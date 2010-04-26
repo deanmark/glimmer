@@ -58,15 +58,18 @@ classdef LevelPopulationSolverLVG < LevelPopulationSolverOpticallyThin
             while ( i <= obj.m_minIterations || (i < obj.m_maxIterations && any(notFinished)) )
                 
                 populationGuess = obj.interpolateNextPopulation(populationGuess, PopulationHistory, i);
-                
+                               
                 [obj.m_betaCoefficients, tau] = obj.m_betaProvider.CalculateBetaCoefficients(populationGuess, MoleculeDensity, VelocityDerivative);
                 
                 obj.m_betaCoefficients = obj.interpolateNextBeta(obj.m_betaCoefficients, BetaHistory, i);
                 
                 PopulationHistory(:,:,i) = populationGuess;
+                lastPopulationGuess = populationGuess;
                 
                 populationGuess(:,notFinished) = SolveLevelsPopulation@LevelPopulationSolverOpticallyThin(obj, CollisionPartnerRates, Weights, Temperature, CollisionPartnerDensities(notFinished), NumLevelsForSolution);
-                
+                %ignore negative population
+                populationGuess(populationGuess < 0) = lastPopulationGuess(populationGuess < 0);
+                 
                 % debug indicators
                 MaxDiffPercentHistory(:,i) = 100*obj.calculateMeanDifferenceRatio(PopulationHistory(:,:,i),populationGuess,true);
                 TauHistory(:,:,i) = tau;
