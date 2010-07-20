@@ -4,8 +4,6 @@ classdef Scripts
         
         function Intensities = CalculateLVGLineIntensities(dvdrKmParsecs, Densities, Temperatures, ColumnDensity, BackgroundTemperature, MoleculeData, CollisionPartnerRates, Weights, CollisionPartnerMoleculeDensityRatio)
             
-            dVdRConversionFactor = 10^5 / (3.08568025 * 10^18);
-            
             LVGSolverSlow = LevelPopulationSolverLVGSlowAccurate(MoleculeData, LVGBetaProvider(MoleculeData, true, true, BackgroundTemperature), 1000);
             
             Intensities = zeros(MoleculeData.MolecularLevels ,numel(Temperatures),numel(Densities),numel(dvdrKmParsecs));
@@ -18,7 +16,7 @@ classdef Scripts
                 
                 for tempIndex=1:numel(Temperatures)
                     
-                    [ Population, Beta, converged, iterations, diffHistory, popHistory, tauHistory, betaHistory] = LVGSolverSlow.SolveLevelsPopulation(CollisionPartnerRates, Weights, Temperatures(tempIndex), Densities, dvdrKmParsecs(dvdrIndex)*dVdRConversionFactor, Densities * CollisionPartnerMoleculeDensityRatio);
+                    [ Population, Beta, converged, iterations, diffHistory, popHistory, tauHistory, betaHistory] = LVGSolverSlow.SolveLevelsPopulation(CollisionPartnerRates, Weights, Temperatures(tempIndex), Densities, dvdrKmParsecs(dvdrIndex)*Constants.dVdRConversionFactor, Densities * CollisionPartnerMoleculeDensityRatio);
                     
                     for densityIndex=1:numel(Densities)
                         
@@ -110,10 +108,11 @@ classdef Scripts
             
             for i=1:size(Ratios,4)
                 [C,h] = contour3 (x, y, squeeze(Ratios(:,:,:,i)), ContourLevels{i}, Scripts.lineStyleChooser(i)); hold all;
+                set(gca,'XScale','log');
                 hGroup = hggroup;
                 set(h,'Parent',hGroup);
                 set(get(get(hGroup,'Annotation'),'LegendInformation'),'IconDisplayStyle','on'); 
-                set(hGroup,'DisplayName', RatiosTitles{i});
+                set(hGroup,'DisplayName', RatiosTitles{i});                
                 if (numel(ContourLevels{i})>1); clabel(C,h,'Rotation',0); end;
             end
             
@@ -127,9 +126,37 @@ classdef Scripts
             
         end
         
-        function Intensities = DrawSEDLVG (dvdrKmParsec, Densities, Temperatures, ColumnDensities, CollisionPartnerMoleculeDensityRatio, MoleculeData, CollisionPartnerRates, Weights, BetaProvider)
+        function Populations = DrawPopulationLVG (dvdrKmParsec, Densities, Temperatures, ColumnDensities, CollisionPartnerMoleculeDensityRatio, MoleculeData, CollisionPartnerRates, Weights, BetaProvider)
             
-            dVdRConversionFactor = 10^5 / (3.08568025 * 10^18);
+            LVGSolverSlow = LevelPopulationSolverLVGSlowAccurate(MoleculeData, BetaProvider, 1000);
+            
+            Populations = zeros(MoleculeData.MolecularLevels, numel(Temperatures), numel(Densities), numel(ColumnDensities));
+            
+            tic;
+            
+            for tempIndex=1:numel(Temperatures)
+                
+                [ Population, Beta, converged, iterations, diffHistory, popHistory, tauHistory, betaHistory] = LVGSolverSlow.SolveLevelsPopulation(CollisionPartnerRates, Weights, Temperatures(tempIndex), Densities, dvdrKmParsec*Constants.dVdRConversionFactor, Densities * CollisionPartnerMoleculeDensityRatio);
+                
+                for densityIndex=1:numel(Densities)
+                    
+                    if converged(densityIndex) == true
+                        
+                        Populations(:,tempIndex,densityIndex,:) = Population(:,densityIndex);
+                        
+                    end
+                    
+                end
+                
+            end
+            
+            toc;
+            
+            Scripts.drawPopulation(Populations, Densities, Temperatures, ColumnDensities)
+            
+        end
+        
+        function Intensities = DrawSEDLVG (dvdrKmParsec, Densities, Temperatures, ColumnDensities, CollisionPartnerMoleculeDensityRatio, MoleculeData, CollisionPartnerRates, Weights, BetaProvider)
             
             LVGSolverSlow = LevelPopulationSolverLVGSlowAccurate(MoleculeData, BetaProvider, 1000);
             
@@ -141,7 +168,7 @@ classdef Scripts
             
             for tempIndex=1:numel(Temperatures)
                 
-                [ Population, Beta, converged, iterations, diffHistory, popHistory, tauHistory, betaHistory] = LVGSolverSlow.SolveLevelsPopulation(CollisionPartnerRates, Weights, Temperatures(tempIndex), Densities, dvdrKmParsec*dVdRConversionFactor, Densities * CollisionPartnerMoleculeDensityRatio);
+                [ Population, Beta, converged, iterations, diffHistory, popHistory, tauHistory, betaHistory] = LVGSolverSlow.SolveLevelsPopulation(CollisionPartnerRates, Weights, Temperatures(tempIndex), Densities, dvdrKmParsec*Constants.dVdRConversionFactor, Densities * CollisionPartnerMoleculeDensityRatio);
                 
                 for densityIndex=1:numel(Densities)
                     
@@ -241,12 +268,10 @@ classdef Scripts
         end
 
         function DrawBoltzmannFitLVG (dvdrKmParsec, Density, Temperature, CollisionPartnerMoleculeDensityRatio, MoleculeData, CollisionPartnerRates, Weights, BetaProvider)
-            
-            dVdRConversionFactor = 10^5 / (3.08568025 * 10^18);
-            
+             
             LVGSolverSlow = LevelPopulationSolverLVGSlowAccurate(MoleculeData, BetaProvider, 1000);
             
-            [ Population, Beta, converged, iterations, diffHistory, popHistory, tauHistory, betaHistory] = LVGSolverSlow.SolveLevelsPopulation(CollisionPartnerRates, Weights, Temperature, Density, dvdrKmParsec*dVdRConversionFactor, Density * CollisionPartnerMoleculeDensityRatio);
+            [ Population, Beta, converged, iterations, diffHistory, popHistory, tauHistory, betaHistory] = LVGSolverSlow.SolveLevelsPopulation(CollisionPartnerRates, Weights, Temperature, Density, dvdrKmParsec*Constants.dVdRConversionFactor, Density * CollisionPartnerMoleculeDensityRatio);
 
             Scripts.drawBoltzmannFit(Density, Temperature, Population, MoleculeData, CollisionPartnerRates, Weights);
             
@@ -359,6 +384,34 @@ classdef Scripts
             
         end
         
+        function drawPopulation (Population, Densities, Temperatures, ColumnDensities)
+            
+            xValues = 0:(size(Population,1)-1);
+            
+            for tempIndex=1:numel(Temperatures)
+                for densityIndex=1:numel(Densities)
+                    for columnDensityIndex=1:numel(ColumnDensities)
+                        
+                        displayName = Scripts.buildSEDDisplayName(Densities, densityIndex, Temperatures, tempIndex, ColumnDensities, columnDensityIndex);
+                        plot(xValues, Population(:,tempIndex,densityIndex,columnDensityIndex), 'DisplayName', displayName); hold all;
+                        
+                    end
+                end
+            end
+            
+            hold off;
+            figure(gcf);
+            
+            xlabel('J');
+            ylabel('x - Fractional population');
+            
+            titleName = Scripts.buildSEDTitleName(Densities, Temperatures, ColumnDensities);
+            title(titleName);
+            
+            legend('toggle');
+            
+        end
+                
         function drawSED (Intensities, Densities, Temperatures, ColumnDensities)
             
             xValues = 0:(size(Intensities,1)-1);

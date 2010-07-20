@@ -21,6 +21,13 @@ classdef CosmicBackgroundProvider < handle
             popRatios(2:end,:) = Population(1:(end-1),:)./Population(2:end,:);
             
             ModifiedBeta = repmat(obj.m_backgroundConstants,1,size(Population,2)) + repmat(obj.m_backgroundVector,1,size(Population,2)).*popRatios;
+            
+            %The modification of the original beta should be within the
+            %range of 0 to 1. Sometimes the calculation goes wrong and this
+            %does not happen. In these cases we set the beta multiplication
+            %factor to 1. In the stable solution this should not occur.
+            ModifiedBeta(ModifiedBeta < 0 | ModifiedBeta > 1) = 1;
+            
             ModifiedBeta = Beta.*ModifiedBeta;
             
         end
