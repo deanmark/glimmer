@@ -126,7 +126,7 @@ classdef Scripts
             
         end
         
-        function Populations = DrawPopulationLVG (dvdrKmParsec, Densities, Temperatures, ColumnDensities, CollisionPartnerMoleculeDensityRatio, MoleculeData, CollisionPartnerRates, Weights, BetaProvider)
+        function Populations = CalculateLVGPopulation (dvdrKmParsec, Densities, Temperatures, ColumnDensities, CollisionPartnerMoleculeDensityRatio, MoleculeData, CollisionPartnerRates, Weights, BetaProvider, DrawGraph)
             
             LVGSolverSlow = LevelPopulationSolverLVGSlowAccurate(MoleculeData, BetaProvider, 1000);
             
@@ -152,7 +152,9 @@ classdef Scripts
             
             toc;
             
-            Scripts.drawPopulation(Populations, Densities, Temperatures, ColumnDensities)
+            if DrawGraph
+                Scripts.DrawPopulation(Populations, Densities, Temperatures, ColumnDensities)
+            end
             
         end
         
@@ -290,6 +292,56 @@ classdef Scripts
             title(sprintf('Collision Rate Coefficients. T=%dK', Temperature));
             
         end
+     
+        function CompareWithRadex (RadexPopUp, RadexPopLow, OurPopulation, Density, Temperature, ColumnDensity)
+        
+            xValues = 0:(size(OurPopulation,1)-1);
+            
+            plot(xValues, OurPopulation(:), 'DisplayName', 'Our'); hold all;
+            plot(xValues, RadexPopUp(:), 'DisplayName', 'Radex Upper');
+            plot(xValues, RadexPopLow(:), 'DisplayName', 'Radex Lower');
+                 
+            hold off;
+            figure(gcf);
+            
+            xlabel('J');
+            ylabel('x - Fractional population');
+            
+            titleName = Scripts.buildSEDTitleName(Density, Temperature, ColumnDensity);
+            title(titleName);
+            
+            legend('toggle');
+            
+            
+        end
+        
+        function DrawPopulation (Population, Densities, Temperatures, ColumnDensities)
+            
+            xValues = 0:(size(Population,1)-1);
+            
+            for tempIndex=1:numel(Temperatures)
+                for densityIndex=1:numel(Densities)
+                    for columnDensityIndex=1:numel(ColumnDensities)
+                        
+                        displayName = Scripts.buildSEDDisplayName(Densities, densityIndex, Temperatures, tempIndex, ColumnDensities, columnDensityIndex);
+                        plot(xValues, Population(:,tempIndex,densityIndex,columnDensityIndex), 'DisplayName', displayName); hold all;
+                        
+                    end
+                end
+            end
+            
+            hold off;
+            figure(gcf);
+            
+            xlabel('J');
+            ylabel('x - Fractional population');
+            
+            titleName = Scripts.buildSEDTitleName(Densities, Temperatures, ColumnDensities);
+            title(titleName);
+            
+            legend('toggle');
+            
+        end
         
     end
     
@@ -383,34 +435,6 @@ classdef Scripts
             legend('toggle');
             
         end
-        
-        function drawPopulation (Population, Densities, Temperatures, ColumnDensities)
-            
-            xValues = 0:(size(Population,1)-1);
-            
-            for tempIndex=1:numel(Temperatures)
-                for densityIndex=1:numel(Densities)
-                    for columnDensityIndex=1:numel(ColumnDensities)
-                        
-                        displayName = Scripts.buildSEDDisplayName(Densities, densityIndex, Temperatures, tempIndex, ColumnDensities, columnDensityIndex);
-                        plot(xValues, Population(:,tempIndex,densityIndex,columnDensityIndex), 'DisplayName', displayName); hold all;
-                        
-                    end
-                end
-            end
-            
-            hold off;
-            figure(gcf);
-            
-            xlabel('J');
-            ylabel('x - Fractional population');
-            
-            titleName = Scripts.buildSEDTitleName(Densities, Temperatures, ColumnDensities);
-            title(titleName);
-            
-            legend('toggle');
-            
-        end
                 
         function drawSED (Intensities, Densities, Temperatures, ColumnDensities)
             
@@ -458,7 +482,7 @@ classdef Scripts
                 colDensityDisplay = sprintf('ColumnDensity=%g[cm^-^2]', ColumnDensities(1));
             end
             
-            TitleName = Scripts.concatWithSeperator({densityDisplay tempDisplay colDensityDisplay}, ',');
+            TitleName = FileIOHelper.ConcatWithSeperator({densityDisplay tempDisplay colDensityDisplay}, ',');
             
         end
         
@@ -480,27 +504,8 @@ classdef Scripts
                 colDensityDisplay = sprintf('ColumnDensity=%gcm^-^2', ColumnDensities(ColumnDensityIndex));
             end
             
-            DisplayName = Scripts.concatWithSeperator({densityDisplay tempDisplay colDensityDisplay}, ',');
+            DisplayName = FileIOHelper.ConcatWithSeperator({densityDisplay tempDisplay colDensityDisplay}, ',');
             
-        end
-        
-        function Result = concatWithSeperator (StringsArray, SeperatorString)
-            
-            Result = '';
-            
-            if numel(StringsArray)==0
-                return;
-            else
-                for i=1:numel(StringsArray)
-                    if (~strcmp(StringsArray(i),''))
-                        if (strcmp(Result,''))
-                            Result = StringsArray(i);
-                        else
-                            Result = strcat(Result, SeperatorString, StringsArray(i));
-                        end
-                    end
-                end
-            end
         end
         
     end

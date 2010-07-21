@@ -17,6 +17,25 @@ classdef FileIOHelper
             end
             
         end
+        
+        function Result = ConcatWithSeperator (StringsArray, SeperatorString)
+            
+            Result = '';
+            
+            if numel(StringsArray)==0
+                return;
+            else
+                for i=1:numel(StringsArray)
+                    if (~strcmp(StringsArray(i),''))
+                        if (strcmp(Result,''))
+                            Result = StringsArray(i);
+                        else
+                            Result = strcat(Result, SeperatorString, StringsArray(i));
+                        end
+                    end
+                end
+            end
+        end
     end
     
 end
