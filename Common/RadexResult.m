@@ -59,9 +59,8 @@ classdef RadexResult < handle
                 
                 currentLine = fgetl(fid);
                 rowData = regexp(strtrim(currentLine),' *','split');
-                rowData = regexp(rowData(6),'/','split');
-                rowData = rowData{1};
-                Result.MoleculeDataFile = rowData(end);
+                [pathstr, name, ext] = fileparts(char(rowData(6)));
+                Result.MoleculeDataFile = strcat(name,ext);
                 
                 currentLine = fgetl(fid);
                 rowData = regexp(strtrim(currentLine),' *','split');

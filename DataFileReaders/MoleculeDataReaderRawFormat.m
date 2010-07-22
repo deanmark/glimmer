@@ -5,7 +5,8 @@ classdef MoleculeDataReaderRawFormat < MoleculeDataReader
         function Molecule = CreateMoleculeDataFromFile (FileName)
             
             [MoleculeName, PhotonFrequencies, EinsteinCoefficients] = MoleculeDataReaderRawFormat.readMoleculeData(FileName);
-            Molecule = MoleculeData(MoleculeName, PhotonFrequencies, EinsteinCoefficients);
+            [pathstr, name, ext] = fileparts(FileName);
+            Molecule = MoleculeData(MoleculeName, PhotonFrequencies, EinsteinCoefficients, strcat(name, ext));
            
         end
         

@@ -4,6 +4,7 @@ classdef MoleculeData < handle
         
         MoleculeName;
         MolecularLevels;
+        MoleculeFileName;
         
         %rows represent upper level, col's are lower level
         m_photonFrequencies;        
@@ -16,11 +17,12 @@ classdef MoleculeData < handle
     
     methods(Access = public)
         
-        function MD = MoleculeData(MoleculeName,PhotonFrequencies,EinsteinCoefficients)
+        function MD = MoleculeData(MoleculeName,PhotonFrequencies,EinsteinCoefficients,MoleculeFileName)
 
             MD.MoleculeName = MoleculeName;
             MD.MolecularLevels = max(PhotonFrequencies(:,1));
             MD.m_hConstant = Constants.h;
+            MD.MoleculeFileName = MoleculeFileName;
             
             MD.m_photonFrequencies = MD.buildPhotonFrequenciesArr (PhotonFrequencies);
             MD.m_einsteinCoefficients = EinsteinCoefficients;

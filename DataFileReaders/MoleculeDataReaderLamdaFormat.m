@@ -1,5 +1,5 @@
 classdef MoleculeDataReaderLamdaFormat < MoleculeDataReader
-    
+
     properties(Constant = true, Hidden=true)
         
         MoleculeNameString = '!MOLECULE';
@@ -13,7 +13,8 @@ classdef MoleculeDataReaderLamdaFormat < MoleculeDataReader
         function Molecule = CreateMoleculeDataFromFile (FileName)
             
             [MoleculeName, PhotonFrequencies, EinsteinCoefficients] = MoleculeDataReaderLamdaFormat.readMoleculeData(FileName);
-            Molecule = MoleculeData(MoleculeName, PhotonFrequencies, EinsteinCoefficients);
+            [pathstr, name, ext] = fileparts(FileName);
+            Molecule = MoleculeData(MoleculeName, PhotonFrequencies, EinsteinCoefficients, strcat(name, ext));
            
         end
         

@@ -4,4 +4,4 @@
 collisionRateRatio = 1;
 
 MoleculeData_HCOplus = MoleculeDataReaderLamdaFormat.CreateMoleculeDataFromFile('DataFiles/Lamda/hco+@xpol.dat');
-CollisionRates_HCOplus_H2 = CollisionRatesReaderLamdaFormat.CreateCollisionRatesFromFile('DataFiles/Lamda/hco+@xpol.dat',1,MoleculeData_HCOplus,collisionRateRatio);
+CollisionRates_HCOplus_H2 = CollisionRatesReaderLamdaFormat.CreateCollisionRatesFromFile('DataFiles/Lamda/hco+@xpol.dat',CollisionPartnersCodes.H2,MoleculeData_HCOplus,collisionRateRatio);

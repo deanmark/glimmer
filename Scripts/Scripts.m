@@ -16,7 +16,7 @@ classdef Scripts
                 
                 for tempIndex=1:numel(Temperatures)
                     
-                    [ Population, Beta, converged, iterations, diffHistory, popHistory, tauHistory, betaHistory] = LVGSolverSlow.SolveLevelsPopulation(CollisionPartnerRates, Weights, Temperatures(tempIndex), Densities, dvdrKmParsecs(dvdrIndex)*Constants.dVdRConversionFactor, Densities * CollisionPartnerMoleculeDensityRatio);
+                    [ Population, Beta, converged, iterations, diffHistory, popHistory, tauHistory, betaHistory] = LVGSolverSlow.SolveLevelsPopulation(CollisionPartnerRates, Weights, Temperatures(tempIndex), Densities*CollisionPartnerMoleculeDensityRatio, dvdrKmParsecs(dvdrIndex)*Constants.dVdRConversionFactor, Densities);
                     
                     for densityIndex=1:numel(Densities)
                         
@@ -136,7 +136,7 @@ classdef Scripts
             
             for tempIndex=1:numel(Temperatures)
                 
-                [ Population, Beta, converged, iterations, diffHistory, popHistory, tauHistory, betaHistory] = LVGSolverSlow.SolveLevelsPopulation(CollisionPartnerRates, Weights, Temperatures(tempIndex), Densities, dvdrKmParsec*Constants.dVdRConversionFactor, Densities * CollisionPartnerMoleculeDensityRatio);
+                [ Population, Beta, converged, iterations, diffHistory, popHistory, tauHistory, betaHistory] = LVGSolverSlow.SolveLevelsPopulation(CollisionPartnerRates, Weights, Temperatures(tempIndex), Densities*CollisionPartnerMoleculeDensityRatio, dvdrKmParsec*Constants.dVdRConversionFactor, Densities);
                 
                 for densityIndex=1:numel(Densities)
                     
@@ -170,7 +170,7 @@ classdef Scripts
             
             for tempIndex=1:numel(Temperatures)
                 
-                [ Population, Beta, converged, iterations, diffHistory, popHistory, tauHistory, betaHistory] = LVGSolverSlow.SolveLevelsPopulation(CollisionPartnerRates, Weights, Temperatures(tempIndex), Densities, dvdrKmParsec*Constants.dVdRConversionFactor, Densities * CollisionPartnerMoleculeDensityRatio);
+                [ Population, Beta, converged, iterations, diffHistory, popHistory, tauHistory, betaHistory] = LVGSolverSlow.SolveLevelsPopulation(CollisionPartnerRates, Weights, Temperatures(tempIndex), Densities*CollisionPartnerMoleculeDensityRatio, dvdrKmParsec*Constants.dVdRConversionFactor, Densities);
                 
                 for densityIndex=1:numel(Densities)
                     
@@ -273,7 +273,7 @@ classdef Scripts
              
             LVGSolverSlow = LevelPopulationSolverLVGSlowAccurate(MoleculeData, BetaProvider, 1000);
             
-            [ Population, Beta, converged, iterations, diffHistory, popHistory, tauHistory, betaHistory] = LVGSolverSlow.SolveLevelsPopulation(CollisionPartnerRates, Weights, Temperature, Density, dvdrKmParsec*Constants.dVdRConversionFactor, Density * CollisionPartnerMoleculeDensityRatio);
+            [ Population, Beta, converged, iterations, diffHistory, popHistory, tauHistory, betaHistory] = LVGSolverSlow.SolveLevelsPopulation(CollisionPartnerRates, Weights, Temperature, Density*CollisionPartnerMoleculeDensityRatio, dvdrKmParsec*Constants.dVdRConversionFactor, Density);
 
             Scripts.drawBoltzmannFit(Density, Temperature, Population, MoleculeData, CollisionPartnerRates, Weights);
             
@@ -293,12 +293,11 @@ classdef Scripts
             
         end
      
-        function CompareWithRadex (RadexPopUp, RadexPopLow, OurPopulation, Density, Temperature, ColumnDensity)
+        function CompareWithRadex (RadexPopLow, OurPopulation, Density, Temperature, ColumnDensity)
         
             xValues = 0:(size(OurPopulation,1)-1);
             
             plot(xValues, OurPopulation(:), 'DisplayName', 'Our'); hold all;
-            plot(xValues, RadexPopUp(:), 'DisplayName', 'Radex Upper');
             plot(xValues, RadexPopLow(:), 'DisplayName', 'Radex Lower');
                  
             hold off;
