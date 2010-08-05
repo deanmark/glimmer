@@ -1,16 +1,22 @@
 classdef LevelPopulationSolverLVGSlowAccurate < LevelPopulationSolverLVG
     
-    properties(SetAccess = private, Constant = true)
+    properties(SetAccess = private)
         
-        m_changePercent = 0.1;
+        m_changePercent;
         
     end
    
     methods(Access=public)
        
-        function LVG = LevelPopulationSolverLVGSlowAccurate(MoleculeData, BetaProvider, MaxIterations)
+        function LVG = LevelPopulationSolverLVGSlowAccurate(MoleculeData, BetaProvider, MaxIterations, ChangePercent)
             
             LVG@LevelPopulationSolverLVG(MoleculeData, BetaProvider, MaxIterations);
+            
+            if isempty(ChangePercent)
+                ChangePercent = 0.1;
+            end
+                
+            LVG.m_changePercent = ChangePercent;
            
         end
         

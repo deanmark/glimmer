@@ -1,6 +1,6 @@
-Temperatures = cat(2, 200);
+Temperatures = cat(2, 200, 300);
 
-Densities = 10.^(10);
+Densities = 10.^(5:1:10);
 
 ColumnDensities = [1];
 

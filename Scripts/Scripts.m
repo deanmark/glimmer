@@ -126,31 +126,41 @@ classdef Scripts
             
         end
         
-        function Populations = CalculateLVGPopulation (dvdrKmParsec, Densities, Temperatures, ColumnDensities, CollisionPartnerMoleculeDensityRatio, MoleculeData, CollisionPartnerRates, Weights, BetaProvider, DrawGraph)
+        function Populations = CalculateLVGPopulation (dvdr, Densities, Temperatures, ColumnDensities, MoleculeToCollisionPartnerDensityRatio, MoleculeData, CollisionPartnerRates, Weights, BetaProvider, DrawGraph)
+            % dvdr - 1/s
+            LVGSolver = LevelPopulationSolverLVGSlowAccurate(MoleculeData, BetaProvider, 1000, 0.1);
+            LVGSolverAccurate = LevelPopulationSolverLVGSlowAccurate(MoleculeData, BetaProvider, 10000, 0.01);
             
-            LVGSolverSlow = LevelPopulationSolverLVGSlowAccurate(MoleculeData, BetaProvider, 1000);
+            Populations = zeros(MoleculeData.MolecularLevels, numel(Temperatures), numel(Densities), numel(dvdr));
             
-            Populations = zeros(MoleculeData.MolecularLevels, numel(Temperatures), numel(Densities), numel(ColumnDensities));
-            
-            tic;
-            
-            for tempIndex=1:numel(Temperatures)
+            for dvdrIndex=1:numel(dvdr)
                 
-                [ Population, Beta, converged, iterations, diffHistory, popHistory, tauHistory, betaHistory] = LVGSolverSlow.SolveLevelsPopulation(CollisionPartnerRates, Weights, Temperatures(tempIndex), Densities*CollisionPartnerMoleculeDensityRatio, dvdrKmParsec*Constants.dVdRConversionFactor, Densities);
-                
-                for densityIndex=1:numel(Densities)
+                for tempIndex=1:numel(Temperatures)
                     
-                    if converged(densityIndex) == true
+                    [ Population, Beta, converged, iterations, diffHistory, popHistory, tauHistory, betaHistory] = LVGSolver.SolveLevelsPopulation(CollisionPartnerRates, Weights, Temperatures(tempIndex), Densities*(MoleculeToCollisionPartnerDensityRatio^-1), dvdr, Densities);
+                    
+                    Indices = zeros(size(Populations));
+                    IndicesConstTemperature = repmat(logical(converged),MoleculeData.MolecularLevels,1);
+                    Indices(:,tempIndex,:,dvdrIndex) = IndicesConstTemperature;
+                    Populations(logical(Indices)) = Population(IndicesConstTemperature);
+                    
+                    if any(~converged)
+                        nonConvergedDensities = Densities(logical(~converged));
+                        [ Population, Beta, convergedAccurate, iterations, diffHistory, popHistory, tauHistory, betaHistory] = LVGSolverAccurate.SolveLevelsPopulation(CollisionPartnerRates, Weights, Temperatures(tempIndex), nonConvergedDensities*(MoleculeToCollisionPartnerDensityRatio^-1), dvdr, nonConvergedDensities);
                         
-                        Populations(:,tempIndex,densityIndex,:) = Population(:,densityIndex);
+                        convergedSecondTime = zeros(size(converged));
+                        convergedSecondTime(logical(~converged)) = convergedAccurate;
+                        Indices = zeros(size(Populations));
+                        IndicesConstTemperature = repmat(logical(convergedSecondTime),MoleculeData.MolecularLevels,1);
+                        Indices(:,tempIndex,:,dvdrIndex) = IndicesConstTemperature;
+                        IndicesFromNonConverged = repmat(logical(convergedAccurate),MoleculeData.MolecularLevels,1);
+                        Populations(logical(Indices)) = Population(IndicesFromNonConverged);
                         
                     end
                     
                 end
                 
             end
-            
-            toc;
             
             if DrawGraph
                 Scripts.DrawPopulation(Populations, Densities, Temperatures, ColumnDensities)
@@ -293,12 +303,22 @@ classdef Scripts
             
         end
      
-        function CompareWithRadex (RadexPopLow, OurPopulation, Density, Temperature, ColumnDensity)
+        function CompareWithRadex (RadexPopLow, OurPopulation, Density, Temperature, ColumnDensity, dvdrKmParsecs, FileName)
         
-            xValues = 0:(size(OurPopulation,1)-1);
+            maxSize = max(numel(RadexPopLow), numel(OurPopulation));
             
-            plot(xValues, OurPopulation(:), 'DisplayName', 'Our'); hold all;
-            plot(xValues, RadexPopLow(:), 'DisplayName', 'Radex Lower');
+            if (numel(RadexPopLow) < maxSize)
+                RadexPopLow = cat(1, RadexPopLow, zeros(maxSize - numel(RadexPopLow),1));
+            end
+            
+            if (numel(OurPopulation) < maxSize)
+                OurPopulation = cat(1, OurPopulation, zeros(maxSize - numel(OurPopulation)));
+            end            
+                
+            xValues = 0:(maxSize-1);
+            
+            plot(xValues, OurPopulation, 'DisplayName', 'Our'); hold all;
+            h = plot(xValues, RadexPopLow, 'DisplayName', 'Radex Lower');
                  
             hold off;
             figure(gcf);
@@ -306,12 +326,14 @@ classdef Scripts
             xlabel('J');
             ylabel('x - Fractional population');
             
-            titleName = Scripts.buildSEDTitleName(Density, Temperature, ColumnDensity);
+            titleName = Scripts.buildSEDTitleName(Density, Temperature, ColumnDensity, dvdrKmParsecs);
             title(titleName);
             
             legend('toggle');
             
-            
+            if nargin > 6 && ~isempty(FileName)
+               saveas (h,FileName);
+            end
         end
         
         function DrawPopulation (Population, Densities, Temperatures, ColumnDensities)
@@ -463,7 +485,7 @@ classdef Scripts
             
         end
         
-        function TitleName = buildSEDTitleName (Densities, Temperatures, ColumnDensities)
+        function TitleName = buildSEDTitleName (Densities, Temperatures, ColumnDensities, dvdrKmParsecs)
             
             densityDisplay = '';
             tempDisplay = '';
@@ -481,7 +503,11 @@ classdef Scripts
                 colDensityDisplay = sprintf('ColumnDensity=%g[cm^-^2]', ColumnDensities(1));
             end
             
-            TitleName = FileIOHelper.ConcatWithSeperator({densityDisplay tempDisplay colDensityDisplay}, ',');
+            if (numel(dvdrKmParsecs)==1)
+                dvdrKmParsecsDisplay = sprintf('dv/dr=%g[km s^-^1 pc^-^1]', dvdrKmParsecs(1));
+            end
+            
+            TitleName = FileIOHelper.ConcatWithSeperator({densityDisplay tempDisplay colDensityDisplay dvdrKmParsecsDisplay}, ',');
             
         end
         

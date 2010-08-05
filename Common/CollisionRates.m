@@ -38,7 +38,7 @@ classdef CollisionRates < handle
         function Q = CollisionRateCoefficient(obj, LeftLevel, RightLevel, Temperature)
                         
             %if temperature is larger or smaller than all the
-            %temperatures, we do not interpolation, but use the value that is
+            %temperatures, we do not interpolate, but use the value that is
             %closest to him
             
             if Temperature <= min(obj.m_temperatures)  

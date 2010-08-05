@@ -1,12 +1,22 @@
-classdef Constants
-    %Contains all the physical constants used in the program
+classdef (Sealed) Constants < handle
+    % Contains all the physical constants used in the program
     
     properties (Constant = true)
-        h = 6.62606896*10^-27; %plank constant - erg*s
-        k = 1.3806504*10^-16; %Boltzmann constant - erg / K
-        c = 29979245800; %Speed of light - cm/s
+        % Plank constant [erg * s]
+        h = 6.62606896*10^-27; 
+        % Boltzmann constant [erg / K]
+        k = 1.3806504*10^-16; 
+        % Speed of light [cm / s]
+        c = 29979245800; 
+        % PI
         pi = 3.141592653589;
-        dVdRConversionFactor = 10^5 / (3.08568025 * 10^18); % convert from km*s-1*pc-1 to cm*s-1
+        % Velocity gradient conversion factor from [km / s pc] to [1/s]
+        dVdRConversionFactor = 10^5 / (3.08568025 * 10^18); 
+    end
+    
+    methods (Access = private)
+        function out = Constants ()
+            % Private so that you can't instatiate.
+        end
     end
 end
-

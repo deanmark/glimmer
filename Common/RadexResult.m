@@ -49,6 +49,12 @@ classdef RadexResult < handle
                        
             %read header info
             fid = fopen(FileName);
+            
+            if fid == -1
+                ME = MException('VerifyInput:fileNotFound','Error in input. FileName [%s] not found', FileName);
+                throw(ME);
+            end
+            
             Result = RadexResult();
             
             try

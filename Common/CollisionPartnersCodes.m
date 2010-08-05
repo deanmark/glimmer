@@ -1,5 +1,5 @@
 classdef (Sealed) CollisionPartnersCodes
-    %COLLISIONPARTNERS Enum of collision partners
+    % Enum of collision partners
     
     properties  (Constant)
         H2 = 1;
@@ -35,6 +35,9 @@ classdef (Sealed) CollisionPartnersCodes
                     Result = 'he';
                 case CollisionPartnersCodes.HPlus
                     Result = 'h+';
+                otherwise
+                    ME = MException('VerifyInput:unknownCollisionPartnerCode','Error in input. Collision partner code [%d] is unknown', CollisionPartnerCode);
+                    throw(ME);
             end            
         end
         
