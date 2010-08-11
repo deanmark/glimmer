@@ -13,7 +13,7 @@ classdef RadexResult < handle
         ColumnDensity;
         LineWidth;
         
-        TransitionEnergy; % E_UP (K)
+        UpperStateEnergy; % E_UP (K)
         Frquency; % FREQ (GHz)
         WaveLength; % WAVEL (um)
         ExcitationTemperature; % T_EX (K)
@@ -95,29 +95,35 @@ classdef RadexResult < handle
                 rowData = regexp(strtrim(currentLine),' *','split');
                 Result.LineWidth = str2double(rowData(5));
                 
+                currentLine = FileIOHelper.JumpLinesInFile(fid,4);
+                i = 1;                
+                
+                while currentLine ~= -1
+                                    
+                    rowData = regexp(strtrim(currentLine),' *','split');
+                    
+                    Result.UpperStateEnergy(i,1) = str2double(rowData{4});
+                    Result.Frquency(i,1) = str2double(rowData{5});
+                    Result.WaveLength(i,1) = str2double(rowData{6});
+                    Result.ExcitationTemperature(i,1) = str2double(rowData{7});
+                    Result.Tau(i,1) = str2double(rowData{8});
+                    Result.RadiationTemeperature(i,1) = str2double(rowData{9});
+                    Result.PopulationUp(i,1) = str2double(rowData{10});
+                    Result.PopulationLow(i,1) = str2double(rowData{11});
+                    Result.Flux_K_km_s(i,1) = str2double(rowData{12});
+                    Result.Flux_erg_cm2_s(i,1) = str2double(rowData{13});
+                    
+                    currentLine = fgetl(fid);                    
+                    i = i+1;
+                end
+                
             catch
                 fclose(fid);
                 rethrow(lasterror);
             end
             
             fclose(fid);
-            
-            DELIMITER = ' ';
-            HEADERLINES = 10 + numel(Result.CollisionParters);
 
-            % Import the file
-            newData1 = importdata(FileName, DELIMITER, HEADERLINES);
-            Result.TransitionEnergy = newData1.data(:,2);
-            Result.Frquency = newData1.data(:,3);
-            Result.WaveLength = newData1.data(:,4);
-            Result.ExcitationTemperature = newData1.data(:,5);
-            Result.Tau = newData1.data(:,6);
-            Result.RadiationTemeperature = newData1.data(:,7);
-            Result.PopulationUp = newData1.data(:,8);
-            Result.PopulationLow = newData1.data(:,9);
-            Result.Flux_K_km_s = newData1.data(:,10);
-            Result.Flux_erg_cm2_s = newData1.data(:,11);
-            
         end
         
     end

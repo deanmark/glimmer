@@ -1,10 +1,14 @@
 classdef LVGBetaProvider < OpticalDepthProvider
     
+    properties (SetAccess = public)
+        
+        IgnoreNegativeTau;
+        IncludeBackgroundRadiation;
+        
+    end
+    
     properties (SetAccess = private)
         
-        m_ignoreNegativeTau;
-        m_includeBackgroundRadiation;
-
         m_cosmicBackgroundProvider;
         
     end
@@ -15,8 +19,8 @@ classdef LVGBetaProvider < OpticalDepthProvider
             
             LVGBeta@OpticalDepthProvider(MoleculeData);
             
-            LVGBeta.m_ignoreNegativeTau = IgnoreNegativeTau;
-            LVGBeta.m_includeBackgroundRadiation = IncludeBackgroundRadiation;
+            LVGBeta.IgnoreNegativeTau = IgnoreNegativeTau;
+            LVGBeta.IncludeBackgroundRadiation = IncludeBackgroundRadiation;
             
             if (IncludeBackgroundRadiation)
                 LVGBeta.m_cosmicBackgroundProvider = CosmicBackgroundProvider(MoleculeData, BackgroundTemperature);
@@ -28,7 +32,7 @@ classdef LVGBetaProvider < OpticalDepthProvider
             
             TauCoefficients = obj.CalculateTauCoefficients(Population, MoleculeDensity, VelocityDerivative);
             
-            if (obj.m_ignoreNegativeTau)
+            if (obj.IgnoreNegativeTau)
                 TauCoefficients(TauCoefficients < 0) = 0;
             end
             
@@ -41,7 +45,7 @@ classdef LVGBetaProvider < OpticalDepthProvider
             
             BetaCoefficients(~smallNumbersLogicalIndex) = (1-exp(-TauCoefficients(~smallNumbersLogicalIndex)))./TauCoefficients(~smallNumbersLogicalIndex);
             
-            if (obj.m_includeBackgroundRadiation)               
+            if (obj.IncludeBackgroundRadiation)               
                 BetaCoefficients = obj.m_cosmicBackgroundProvider.AddBackgroundRadiation(Population, BetaCoefficients);                
             end
                         

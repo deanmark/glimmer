@@ -1,11 +1,36 @@
 classdef RadexSolver
     
+    properties (Constant)
+        
+        LVG = 1;
+        UniformSphere = 2;
+        PlaneParallelSlab = 3;
+        
+        RadexLVGFileName = 'radexLVG.exe';
+        RadexUniformSphereFileName = 'radexUniformSphere.exe';
+        RadexPlaneParallelSlabFileName = 'radexPlaneParallelSlab.exe';
+        InputFileName = 'radex.inp';
+        OutputFileName = 'radex.out';
+    end
+    
+    
     methods(Static=true)
         
-        function [ Result , RuntimeMessage ] = SolveLevelsPopulation( DvDr, Density, Temperature, MoleculeToCollisionPartnerDensityRatio, Molecule, CollisionPartners, CollisionPartnerWeights, BackgroundTemperature)
+        function [ Result , RuntimeMessage ] = SolveLevelsPopulation(BetaType, DvDr, CollisionPartnerDensity, Temperature, MoleculeToCollisionPartnerDensityRatio, Molecule, CollisionPartners, CollisionPartnerWeights, BackgroundTemperature)
+            persistent RadexDirectory;
+            if isempty(RadexDirectory)
+                classPath = mfilename('fullpath'); %returns path of current class. exe files are assumed to be in the same directory as the RadexSolver class.
+                RadexDirectory = fileparts(classPath);
+            end
             
-            CollisionPartnerDensities = Density*(MoleculeToCollisionPartnerDensityRatio^-1)*CollisionPartnerWeights/(sum(CollisionPartnerWeights));
-            DensityToDvdrRatio = Density / DvDr;
+            %we need to set the directory to the radex exe dir.
+            userDir = cd;
+            cd(RadexDirectory);
+            
+            radexFileName = RadexSolver.convertBetaTypeToFileName(BetaType);
+               
+            CollisionPartnerDensities = CollisionPartnerDensity*CollisionPartnerWeights/(sum(CollisionPartnerWeights));
+            DensityToDvdrRatio = MoleculeToCollisionPartnerDensityRatio * CollisionPartnerDensity / ( DvDr * 1e-5); %Radex accepts dvdr in Km/sec, the 1e5 converts our cm's to km's
             
             if (1e5 <= DensityToDvdrRatio) && (DensityToDvdrRatio <= 1e25)
                 InputDensity = DensityToDvdrRatio;
@@ -20,14 +45,20 @@ classdef RadexSolver
                 ME = MException('VerifyInput:DensityToDvdrRatioOutOfRange','Error in input. Density To Dvdr Ratio should be between 1e2 and 1e28. Input: [%g]', DensityToDvdrRatio);
                 throw(ME);
             end
+
+            RadexSolver.buildRadexInputFile(RadexSolver.InputFileName, Molecule.MoleculeFileName, RadexSolver.OutputFileName, 0, 0, Temperature, CollisionPartners, CollisionPartnerDensities, BackgroundTemperature, InputDensity, InputDvDr);
             
-            RadexSolver.buildRadexInputFile('radex.inp', Molecule.MoleculeFileName, 'radex.out', 0, 0, Temperature, CollisionPartners, CollisionPartnerDensities, BackgroundTemperature, InputDensity, InputDvDr);
+            RuntimeMessage = evalc(sprintf('!%s < %s',radexFileName, RadexSolver.InputFileName));
             
-            radexPath = fullfile('.','radexLVG.exe');
+            %check that radex has run
+            if isempty(regexp(RuntimeMessage,'Finished in.*iterations', 'once'))
+                ME = MException('VerifyInput:RadexError','Radex did not run. Output message: %s', RuntimeMessage);
+                throw(ME);
+            end
             
-            RuntimeMessage = evalc(sprintf('!%s < radex.inp',radexPath));
+            Result = RadexResult.ReadFromFile(RadexSolver.OutputFileName);
             
-            Result = RadexResult.ReadFromFile('radex.out');
+            cd(userDir);
             
         end
         
@@ -35,7 +66,7 @@ classdef RadexSolver
     
     methods(Access=private, Static=true)
         
-        function buildRadexInputFile (FileName, InputFile, OutputFile, LowerFreq, UpperFreq, KineticTemp, CollisionParters, CollisionPartnerDensities, BackgroundTemperature, ColumnDensity, LineWidth)
+        function buildRadexInputFile (FileName, MoleculeFile, OutputFile, LowerFreq, UpperFreq, KineticTemp, CollisionParters, CollisionPartnerDensities, BackgroundTemperature, ColumnDensity, LineWidth)
             
             if ~(0.1 <= KineticTemp && KineticTemp <= 1e4)
                 ME = MException('VerifyInput:TemperatureOutOfRange','Error in input. Kinetic temperature [K] should be between 0.1 and 1e4. Input: [%g]', KineticTemp);
@@ -57,11 +88,16 @@ classdef RadexSolver
                 throw(ME);
             end
             
+            %optically thin debug
+%             ColumnDensity = 1e5;
+%             LineWidth = 1e3;
+            %
+            
             fid = fopen(FileName,'wt');
             
             try
                 
-                fprintf(fid,'%s\n',InputFile);
+                fprintf(fid,'%s\n',MoleculeFile);
                 fprintf(fid,'%s\n',OutputFile);
                 fprintf(fid,'%g %g\n',LowerFreq,UpperFreq);
                 fprintf(fid,'%g\n',KineticTemp);
@@ -83,6 +119,19 @@ classdef RadexSolver
             end
             
             fclose(fid);
+            
+        end
+        
+        function FileName = convertBetaTypeToFileName (BetaType)
+            
+            switch BetaType
+                case RadexSolver.LVG
+                    FileName = RadexSolver.RadexLVGFileName;
+                case RadexSolver.UniformSphere
+                    FileName = RadexSolver.RadexUniformSphereFileName;
+                case RadexSolver.PlaneParallelSlab
+                    FileName = RadexSolver.RadexPlaneParallelSlabFileName;
+            end
             
         end
         

@@ -1,3 +1,7 @@
+p = mfilename('fullpath'); %returns path of current script.
+ScriptsDirectory = fileparts(p);
+radexComparePath = fullfile(ScriptsDirectory, '..', 'Results', 'RadexCompareOutput');
+
 data = cell(size(Results));
 
 for i=1:size(Results,1)
@@ -6,10 +10,10 @@ for i=1:size(Results,1)
     end    
 end
 
-colheads = cell(size(Densities));
+colheads = cell(size(CollisionPartnerDensities));
 
-for i=1:numel(Densities)
-    colheads{i} = sprintf('%4.3g cm^-3',Densities(i));
+for i=1:numel(CollisionPartnerDensities)
+    colheads{i} = sprintf('%4.3g cm^-3',CollisionPartnerDensities(i));
 end
 
 rowheads = cell(size(Temperatures));
@@ -22,4 +26,4 @@ rowheads = transpose(rowheads);
 
 table_cell = [[cell(1);rowheads] [colheads; num2cell(data)]];
 
-html_table(table_cell, 'radex_compare.html','FirstRowIsHeading',1, 'FirstColIsHeading',1);
+html_table(table_cell, fullfile(radexComparePath,'index.html'),'FirstRowIsHeading',1, 'FirstColIsHeading',1);

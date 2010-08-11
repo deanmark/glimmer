@@ -32,30 +32,34 @@ classdef LevelPopulationSolverLVG < LevelPopulationSolverOpticallyThin
             
         end
         
-        function [Population, FinalBetaCoefficients, HasConverged, Iterations, MaxDiffPercentHistory, PopulationHistory, TauHistory, BetaHistory] = SolveLevelsPopulation(obj, CollisionPartnerRates, Weights, Temperature, CollisionPartnerDensities, VelocityDerivative, MoleculeDensity, NumLevelsForSolution)
+        function [Population, FinalBetaCoefficients, HasConverged, Iterations, MaxDiffPercentHistory, PopulationHistory, TauHistory, BetaHistory] = SolveLevelsPopulation(obj, CollisionPartnerRates, Weights, Temperature, CollisionPartnerDensities, VelocityDerivative, MoleculeDensity, NumLevelsForSolution, FirstPopulationGuess)
             
-            if (nargin < 8); NumLevelsForSolution=obj.m_moleculeData.MolecularLevels; end;
+            if (isempty(NumLevelsForSolution)); NumLevelsForSolution=obj.m_moleculeData.MolecularLevels; end;
             
             numDensities = numel(CollisionPartnerDensities);
             
             obj.m_collisionRateMatrix = 0;
             obj.m_collisionPartnerDensities = CollisionPartnerDensities;
-            obj.m_betaCoefficients = ones(obj.m_moleculeData.MolecularLevels, numDensities);
+            obj.m_betaCoefficients = ones(NumLevelsForSolution, numDensities);
             
-            populationGuess = SolveLevelsPopulation@LevelPopulationSolverOpticallyThin(obj, CollisionPartnerRates, Weights, Temperature, CollisionPartnerDensities, NumLevelsForSolution);
+            if (isempty(FirstPopulationGuess))
+                FirstPopulationGuess = SolveLevelsPopulation@LevelPopulationSolverOpticallyThin(obj, CollisionPartnerRates, Weights, Temperature, CollisionPartnerDensities, NumLevelsForSolution);
+            end
+            
+            populationGuess = FirstPopulationGuess;
             
             i = 1;
             
             MaxDiffPercentHistory = zeros (numDensities, obj.m_maxIterations);
-            PopulationHistory = zeros (obj.m_moleculeData.MolecularLevels, numDensities, obj.m_maxIterations);
-            TauHistory = zeros (obj.m_moleculeData.MolecularLevels, numDensities, obj.m_maxIterations);
-            BetaHistory = zeros (obj.m_moleculeData.MolecularLevels, numDensities, obj.m_maxIterations);
+            PopulationHistory = zeros (NumLevelsForSolution, numDensities, obj.m_maxIterations);
+            TauHistory = zeros (NumLevelsForSolution, numDensities, obj.m_maxIterations);
+            BetaHistory = zeros (NumLevelsForSolution, numDensities, obj.m_maxIterations);
             
             converged = zeros (1, numDensities);
             haywired = zeros (1, numDensities);
             notFinished = ~(converged | haywired);
             
-            while ( i <= obj.m_minIterations || (i < obj.m_maxIterations && any(notFinished)) )
+            while ( (i <= obj.m_minIterations || i < obj.m_maxIterations) && any(notFinished) )
                 
                 populationGuess = obj.interpolateNextPopulation(populationGuess, PopulationHistory, i);
                                
@@ -67,8 +71,9 @@ classdef LevelPopulationSolverLVG < LevelPopulationSolverOpticallyThin
                 lastPopulationGuess = populationGuess;
                 
                 populationGuess(:,notFinished) = SolveLevelsPopulation@LevelPopulationSolverOpticallyThin(obj, CollisionPartnerRates, Weights, Temperature, CollisionPartnerDensities(notFinished), NumLevelsForSolution);
-                %ignore negative population
-                populationGuess(populationGuess < 0) = lastPopulationGuess(populationGuess < 0);
+                %ignore negative and haywired population
+                %badPopulations = populationGuess < 0 | isnan(populationGuess);
+                %populationGuess(badPopulations) = lastPopulationGuess(badPopulations);
                  
                 % debug indicators
                 MaxDiffPercentHistory(:,i) = 100*obj.calculateMeanDifferenceRatio(PopulationHistory(:,:,i),populationGuess,true);
@@ -133,8 +138,10 @@ classdef LevelPopulationSolverLVG < LevelPopulationSolverOpticallyThin
         
         function EinsteinMatrix = getEinsteinMatrix (obj, CollisionPartnerDensity)
             
+            levels = size(obj.m_betaCoefficients,1);           
+            
             densityIndex = obj.m_collisionPartnerDensities == CollisionPartnerDensity;
-            EinsteinMatrix = obj.m_einsteinMatrix*diag(obj.m_betaCoefficients(:,logical(densityIndex)));
+            EinsteinMatrix = obj.m_einsteinMatrix(1:levels,1:levels)*diag(obj.m_betaCoefficients(:,logical(densityIndex)));
             
         end
         
@@ -154,9 +161,7 @@ classdef LevelPopulationSolverLVG < LevelPopulationSolverOpticallyThin
         
         function GoneHaywire = hasPopulationGoneHaywire(obj, populationGuess)
             
-            nanSums = sum(isnan(populationGuess), 1);
-            
-            GoneHaywire = nanSums == size(populationGuess,1);
+            GoneHaywire = any(isnan(populationGuess));
             
         end
                 

@@ -26,8 +26,8 @@ classdef LevelPopulationSolverOpticallyThin < handle
                 NumLevelsForSolution = obj.m_moleculeData.MolecularLevels;
             end            
             
-            matrix = obj.createEquationMatrix(CollisionPartnerRates, Weights, Temperature, CollisionPartnerDensities);            
-            Population = zeros(obj.m_moleculeData.MolecularLevels,numel(CollisionPartnerDensities));
+            matrix = obj.createEquationMatrix(CollisionPartnerRates, Weights, Temperature, CollisionPartnerDensities, NumLevelsForSolution);            
+            Population = zeros(NumLevelsForSolution,numel(CollisionPartnerDensities));
             
             %take only the levels requested for solution
             subMatrix = matrix(1:NumLevelsForSolution,1:NumLevelsForSolution,:);
@@ -45,18 +45,16 @@ classdef LevelPopulationSolverOpticallyThin < handle
     
     methods(Access=private)
 
-        function EqMatrix = createEquationMatrix(obj, CollisionPartnerRates, Weights, Temperature, CollisionPartnerDensities)
+        function EqMatrix = createEquationMatrix(obj, CollisionPartnerRates, Weights, Temperature, CollisionPartnerDensities, NumLevelsForSolution)
             
-            moleculerLevels = obj.m_moleculeData.MolecularLevels;
-            
-            EqMatrix = zeros(moleculerLevels,moleculerLevels,numel(CollisionPartnerDensities));
+            EqMatrix = zeros(NumLevelsForSolution,NumLevelsForSolution,numel(CollisionPartnerDensities));
             collisionRateMatrix = obj.createCollisionRateMatrix(CollisionPartnerRates, Weights, Temperature);
             
             for i = 1:numel(CollisionPartnerDensities)
                 
                 EqMatrix(:,:,i) = obj.getEinsteinMatrix(CollisionPartnerDensities(i));
                 
-                EqMatrix(:,:,i) = EqMatrix(:,:,i) + CollisionPartnerDensities(i)*collisionRateMatrix;
+                EqMatrix(:,:,i) = EqMatrix(:,:,i) + CollisionPartnerDensities(i)*collisionRateMatrix(1:NumLevelsForSolution,1:NumLevelsForSolution);
                 
                 %the last equation states that all coefficients should sum up to unity.
                 EqMatrix(1,1:end, i) = 1;
