@@ -3,7 +3,8 @@ classdef LevelPopulationSolverLVG < LevelPopulationSolverOpticallyThin
     properties(SetAccess = private, Constant = true)
         
         m_minIterations = 4;
-        m_convergenceThreshold = 10^-5; %relative difference
+        %m_convergenceThreshold = 10^-5; %relative difference
+        m_convergenceThreshold = 0.0001; %relative difference
         m_significantPopulationThreshold = 0.001;
         
     end
@@ -130,7 +131,7 @@ classdef LevelPopulationSolverLVG < LevelPopulationSolverOpticallyThin
             end
             
             diffRatio = abs(Pop1-Pop2)./Pop1;
-            diffRatio(sgnfLvlsIndex) = 0;
+            diffRatio(~sgnfLvlsIndex) = 0;
             
             MaxDifferenceRatio = sum(diffRatio,1)./sum(sgnfLvlsIndex,1);
             

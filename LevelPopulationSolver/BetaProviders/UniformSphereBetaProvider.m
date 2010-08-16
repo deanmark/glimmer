@@ -1,10 +1,14 @@
 classdef UniformSphereBetaProvider < OpticalDepthProvider
     
+    properties (SetAccess = public)
+        
+        IgnoreNegativeTau;
+        IncludeBackgroundRadiation;
+        
+    end
+    
     properties (SetAccess = private)
         
-        m_ignoreNegativeTau;
-        m_includeBackgroundRadiation;
-
         m_cosmicBackgroundProvider;
         
     end
@@ -15,8 +19,8 @@ classdef UniformSphereBetaProvider < OpticalDepthProvider
             
             USphereBeta@OpticalDepthProvider(MoleculeData);
             
-            USphereBeta.m_ignoreNegativeTau = IgnoreNegativeTau;
-            USphereBeta.m_includeBackgroundRadiation = IncludeBackgroundRadiation;
+            USphereBeta.IgnoreNegativeTau = IgnoreNegativeTau;
+            USphereBeta.IncludeBackgroundRadiation = IncludeBackgroundRadiation;
             
             if (IncludeBackgroundRadiation)
                 USphereBeta.m_cosmicBackgroundProvider = CosmicBackgroundProvider(MoleculeData, BackgroundTemperature);
@@ -28,7 +32,7 @@ classdef UniformSphereBetaProvider < OpticalDepthProvider
             
             TauCoefficients = obj.CalculateTauCoefficients(Population, MoleculeDensity, VelocityDerivative);
             
-            if (obj.m_ignoreNegativeTau)
+            if (obj.IgnoreNegativeTau)
                 TauCoefficients(TauCoefficients < 0) = 0;
             end
             
@@ -42,7 +46,7 @@ classdef UniformSphereBetaProvider < OpticalDepthProvider
             x = TauCoefficients(~smallNumbersLogicalIndex);
             BetaCoefficients(~smallNumbersLogicalIndex) = (1.5./x).*(1 - (2./x.^2) + exp(-x).*( (2./x) +  (2./x.^2) ) );
             
-            if (obj.m_includeBackgroundRadiation)               
+            if (obj.IncludeBackgroundRadiation)               
                 BetaCoefficients = obj.m_cosmicBackgroundProvider.AddBackgroundRadiation(Population, BetaCoefficients);                
             end
                         

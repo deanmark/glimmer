@@ -16,7 +16,7 @@ classdef RadexSolver
     
     methods(Static=true)
         
-        function [ Result , RuntimeMessage ] = SolveLevelsPopulation(BetaType, DvDr, CollisionPartnerDensity, Temperature, MoleculeToCollisionPartnerDensityRatio, Molecule, CollisionPartners, CollisionPartnerWeights, BackgroundTemperature)
+        function [ Result, converged, RuntimeMessage ] = SolveLevelsPopulationLVG(BetaType, DvDr, CollisionPartnerDensity, Temperature, MoleculeToCollisionPartnerDensityRatio, Molecule, CollisionPartners, CollisionPartnerWeights, BackgroundTemperature)
             persistent RadexDirectory;
             if isempty(RadexDirectory)
                 classPath = mfilename('fullpath'); %returns path of current class. exe files are assumed to be in the same directory as the RadexSolver class.
@@ -51,7 +51,11 @@ classdef RadexSolver
             RuntimeMessage = evalc(sprintf('!%s < %s',radexFileName, RadexSolver.InputFileName));
             
             %check that radex has run
-            if isempty(regexp(RuntimeMessage,'Finished in.*iterations', 'once'))
+            converged = 1;
+            
+            if ~isempty(regexp(RuntimeMessage,'Calculation did not converge', 'once'))
+                converged = 0;
+            elseif isempty(regexp(RuntimeMessage,'Finished in.*iterations', 'once'))
                 ME = MException('VerifyInput:RadexError','Radex did not run. Output message: %s', RuntimeMessage);
                 throw(ME);
             end
@@ -59,6 +63,12 @@ classdef RadexSolver
             Result = RadexResult.ReadFromFile(RadexSolver.OutputFileName);
             
             cd(userDir);
+            
+        end
+        
+        function [ Result , RuntimeMessage ] = SolveLevelsPopulationOpticallyThin(CollisionPartnerDensity, Temperature, Molecule, CollisionPartners, CollisionPartnerWeights, BackgroundTemperature)
+           
+           [ Result , RuntimeMessage ] = RadexSolver.SolveLevelsPopulationLVG(RadexSolver.LVG, 1e3, CollisionPartnerDensity, Temperature, 1e5/CollisionPartnerDensity, Molecule, CollisionPartners, CollisionPartnerWeights, BackgroundTemperature);
             
         end
         
@@ -87,12 +97,7 @@ classdef RadexSolver
                 ME = MException('VerifyInput:LineWidthOutOfRange','Error in input. Line Width [km/s] should be between 1e-3 and 1e3. Input: [%g]', LineWidth);
                 throw(ME);
             end
-            
-            %optically thin debug
-%             ColumnDensity = 1e5;
-%             LineWidth = 1e3;
-            %
-            
+                      
             fid = fopen(FileName,'wt');
             
             try

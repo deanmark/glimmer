@@ -10,6 +10,12 @@ for i=1:size(Results,1)
     end    
 end
 
+% colheads = cell(size(dvdrKmParsecArray));
+% 
+% for i=1:numel(dvdrKmParsecArray)
+%     colheads{i} = sprintf('%4.3g [km s-1 pc-1]',dvdrKmParsecArray(i));
+% end
+
 colheads = cell(size(CollisionPartnerDensities));
 
 for i=1:numel(CollisionPartnerDensities)

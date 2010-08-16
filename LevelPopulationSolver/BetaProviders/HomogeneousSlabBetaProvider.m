@@ -1,13 +1,18 @@
 classdef HomogeneousSlabBetaProvider < OpticalDepthProvider
     
+    properties (SetAccess = public)
+        
+        IgnoreNegativeTau;
+        IncludeBackgroundRadiation;
+        
+    end
+    
     properties (SetAccess = private)
         
-        m_ignoreNegativeTau;
-        m_includeBackgroundRadiation;
-
         m_cosmicBackgroundProvider;
         
     end
+    
     
     methods(Access=public)
         
@@ -15,8 +20,8 @@ classdef HomogeneousSlabBetaProvider < OpticalDepthProvider
             
             HSlabBeta@OpticalDepthProvider(MoleculeData);
             
-            HSlabBeta.m_ignoreNegativeTau = IgnoreNegativeTau;
-            HSlabBeta.m_includeBackgroundRadiation = IncludeBackgroundRadiation;
+            HSlabBeta.IgnoreNegativeTau = IgnoreNegativeTau;
+            HSlabBeta.IncludeBackgroundRadiation = IncludeBackgroundRadiation;
             
             if (IncludeBackgroundRadiation)
                 HSlabBeta.m_cosmicBackgroundProvider = CosmicBackgroundProvider(MoleculeData, BackgroundTemperature);
@@ -28,7 +33,7 @@ classdef HomogeneousSlabBetaProvider < OpticalDepthProvider
             
             TauCoefficients = obj.CalculateTauCoefficients(Population, MoleculeDensity, VelocityDerivative);
             
-            if (obj.m_ignoreNegativeTau)
+            if (obj.IgnoreNegativeTau)
                 TauCoefficients(TauCoefficients < 0) = 0;
             end
             
@@ -41,7 +46,7 @@ classdef HomogeneousSlabBetaProvider < OpticalDepthProvider
             
             BetaCoefficients(~smallNumbersLogicalIndex) = (1-exp(-3*TauCoefficients(~smallNumbersLogicalIndex)))./(3*TauCoefficients(~smallNumbersLogicalIndex));
             
-            if (obj.m_includeBackgroundRadiation)
+            if (obj.IncludeBackgroundRadiation)
                 BetaCoefficients = obj.m_cosmicBackgroundProvider.AddBackgroundRadiation(Population, BetaCoefficients);                
             end
                         

@@ -2,6 +2,60 @@ classdef Scripts
     
     methods (Access=public, Static=true)
         
+        function Populations = CalculateLVGPopulation (DvDr, CollisionPartnerDensities, Temperatures, MoleculeToCollisionPartnerDensityRatio, MoleculeData, CollisionPartnerRates, Weights, BetaProvider, NumLevelsForSolution)
+            % DvDr - 1/s
+            LVGSolver = LevelPopulationSolverLVGSlowAccurate(MoleculeData, BetaProvider, 1000, 0.01);
+            LVGSolverAccurate = LevelPopulationSolverLVGSlowAccurate(MoleculeData, BetaProvider, 10000, 0.0001);
+            
+            Populations = zeros(NumLevelsForSolution, numel(Temperatures), numel(CollisionPartnerDensities), numel(DvDr));
+            
+            for dvdrIndex=1:numel(DvDr)
+                
+                for tempIndex=1:numel(Temperatures)
+                    
+                    LVGSolver.m_betaProvider.IgnoreNegativeTau = true;
+                    
+                    [ PopulationFirstGuess, Beta, converged, iterations, diffHistory, popHistory, tauHistory, betaHistory] = LVGSolver.SolveLevelsPopulation(CollisionPartnerRates, Weights, Temperatures(tempIndex), CollisionPartnerDensities, DvDr, MoleculeToCollisionPartnerDensityRatio*CollisionPartnerDensities, NumLevelsForSolution, []);
+                    
+                    LVGSolver.m_betaProvider.IgnoreNegativeTau = false;
+                    
+                    [ Population, Beta, converged, iterations, diffHistory, popHistory, tauHistory, betaHistory] = LVGSolverAccurate.SolveLevelsPopulation(CollisionPartnerRates, Weights, Temperatures(tempIndex), CollisionPartnerDensities, DvDr, MoleculeToCollisionPartnerDensityRatio*CollisionPartnerDensities, NumLevelsForSolution, PopulationFirstGuess);
+                    
+                    Indices = zeros(size(Populations));
+                    IndicesConstTemperature = repmat(logical(converged),NumLevelsForSolution,1);
+                    Indices(:,tempIndex,:,dvdrIndex) = IndicesConstTemperature;
+                    Populations(logical(Indices)) = Population(IndicesConstTemperature);
+
+                end
+                
+            end
+            
+        end
+        
+        function Populations = CalculateOpticallyThinPopulation (CollisionPartnerDensities, Temperatures, MoleculeData, CollisionPartnerRates, Weights, BetaProvider, NumLevelsForSolution)
+            % DvDr - 1/s
+            OThin = LevelPopulationSolverOpticallyThin(MoleculeData);
+            
+            Populations = zeros(NumLevelsForSolution, numel(Temperatures), numel(CollisionPartnerDensities), numel(DvDr));
+            
+            for dvdrIndex=1:numel(DvDr)
+                
+                for tempIndex=1:numel(Temperatures)
+                    
+                    Population = OThin.SolveLevelsPopulation(CollisionPartnerRates, Weights, Temperatures(tempIndex), CollisionPartnerDensities, NumLevelsForSolution);
+                    
+                    converged = ones(numel(CollisionPartnerDensities));                    
+                    Indices = zeros(size(Populations));
+                    IndicesConstTemperature = repmat(logical(converged),NumLevelsForSolution,1);
+                    Indices(:,tempIndex,:,dvdrIndex) = IndicesConstTemperature;
+                    Populations(logical(Indices)) = Population(IndicesConstTemperature);
+                    
+                end
+                
+            end
+            
+        end
+        
         function Intensities = CalculateLVGLineIntensities(dvdrKmParsecs, Densities, Temperatures, ColumnDensity, BackgroundTemperature, MoleculeData, CollisionPartnerRates, Weights, CollisionPartnerMoleculeDensityRatio)
             
             LVGSolverSlow = LevelPopulationSolverLVGSlowAccurate(MoleculeData, LVGBetaProvider(MoleculeData, true, true, BackgroundTemperature), 1000);
@@ -125,59 +179,7 @@ classdef Scripts
             legend('toggle');
             
         end
-        
-        function Populations = CalculateLVGPopulation (DvDr, CollisionPartnerDensities, Temperatures, MoleculeToCollisionPartnerDensityRatio, MoleculeData, CollisionPartnerRates, Weights, BetaProvider, NumLevelsForSolution)
-            % DvDr - 1/s
-            LVGSolver = LevelPopulationSolverLVGSlowAccurate(MoleculeData, BetaProvider, 1000, 0.1);
-            LVGSolverAccurate = LevelPopulationSolverLVGSlowAccurate(MoleculeData, BetaProvider, 10000, 0.01);
-            
-            OThin = LevelPopulationSolverOpticallyThin(MoleculeData);
-            
-            Populations = zeros(NumLevelsForSolution, numel(Temperatures), numel(CollisionPartnerDensities), numel(DvDr));
-            
-            for dvdrIndex=1:numel(DvDr)
-                
-                for tempIndex=1:numel(Temperatures)
-                    
-%                     Population = OThin.SolveLevelsPopulation(CollisionPartnerRates, Weights, Temperatures(tempIndex), CollisionPartnerDensities, NumLevelsForSolution);
-%                     converged = 1;
-                    
-                    LVGSolver.m_betaProvider.IgnoreNegativeTau = true;
-                    
-                    [ PopulationFirstGuess, Beta, converged, iterations, diffHistory, popHistory, tauHistory, betaHistory] = LVGSolver.SolveLevelsPopulation(CollisionPartnerRates, Weights, Temperatures(tempIndex), CollisionPartnerDensities, DvDr, MoleculeToCollisionPartnerDensityRatio*CollisionPartnerDensities, NumLevelsForSolution, []);
-                    
-                    LVGSolver.m_betaProvider.IgnoreNegativeTau = false;
-                    
-                    [ Population, Beta, converged, iterations, diffHistory, popHistory, tauHistory, betaHistory] = LVGSolverAccurate.SolveLevelsPopulation(CollisionPartnerRates, Weights, Temperatures(tempIndex), CollisionPartnerDensities, DvDr, MoleculeToCollisionPartnerDensityRatio*CollisionPartnerDensities, NumLevelsForSolution, PopulationFirstGuess);
-                    
-                    Indices = zeros(size(Populations));
-                    IndicesConstTemperature = repmat(logical(converged),NumLevelsForSolution,1);
-                    Indices(:,tempIndex,:,dvdrIndex) = IndicesConstTemperature;
-                    Populations(logical(Indices)) = Population(IndicesConstTemperature);
-
-
-                    
-%                     if any(~converged)
-%                         nonConvergedCollisionPartnerDensities = CollisionPartnerDensities(logical(~converged));
-%                         
-%                         Population = OThin.SolveLevelsPopulation(CollisionPartnerRates, Weights, Temperatures(tempIndex), nonConvergedCollisionPartnerDensities, NumLevelsForSolution);
-%                         
-%                         convergedSecondTime = ones(size(converged));
-%                         %convergedSecondTime(logical(~converged)) = convergedAccurate;
-%                         Indices = zeros(size(Populations));
-%                         IndicesConstTemperature = repmat(logical(convergedSecondTime),NumLevelsForSolution,1);
-%                         Indices(:,tempIndex,:,dvdrIndex) = IndicesConstTemperature;
-%                         IndicesFromNonConverged = repmat(logical(convergedSecondTime),NumLevelsForSolution,1);
-%                         Populations(logical(Indices)) = Population(IndicesFromNonConverged);
-%                         
-%                     end
-                    
-                end
-                
-            end
-            
-        end
-        
+                       
         function Intensities = DrawSEDLVG (dvdrKmParsec, Densities, Temperatures, ColumnDensities, CollisionPartnerMoleculeDensityRatio, MoleculeData, CollisionPartnerRates, Weights, BetaProvider)
             
             LVGSolverSlow = LevelPopulationSolverLVGSlowAccurate(MoleculeData, BetaProvider, 1000);
@@ -315,7 +317,7 @@ classdef Scripts
      
         function CompareWithRadex (RadexPopLow, OurPopulation, CollisionPartnerDensity, Temperature, dvdrKmParsecs, FileName)
         
-            maxSize = max(numel(RadexPopLow), numel(OurPopulation));
+            maxSize = max([numel(RadexPopLow) numel(OurPopulation)]);
             
             if (numel(RadexPopLow) < maxSize)
                 RadexPopLow = cat(1, RadexPopLow, zeros(maxSize - numel(RadexPopLow),1));
@@ -323,13 +325,14 @@ classdef Scripts
             
             if (numel(OurPopulation) < maxSize)
                 OurPopulation = cat(1, OurPopulation, zeros(maxSize - numel(OurPopulation)));
-            end            
-                
+            end                
+                  
             xValues = 0:(maxSize-1);
             
             plot(xValues, OurPopulation, 'DisplayName', 'Our'); hold all;
-            h = plot(xValues, RadexPopLow, 'DisplayName', 'Radex Lower');
-                 
+            h = plot(xValues, RadexPopLow, 'DisplayName', 'Radex Lower'); %hold all;
+            
+                             
             hold off;
             figure(gcf);
             
@@ -338,6 +341,7 @@ classdef Scripts
             
             titleName = Scripts.buildSEDTitleName(CollisionPartnerDensity, Temperature, [], dvdrKmParsecs);
             title(titleName);
+            axis([0 maxSize 0 1]);
             
             legend('toggle');
             
