@@ -1,4 +1,4 @@
-classdef RadexSolver
+classdef RadexSolver < handle
     
     properties (Constant)
         
@@ -16,7 +16,8 @@ classdef RadexSolver
     
     methods(Static=true)
         
-        function [ Result, converged, RuntimeMessage ] = SolveLevelsPopulationLVG(BetaType, DvDr, CollisionPartnerDensity, Temperature, MoleculeToCollisionPartnerDensityRatio, Molecule, CollisionPartners, CollisionPartnerWeights, BackgroundTemperature)
+        function [ Result, converged, RuntimeMessage ] = SolveLevelsPopulationLVG(Molecule, BetaType, BackgroundTemperature, PopulationRequest)
+                        
             persistent RadexDirectory;
             if isempty(RadexDirectory)
                 classPath = mfilename('fullpath'); %returns path of current class. exe files are assumed to be in the same directory as the RadexSolver class.
@@ -29,24 +30,25 @@ classdef RadexSolver
             
             radexFileName = RadexSolver.convertBetaTypeToFileName(BetaType);
                
-            CollisionPartnerDensities = CollisionPartnerDensity*CollisionPartnerWeights/(sum(CollisionPartnerWeights));
-            DensityToDvdrRatio = MoleculeToCollisionPartnerDensityRatio * CollisionPartnerDensity / ( DvDr * 1e-5); %Radex accepts dvdr in Km/sec, the 1e5 converts our cm's to km's
+            collisionPartnerDensities = PopulationRequest.CollisionPartnerDensities*PopulationRequest.Weights/(sum(PopulationRequest.Weights));
+            DensityToDvdrRatio = PopulationRequest.MoleculeDensity / ( PopulationRequest.VelocityDerivative * 1e-5); %Radex accepts dvdr in Km/sec, the 1e5 converts our cm's to km's
             
             if (1e5 <= DensityToDvdrRatio) && (DensityToDvdrRatio <= 1e25)
-                InputDensity = DensityToDvdrRatio;
-                InputDvDr = 1;
+                inputDensity = DensityToDvdrRatio;
+                inputDvDr = 1;
             elseif (DensityToDvdrRatio > 1e25) && (DensityToDvdrRatio * 1e-3 <= 1e25)
-                InputDensity = DensityToDvdrRatio * 1e-3;
-                InputDvDr = 1e-3;
+                inputDensity = DensityToDvdrRatio * 1e-3;
+                inputDvDr = 1e-3;
             elseif (DensityToDvdrRatio < 1e5) && (DensityToDvdrRatio * 1e3 >= 1e5)
-                InputDensity = DensityToDvdrRatio * 1e3;
-                InputDvDr = 1e3;
+                inputDensity = DensityToDvdrRatio * 1e3;
+                inputDvDr = 1e3;
             else
                 ME = MException('VerifyInput:DensityToDvdrRatioOutOfRange','Error in input. Density To Dvdr Ratio should be between 1e2 and 1e28. Input: [%g]', DensityToDvdrRatio);
                 throw(ME);
             end
 
-            RadexSolver.buildRadexInputFile(RadexSolver.InputFileName, Molecule.MoleculeFileName, RadexSolver.OutputFileName, 0, 0, Temperature, CollisionPartners, CollisionPartnerDensities, BackgroundTemperature, InputDensity, InputDvDr);
+            RadexSolver.buildRadexInputFile(RadexSolver.InputFileName, Molecule.MoleculeFileName, RadexSolver.OutputFileName, 0, 0, PopulationRequest.Temperature, ...
+                PopulationRequest.CollisionPartnerRates, collisionPartnerDensities, BackgroundTemperature, inputDensity, inputDvDr);
             
             RuntimeMessage = evalc(sprintf('!%s < %s',radexFileName, RadexSolver.InputFileName));
             

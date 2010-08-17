@@ -1,17 +1,13 @@
 classdef LevelPopulationSolverLVG < LevelPopulationSolverOpticallyThin
     
-    properties(SetAccess = private, Constant = true)
-        
-        m_minIterations = 4;
-        %m_convergenceThreshold = 10^-5; %relative difference
-        m_convergenceThreshold = 0.0001; %relative difference
-        m_significantPopulationThreshold = 0.001;
+    properties(SetAccess = protected)
+
+        m_algorithmParameters;
         
     end
     
     properties(SetAccess = private)
         
-        m_maxIterations;        
         m_betaProvider;
 
         m_collisionRateMatrix;
@@ -22,78 +18,78 @@ classdef LevelPopulationSolverLVG < LevelPopulationSolverOpticallyThin
     
     methods(Access=public)
         
-        function LVG = LevelPopulationSolverLVG(MoleculeData, BetaProvider, MaxIterations)
+        function LVG = LevelPopulationSolverLVG(MoleculeData, BetaProvider, LVGAlgorithmParameters)
             
             LVG@LevelPopulationSolverOpticallyThin(MoleculeData);
-            
-            if (nargin <3); MaxIterations = 1000; end
-            LVG.m_maxIterations = MaxIterations;
-                       
             LVG.m_betaProvider = BetaProvider;
+            LVG.m_algorithmParameters = LVGAlgorithmParameters;
             
         end
         
-        function [Population, FinalBetaCoefficients, HasConverged, Iterations, MaxDiffPercentHistory, PopulationHistory, TauHistory, BetaHistory] = SolveLevelsPopulation(obj, CollisionPartnerRates, Weights, Temperature, CollisionPartnerDensities, VelocityDerivative, MoleculeDensity, NumLevelsForSolution, FirstPopulationGuess)
+        function Result = SolveLevelsPopulation(obj, Request)
             
-            if (isempty(NumLevelsForSolution)); NumLevelsForSolution=obj.m_moleculeData.MolecularLevels; end;
-            
-            numDensities = numel(CollisionPartnerDensities);
+            Result = LVGSolverPopulationResult();
+            numDensities = numel(Request.CollisionPartnerDensities);
             
             obj.m_collisionRateMatrix = 0;
-            obj.m_collisionPartnerDensities = CollisionPartnerDensities;
-            obj.m_betaCoefficients = ones(NumLevelsForSolution, numDensities);
+            obj.m_collisionPartnerDensities = Request.CollisionPartnerDensities;
+            obj.m_betaCoefficients = ones(Request.NumLevelsForSolution, numDensities);
             
-            if (isempty(FirstPopulationGuess))
-                FirstPopulationGuess = SolveLevelsPopulation@LevelPopulationSolverOpticallyThin(obj, CollisionPartnerRates, Weights, Temperature, CollisionPartnerDensities, NumLevelsForSolution);
+            if (isempty(Request.FirstPopulationGuess))
+                populationGuess = SolveLevelsPopulation@LevelPopulationSolverOpticallyThin(obj, Request.CollisionPartnerRates, Request.Weights, Request.Temperature, Request.CollisionPartnerDensities, Request.NumLevelsForSolution);
+            else               
+                populationGuess = Request.FirstPopulationGuess;
             end
             
-            populationGuess = FirstPopulationGuess;
+            i = 0;
             
-            i = 1;
-            
-            MaxDiffPercentHistory = zeros (numDensities, obj.m_maxIterations);
-            PopulationHistory = zeros (NumLevelsForSolution, numDensities, obj.m_maxIterations);
-            TauHistory = zeros (NumLevelsForSolution, numDensities, obj.m_maxIterations);
-            BetaHistory = zeros (NumLevelsForSolution, numDensities, obj.m_maxIterations);
+            Result.MaxDiffPercentHistory = zeros (numDensities, obj.m_algorithmParameters.MaxIterations);
+            Result.PopulationHistory = zeros (Request.NumLevelsForSolution, numDensities, obj.m_algorithmParameters.MaxIterations);
+            Result.TauHistory = zeros (Request.NumLevelsForSolution, numDensities, obj.m_algorithmParameters.MaxIterations);
+            Result.BetaHistory = zeros (Request.NumLevelsForSolution, numDensities, obj.m_algorithmParameters.MaxIterations);
             
             converged = zeros (1, numDensities);
             haywired = zeros (1, numDensities);
             notFinished = ~(converged | haywired);
             
-            while ( (i <= obj.m_minIterations || i < obj.m_maxIterations) && any(notFinished) )
-                
-                populationGuess = obj.interpolateNextPopulation(populationGuess, PopulationHistory, i);
-                               
-                [obj.m_betaCoefficients, tau] = obj.m_betaProvider.CalculateBetaCoefficients(populationGuess, MoleculeDensity, VelocityDerivative);
-                
-                obj.m_betaCoefficients = obj.interpolateNextBeta(obj.m_betaCoefficients, BetaHistory, i);
-                
-                PopulationHistory(:,:,i) = populationGuess;
-                lastPopulationGuess = populationGuess;
-                
-                populationGuess(:,notFinished) = SolveLevelsPopulation@LevelPopulationSolverOpticallyThin(obj, CollisionPartnerRates, Weights, Temperature, CollisionPartnerDensities(notFinished), NumLevelsForSolution);
-                %ignore negative and haywired population
-                %badPopulations = populationGuess < 0 | isnan(populationGuess);
-                %populationGuess(badPopulations) = lastPopulationGuess(badPopulations);
-                 
-                % debug indicators
-                MaxDiffPercentHistory(:,i) = 100*obj.calculateMeanDifferenceRatio(PopulationHistory(:,:,i),populationGuess,true);
-                TauHistory(:,:,i) = tau;
-                BetaHistory(:,:,i) = obj.m_betaCoefficients;
-                %
-
-                haywired = obj.hasPopulationGoneHaywire(populationGuess);
-                converged = obj.hasPopulationConverged(PopulationHistory(:,:,i), populationGuess);
-                notFinished = ~(converged | haywired);
+            while ( (i <= obj.m_algorithmParameters.MinIterations || i < obj.m_algorithmParameters.MaxIterations) && any(notFinished) )
                 
                 i = i + 1;
                 
+                % This feature isn't used. In principle this allows us to
+                % guess the next population based on the new population and
+                % old ones. We prefer to guess the next iteration based on
+                % the beta coefficients.           
+                populationGuess = obj.interpolateNextPopulation(populationGuess, Result.PopulationHistory, i);                               
+                % Calculate beta coefficients from new population
+                [obj.m_betaCoefficients, tau] = obj.m_betaProvider.CalculateBetaCoefficients(populationGuess, Request.MoleculeDensity, Request.VelocityDerivative);                
+                % Interpolate our next beta guess based upon the beta
+                %coefficients just found and old beta coefficients.
+                obj.m_betaCoefficients = obj.interpolateNextBeta(obj.m_betaCoefficients, Result.BetaHistory, i);                                
+                Result.PopulationHistory(:,:,i) = populationGuess;                
+                % Calculate the new population based on the beta
+                % coefficients found and physical parameters.
+                populationGuess(:,notFinished) = SolveLevelsPopulation@LevelPopulationSolverOpticallyThin(obj, Request.CollisionPartnerRates, ...
+                    Request.Weights, Request.Temperature, Request.CollisionPartnerDensities(notFinished), Request.NumLevelsForSolution);
+                 
+                % debug indicators
+                Result.MaxDiffPercentHistory(:,i) = 100*obj.calculateMeanDifferenceRatio(Result.PopulationHistory(:,:,i),populationGuess,true);
+                Result.TauHistory(:,:,i) = tau;
+                Result.BetaHistory(:,:,i) = obj.m_betaCoefficients;
+                %
+
+                % check for end of run
+                haywired = obj.hasPopulationGoneHaywire(populationGuess);
+                converged = obj.hasPopulationConverged(Result.PopulationHistory(:,:,i), populationGuess);
+                notFinished = ~(converged | haywired);
+                %
+                
             end
             
-            FinalBetaCoefficients = obj.m_betaCoefficients;
-            Population = populationGuess;
-            HasConverged = converged & ~ haywired;
-            Iterations = i;
+            Result.FinalBetaCoefficients = obj.m_betaCoefficients;
+            Result.Population = populationGuess;
+            Result.Converged = converged & ~ haywired;
+            Result.Iterations = i;
             
         end
         
@@ -125,7 +121,7 @@ classdef LevelPopulationSolverLVG < LevelPopulationSolverOpticallyThin
         function MaxDifferenceRatio = calculateMeanDifferenceRatio (obj, Pop1, Pop2, SignificantOnly)
             
             if (nargin == 4 && SignificantOnly)
-                sgnfLvlsIndex = Pop2 > obj.m_significantPopulationThreshold;
+                sgnfLvlsIndex = Pop2 > obj.m_algorithmParameters.SignificantPopulationThreshold;
             else
                 sgnfLvlsIndex = ones(numel(Pop1),1);
             end
@@ -175,7 +171,7 @@ classdef LevelPopulationSolverLVG < LevelPopulationSolverOpticallyThin
                 %we want to check for convergence on significant levels.
                 maxDiffRatio = obj.calculateMeanDifferenceRatio (OldPopulation, NewPopulation, true);
                 
-                Converged = maxDiffRatio < obj.m_convergenceThreshold;
+                Converged = maxDiffRatio < obj.m_algorithmParameters.ConvergenceThreshold;
                 
             else
                 Converged = zeros(1,numel(OldPopulation));

@@ -2,29 +2,41 @@ classdef Scripts
     
     methods (Access=public, Static=true)
         
-        function Populations = CalculateLVGPopulation (DvDr, CollisionPartnerDensities, Temperatures, MoleculeToCollisionPartnerDensityRatio, MoleculeData, CollisionPartnerRates, Weights, BetaProvider, NumLevelsForSolution)
+        function Populations = CalculateLVGPopulation (AlgorithmParamsInitial, AlgorithmParamsConfirming, MoleculeData, BetaProvider, PopulationRequest)
             % DvDr - 1/s
-            LVGSolver = LevelPopulationSolverLVGSlowAccurate(MoleculeData, BetaProvider, 1000, 0.01);
-            LVGSolverAccurate = LevelPopulationSolverLVGSlowAccurate(MoleculeData, BetaProvider, 10000, 0.0001);
+            LVGSolver = LevelPopulationSolverLVGSlowAccurate(MoleculeData, BetaProvider, AlgorithmParamsInitial);
+            LVGSolverAccurate = LevelPopulationSolverLVGSlowAccurate(MoleculeData, BetaProvider, AlgorithmParamsConfirming);
             
-            Populations = zeros(NumLevelsForSolution, numel(Temperatures), numel(CollisionPartnerDensities), numel(DvDr));
+            temperatures = PopulationRequest.Temperature;
+            collisionPartnerDensities = PopulationRequest.CollisionPartnerDensities;
+            dvDr = PopulationRequest.VelocityDerivative;
+            populationRequestCopy = PopulationRequest.Copy();
             
-            for dvdrIndex=1:numel(DvDr)
+            Populations = zeros(PopulationRequest.NumLevelsForSolution, numel(temperatures), numel(collisionPartnerDensities), numel(dvDr));
+            
+            for dvDrIndex=1:numel(dvDr)
                 
-                for tempIndex=1:numel(Temperatures)
+                for tempIndex=1:numel(temperatures)
                     
-                    LVGSolver.m_betaProvider.IgnoreNegativeTau = true;
+                    populationRequestCopy.Temperature = temperatures(tempIndex);
+                    populationRequestCopy.CollisionPartnerDensities = collisionPartnerDensities;
+                    populationRequestCopy.VelocityDerivative = dvDr(dvDrIndex);
                     
-                    [ PopulationFirstGuess, Beta, converged, iterations, diffHistory, popHistory, tauHistory, betaHistory] = LVGSolver.SolveLevelsPopulation(CollisionPartnerRates, Weights, Temperatures(tempIndex), CollisionPartnerDensities, DvDr, MoleculeToCollisionPartnerDensityRatio*CollisionPartnerDensities, NumLevelsForSolution, []);
+                    BetaProvider.IgnoreNegativeTau = true;                    
+                    NoNegativeTauResult = LVGSolver.SolveLevelsPopulation(populationRequestCopy);
                     
-                    LVGSolver.m_betaProvider.IgnoreNegativeTau = false;
-                    
-                    [ Population, Beta, converged, iterations, diffHistory, popHistory, tauHistory, betaHistory] = LVGSolverAccurate.SolveLevelsPopulation(CollisionPartnerRates, Weights, Temperatures(tempIndex), CollisionPartnerDensities, DvDr, MoleculeToCollisionPartnerDensityRatio*CollisionPartnerDensities, NumLevelsForSolution, PopulationFirstGuess);
+                    BetaProvider.IgnoreNegativeTau = false;
+                    populationRequestCopy.FirstPopulationGuess = NoNegativeTauResult.Population;
+                    Result = LVGSolverAccurate.SolveLevelsPopulation(populationRequestCopy);
+                                        
+                    if sum(NoNegativeTauResult.TauHistory(:,1,NoNegativeTauResult.Iterations)==0) > 1
+                        %fprintf(1,'Negative Tau');
+                    end   
                     
                     Indices = zeros(size(Populations));
-                    IndicesConstTemperature = repmat(logical(converged),NumLevelsForSolution,1);
-                    Indices(:,tempIndex,:,dvdrIndex) = IndicesConstTemperature;
-                    Populations(logical(Indices)) = Population(IndicesConstTemperature);
+                    IndicesConstTemperature = repmat(logical(Result.Converged),PopulationRequest.NumLevelsForSolution,1);
+                    Indices(:,tempIndex,:,dvDrIndex) = IndicesConstTemperature;
+                    Populations(logical(Indices)) = Result.Population(IndicesConstTemperature);
 
                 end
                 

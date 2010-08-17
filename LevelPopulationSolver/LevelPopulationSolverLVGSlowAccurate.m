@@ -1,23 +1,11 @@
 classdef LevelPopulationSolverLVGSlowAccurate < LevelPopulationSolverLVG
     
-    properties(SetAccess = private)
-        
-        m_changePercent;
-        
-    end
-   
     methods(Access=public)
        
-        function LVG = LevelPopulationSolverLVGSlowAccurate(MoleculeData, BetaProvider, MaxIterations, ChangePercent)
+        function LVG = LevelPopulationSolverLVGSlowAccurate(MoleculeData, BetaProvider, LVGAlgorithmParameters)
             
-            LVG@LevelPopulationSolverLVG(MoleculeData, BetaProvider, MaxIterations);
+            LVG@LevelPopulationSolverLVG(MoleculeData, BetaProvider, LVGAlgorithmParameters);
             
-            if isempty(ChangePercent)
-                ChangePercent = 0.1;
-            end
-                
-            LVG.m_changePercent = ChangePercent;
-           
         end
         
     end
@@ -27,7 +15,7 @@ classdef LevelPopulationSolverLVGSlowAccurate < LevelPopulationSolverLVG
         function BetaGuess = interpolateNextBeta (obj, CurrentBetaGuess, BetaHistory, CurrentIteration)
             
             if (CurrentIteration > 1)
-                BetaGuess = BetaHistory(:,:,CurrentIteration-1)*(1-obj.m_changePercent) + CurrentBetaGuess*obj.m_changePercent;
+                BetaGuess = BetaHistory(:,:,CurrentIteration-1)*(1-obj.m_algorithmParameters.ChangePercent) + CurrentBetaGuess*obj.m_algorithmParameters.ChangePercent;
             else
                 BetaGuess = CurrentBetaGuess;
             end
