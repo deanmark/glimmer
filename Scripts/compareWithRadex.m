@@ -2,24 +2,24 @@
 %our calculation
 %Temperatures = cat(2, 25:10:100, 100:100:2000);
 %Temperatures = cat(2, 1700:100:2000);
+Temperatures = cat(2, 25:20:400, 400);
+%Temperatures = cat(2, 100);
 
-%Temperatures = cat(2, 2000);
-
-Temperatures = CollisionRates_12CO_H2ortho.m_temperatures;
+%Temperatures = CollisionRates_12CO_H2ortho.m_temperatures;
 %Temperatures = CollisionRates_HCOplus_H2.m_temperatures;
 %Temperatures = CollisionRates_HCN_H2.m_temperatures;
 
-%CollisionPartnerDensities = 10.^(6);
-CollisionPartnerDensities = 10.^(1:1:7);
+%CollisionPartnerDensities = 10.^(5);
+CollisionPartnerDensities = 10.^(3:1:6);
 %CollisionPartnerDensities = 10.^(2.8:0.2:7);
 
 ColumnDensities = [1];
-% 
+
 Molecule = MoleculeData_12CO;
 MoleculeToCollisionPartnerDensityRatio = 8e-5;
 CollisionPartners = [CollisionRates_12CO_H2ortho,CollisionRates_12CO_H2para];
 CollisionPartnerWeights = [3 1];
- 
+%  
 % Molecule = MoleculeData_HCOplus;
 % MoleculeToCollisionPartnerDensityRatio = 10^-8;
 % CollisionPartners = [CollisionRates_HCOplus_H2];
@@ -31,20 +31,12 @@ CollisionPartnerWeights = [3 1];
 % CollisionPartnerWeights = [1];
 
 %dvdrKmParsecArray = 1:0.05:1.05;
-dvdrKmParsecArray = 1;
+dvdrKmParsecArray = 20;
 
 BackgroundTemperature = 2.73;
 
 IgnoreNegativeTau = false;
 IncludeBackgroundRadiation = true;
-
-%Parameters for LVG algorithm
-fastParams = LVGSolverAlgorithmParameters();
-fastParams.MaxIterations = 1500;
-fastParams.ChangePercent = 0.01;
-slowParams = LVGSolverAlgorithmParameters();
-slowParams.MaxIterations = 5000;
-slowParams.ChangePercent = 0.000001;
 
 %BetaProvider = HomogeneousSlabBetaProvider(Molecule, IgnoreNegativeTau, IncludeBackgroundRadiation, BackgroundTemperature);
 %BetaProvider = UniformSphereBetaProvider(Molecule, IgnoreNegativeTau, IncludeBackgroundRadiation, BackgroundTemperature);
@@ -63,26 +55,29 @@ for dvdrKmParsec = dvdrKmParsecArray
         
         for dens = CollisionPartnerDensities
             
-            req = LVGSolverPopulationRequest(CollisionPartners, CollisionPartnerWeights, temp, dens, dvdrKmParsec*Constants.dVdRConversionFactor, dens*MoleculeToCollisionPartnerDensityRatio, Molecule.MolecularLevels, []);
+            req = LVGSolverPopulationRequest(Molecule, BetaProvider, CollisionPartners, CollisionPartnerWeights, temp, dens, ...
+                dvdrKmParsec*Constants.dVdRConversionFactor, dens*MoleculeToCollisionPartnerDensityRatio, Molecule.MolecularLevels, [], true, 1e6*dens*MoleculeToCollisionPartnerDensityRatio/(dvdrKmParsec*Constants.dVdRConversionFactor));
             
-            PopulationsLVG = Scripts.CalculateLVGPopulation(fastParams, slowParams, Molecule, BetaProvider, req);
-            
-            %dvdrKmParsec*Constants.dVdRConversionFactor,dens,temp,MoleculeToCollisionPartnerDensityRatio,,CollisionPartners,CollisionPartnerWeights
-            %radex calculation
-            [Result, RadexConverged, RuntimeMessage] = RadexSolver.SolveLevelsPopulationLVG (Molecule, RadexSolver.PlaneParallelSlab, BackgroundTemperature, req);
+            LVGResult = Scripts.CalculateLVGPopulation(req);
+            RadexLVGResult = Scripts.CalculateRadexLVGPopulation (req);
             
             %Compare results using a graph
             %picFileName = sprintf('Temperature%g_%g.jpg',temp, find(dvdrKmParsecArray==dvdrKmParsec));
             picFileName = sprintf('Temperature%g_%g.jpg',temp, find(CollisionPartnerDensities==dens));
             FileName = fullfile(picsPath, picFileName);
             
-            minLength = min(numel(Result.PopulationLow), numel(PopulationsLVG));
+            radexCmp = RadexLVGResult.Population;
+            ourCmp = LVGResult.Population;
             
-            Scripts.CompareWithRadex(Result.PopulationLow, PopulationsLVG, dens, temp, dvdrKmParsec, FileName);
+            %radexCmp = RadexLVGResult.FinalTauCoefficients;
+            %ourCmp = LVGResult.FinalTauCoefficients;
+                        
+            minLength = min(numel(radexCmp), numel(ourCmp));
+            Scripts.CompareWithRadex(radexCmp, ourCmp, dens, temp, dvdrKmParsec, FileName);
             
             % Calculate difference between codes
-            Ours = PopulationsLVG(1:minLength);
-            radex = Result.PopulationLow(1:minLength);
+            Ours = ourCmp(1:minLength);
+            radex = radexCmp(1:minLength);
             
             smallIndices = Ours < 0.001 | radex < 0.001;
             
@@ -90,11 +85,12 @@ for dvdrKmParsec = dvdrKmParsecArray
             radex(smallIndices) = 0;
             maxPop = max (Ours, radex);
             
+            ratio = Ours./radex;
             diff = (abs(Ours-radex)./mean(maxPop(~smallIndices)));
             
             %Results(find(Temperatures == temp,1),find(dvdrKmParsecArray == dvdrKmParsec,1)) = 100*max(diff);
             Results(find(Temperatures == temp,1),find(CollisionPartnerDensities == dens,1)) = 100*max(diff);
-            if any (isnan(diff)) || RadexConverged == 0
+            if any (isnan(diff)) %|| RadexConverged == 0
                 'Error'
             end
             

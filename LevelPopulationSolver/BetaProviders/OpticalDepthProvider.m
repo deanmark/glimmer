@@ -23,6 +23,12 @@ classdef OpticalDepthProvider < handle
         
     end
     
+    methods (Abstract)
+
+        [BetaCoefficients, TauCoefficients] = CalculateBetaCoefficients (obj, Population, MoleculeDensity, VelocityDerivative);
+    
+    end
+    
     methods(Access=private)
         
         function TauMatrix = buildTauMatrix (obj, MoleculeData)

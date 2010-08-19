@@ -25,7 +25,11 @@ classdef IntensitiesCalculator < handle
         
         function Intensities = CalculateIntensitiesLVG(obj, LevelPopulation, BetaCoefficients, ColumnDensities)
             
-            Intensities = (LevelPopulation.*obj.m_einsteinCoefficients.*obj.m_transitionEnergies.*BetaCoefficients*ColumnDensities)/(4*Constants.pi);
+            ratio = numel(LevelPopulation)/numel(obj.m_einsteinCoefficients);
+            repeatedEinsteinCoefficients = repmat(obj.m_einsteinCoefficients,[ratio 1]);
+            repeatedTransitionEnergies = repmat(obj.m_transitionEnergies,[ratio 1]);
+            
+            Intensities = (LevelPopulation.*repeatedEinsteinCoefficients.*repeatedTransitionEnergies.*BetaCoefficients*ColumnDensities)/(4*Constants.pi);
 
         end
         

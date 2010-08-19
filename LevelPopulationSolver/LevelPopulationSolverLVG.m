@@ -26,27 +26,28 @@ classdef LevelPopulationSolverLVG < LevelPopulationSolverOpticallyThin
             
         end
         
-        function Result = SolveLevelsPopulation(obj, Request)
+        function Result = SolveLevelsPopulation(obj, PopulationRequest)
             
             Result = LVGSolverPopulationResult();
-            numDensities = numel(Request.CollisionPartnerDensities);
+            numDensities = numel(PopulationRequest.CollisionPartnerDensities);
             
             obj.m_collisionRateMatrix = 0;
-            obj.m_collisionPartnerDensities = Request.CollisionPartnerDensities;
-            obj.m_betaCoefficients = ones(Request.NumLevelsForSolution, numDensities);
+            obj.m_collisionPartnerDensities = PopulationRequest.CollisionPartnerDensities;
+            obj.m_betaCoefficients = ones(PopulationRequest.NumLevelsForSolution, numDensities);
             
-            if (isempty(Request.FirstPopulationGuess))
-                populationGuess = SolveLevelsPopulation@LevelPopulationSolverOpticallyThin(obj, Request.CollisionPartnerRates, Request.Weights, Request.Temperature, Request.CollisionPartnerDensities, Request.NumLevelsForSolution);
+            if (isempty(PopulationRequest.FirstPopulationGuess))
+                populationGuess = SolveLevelsPopulation@LevelPopulationSolverOpticallyThin(obj, PopulationRequest);
             else               
-                populationGuess = Request.FirstPopulationGuess;
+                populationGuess = PopulationRequest.FirstPopulationGuess;
             end
             
             i = 0;
             
             Result.MaxDiffPercentHistory = zeros (numDensities, obj.m_algorithmParameters.MaxIterations);
-            Result.PopulationHistory = zeros (Request.NumLevelsForSolution, numDensities, obj.m_algorithmParameters.MaxIterations);
-            Result.TauHistory = zeros (Request.NumLevelsForSolution, numDensities, obj.m_algorithmParameters.MaxIterations);
-            Result.BetaHistory = zeros (Request.NumLevelsForSolution, numDensities, obj.m_algorithmParameters.MaxIterations);
+            Result.PopulationHistory = zeros (PopulationRequest.NumLevelsForSolution, numDensities, obj.m_algorithmParameters.MaxIterations);
+            Result.TauHistory = zeros (PopulationRequest.NumLevelsForSolution, numDensities, obj.m_algorithmParameters.MaxIterations);
+            Result.BetaHistory = zeros (PopulationRequest.NumLevelsForSolution, numDensities, obj.m_algorithmParameters.MaxIterations);
+            requestOnlyNonConverged = PopulationRequest.Copy();
             
             converged = zeros (1, numDensities);
             haywired = zeros (1, numDensities);
@@ -62,15 +63,17 @@ classdef LevelPopulationSolverLVG < LevelPopulationSolverOpticallyThin
                 % the beta coefficients.           
                 populationGuess = obj.interpolateNextPopulation(populationGuess, Result.PopulationHistory, i);                               
                 % Calculate beta coefficients from new population
-                [obj.m_betaCoefficients, tau] = obj.m_betaProvider.CalculateBetaCoefficients(populationGuess, Request.MoleculeDensity, Request.VelocityDerivative);                
+                [obj.m_betaCoefficients, tau] = obj.m_betaProvider.CalculateBetaCoefficients(populationGuess, PopulationRequest.MoleculeDensity, PopulationRequest.VelocityDerivative);                
                 % Interpolate our next beta guess based upon the beta
-                %coefficients just found and old beta coefficients.
-                obj.m_betaCoefficients = obj.interpolateNextBeta(obj.m_betaCoefficients, Result.BetaHistory, i);                                
+                % coefficients just found and old beta coefficients.
+                obj.m_betaCoefficients = obj.interpolateNextBeta(obj.m_betaCoefficients, Result.BetaHistory, i);        
+                % save population for the record
                 Result.PopulationHistory(:,:,i) = populationGuess;                
                 % Calculate the new population based on the beta
-                % coefficients found and physical parameters.
-                populationGuess(:,notFinished) = SolveLevelsPopulation@LevelPopulationSolverOpticallyThin(obj, Request.CollisionPartnerRates, ...
-                    Request.Weights, Request.Temperature, Request.CollisionPartnerDensities(notFinished), Request.NumLevelsForSolution);
+                % coefficients found and physical parameters. Calculate 
+                % only for unconverged densities               
+                requestOnlyNonConverged.CollisionPartnerDensities = PopulationRequest.CollisionPartnerDensities(notFinished);
+                populationGuess(:,notFinished) = SolveLevelsPopulation@LevelPopulationSolverOpticallyThin(obj, requestOnlyNonConverged);
                  
                 % debug indicators
                 Result.MaxDiffPercentHistory(:,i) = 100*obj.calculateMeanDifferenceRatio(Result.PopulationHistory(:,:,i),populationGuess,true);
@@ -86,6 +89,12 @@ classdef LevelPopulationSolverLVG < LevelPopulationSolverOpticallyThin
                 
             end
             
+            Result.MaxDiffPercentHistory = Result.MaxDiffPercentHistory(:,1:i);
+            Result.TauHistory = Result.TauHistory(:,:,1:i);
+            Result.BetaHistory = Result.BetaHistory(:,:,1:i);            
+            Result.PopulationHistory = Result.PopulationHistory(:,:,1:i);
+            
+            Result.FinalTauCoefficients = tau;
             Result.FinalBetaCoefficients = obj.m_betaCoefficients;
             Result.Population = populationGuess;
             Result.Converged = converged & ~ haywired;
@@ -118,7 +127,7 @@ classdef LevelPopulationSolverLVG < LevelPopulationSolverOpticallyThin
     methods(Access=protected, Sealed=true)
 
         %mean (Pop1-Pop2)/Pop1
-        function MaxDifferenceRatio = calculateMeanDifferenceRatio (obj, Pop1, Pop2, SignificantOnly)
+        function MeanDifferenceRatio = calculateMeanDifferenceRatio (obj, Pop1, Pop2, SignificantOnly)
             
             if (nargin == 4 && SignificantOnly)
                 sgnfLvlsIndex = Pop2 > obj.m_algorithmParameters.SignificantPopulationThreshold;
@@ -129,7 +138,7 @@ classdef LevelPopulationSolverLVG < LevelPopulationSolverOpticallyThin
             diffRatio = abs(Pop1-Pop2)./Pop1;
             diffRatio(~sgnfLvlsIndex) = 0;
             
-            MaxDifferenceRatio = sum(diffRatio,1)./sum(sgnfLvlsIndex,1);
+            MeanDifferenceRatio = sum(diffRatio,1)./sum(sgnfLvlsIndex,1);
             
         end
         

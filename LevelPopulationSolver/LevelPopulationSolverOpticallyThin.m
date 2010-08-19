@@ -20,23 +20,21 @@ classdef LevelPopulationSolverOpticallyThin < handle
         %solves levels population. 
         %CollisionPartnerDensities is an array of densities for which a
         %solution is requested
-        function Population = SolveLevelsPopulation(obj, CollisionPartnerRates, Weights, Temperature, CollisionPartnerDensities, NumLevelsForSolution)
+        function Population = SolveLevelsPopulation(obj, PopulationRequest)
             
-            if (nargin < 6)
-                NumLevelsForSolution = obj.m_moleculeData.MolecularLevels;
-            end            
+            matrix = obj.createEquationMatrix(PopulationRequest.CollisionPartnerRates, PopulationRequest.Weights, PopulationRequest.Temperature, ...
+                PopulationRequest.CollisionPartnerDensities, PopulationRequest.NumLevelsForSolution);            
             
-            matrix = obj.createEquationMatrix(CollisionPartnerRates, Weights, Temperature, CollisionPartnerDensities, NumLevelsForSolution);            
-            Population = zeros(NumLevelsForSolution,numel(CollisionPartnerDensities));
+            Population = zeros(PopulationRequest.NumLevelsForSolution,numel(PopulationRequest.CollisionPartnerDensities));
             
             %take only the levels requested for solution
-            subMatrix = matrix(1:NumLevelsForSolution,1:NumLevelsForSolution,:);
+            subMatrix = matrix(1:PopulationRequest.NumLevelsForSolution,1:PopulationRequest.NumLevelsForSolution,:);
             
-            sol = zeros(NumLevelsForSolution,1);
+            sol = zeros(PopulationRequest.NumLevelsForSolution,1);
             sol(1,1) = 1;
                         
-            for i=1:numel(CollisionPartnerDensities)           
-                Population(1:NumLevelsForSolution,i) = subMatrix(:,:,i)\sol;
+            for i=1:numel(PopulationRequest.CollisionPartnerDensities)           
+                Population(1:PopulationRequest.NumLevelsForSolution,i) = subMatrix(:,:,i)\sol;
             end
             
         end

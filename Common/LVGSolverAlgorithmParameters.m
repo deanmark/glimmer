@@ -16,15 +16,34 @@ classdef LVGSolverAlgorithmParameters < handle
         
         function Params = LVGSolverAlgorithmParameters()
             
-            %default parameters;
-            Params.MinIterations = 4;
-            Params.MaxIterations = 1000;
-            Params.ChangePercent = 0.01;
-            Params.ConvergenceThreshold = 0.0001;
-            Params.SignificantPopulationThreshold = 0.001;
-            
         end
         
+    end
+    
+    methods(Access=public, Static=true)
+       
+        function Result = DefaultInitialRunParams ()
+        
+            Result = LVGSolverAlgorithmParameters();
+            Result.MinIterations = 4;
+            Result.MaxIterations = 1500;
+            Result.ChangePercent = 0.01;
+            Result.ConvergenceThreshold = 0.0001;
+            Result.SignificantPopulationThreshold = 0.001;
+            
+        end
+                
+        function Result = DefaultConfirmationRunParams ()
+        
+            Result = LVGSolverAlgorithmParameters();
+            Result.MinIterations = 4;
+            Result.MaxIterations = 5000;
+            Result.ChangePercent = 0.000001;
+            Result.ConvergenceThreshold = 0.0001;
+            Result.SignificantPopulationThreshold = 0.001;
+            
+        end
+                
     end
     
 end

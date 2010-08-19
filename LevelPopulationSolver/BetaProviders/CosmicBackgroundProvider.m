@@ -4,6 +4,7 @@ classdef CosmicBackgroundProvider < handle
         
         m_backgroundVector;
         m_backgroundConstants;
+        BackgroundTemperature;
         
     end
     
@@ -12,6 +13,7 @@ classdef CosmicBackgroundProvider < handle
         function Cosmic = CosmicBackgroundProvider(MoleculeData, BackgroundTemperature)
             
             Cosmic.initializeBackgroundVector(MoleculeData, BackgroundTemperature);
+            Cosmic.BackgroundTemperature = BackgroundTemperature;
             
         end
         
@@ -28,7 +30,7 @@ classdef CosmicBackgroundProvider < handle
             %does not happen. In these cases we set the beta multiplication
             %factor to 1. In the stable solution this should not occur.
             ModifiedBeta(ModifiedBeta < 0 | ModifiedBeta > 1 | isnan(ModifiedBeta)) = 1;
-            
+           
             ModifiedBeta = Beta.*ModifiedBeta;
             
         end

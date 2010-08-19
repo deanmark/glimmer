@@ -4,6 +4,8 @@ classdef LVGSolverPopulationResult < handle
         
         Population; 
         FinalBetaCoefficients; 
+        FinalTauCoefficients;
+        Intensities;
         Converged; 
         Iterations; 
         MaxDiffPercentHistory; 
