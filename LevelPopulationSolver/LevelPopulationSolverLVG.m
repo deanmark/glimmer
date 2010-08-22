@@ -52,6 +52,7 @@ classdef LevelPopulationSolverLVG < LevelPopulationSolverOpticallyThin
             converged = zeros (1, numDensities);
             haywired = zeros (1, numDensities);
             notFinished = ~(converged | haywired);
+            tau = zeros(PopulationRequest.NumLevelsForSolution,numDensities);
             
             while ( (i <= obj.m_algorithmParameters.MinIterations || i < obj.m_algorithmParameters.MaxIterations) && any(notFinished) )
                 
@@ -61,16 +62,16 @@ classdef LevelPopulationSolverLVG < LevelPopulationSolverOpticallyThin
                 % guess the next population based on the new population and
                 % old ones. We prefer to guess the next iteration based on
                 % the beta coefficients.           
-                populationGuess = obj.interpolateNextPopulation(populationGuess, Result.PopulationHistory, i);                               
+                populationGuess(:,notFinished) = obj.interpolateNextPopulation(populationGuess(:,notFinished), Result.PopulationHistory(:,notFinished,:), i);                               
                 % Calculate beta coefficients from new population
-                [obj.m_betaCoefficients, tau] = obj.m_betaProvider.CalculateBetaCoefficients(populationGuess, PopulationRequest.MoleculeDensity, PopulationRequest.VelocityDerivative);                
+                [obj.m_betaCoefficients(:,notFinished), tau(:,notFinished)] = obj.m_betaProvider.CalculateBetaCoefficients(populationGuess(:,notFinished), PopulationRequest.MoleculeDensity(notFinished), PopulationRequest.VelocityDerivative);
                 % Interpolate our next beta guess based upon the beta
                 % coefficients just found and old beta coefficients.
-                obj.m_betaCoefficients = obj.interpolateNextBeta(obj.m_betaCoefficients, Result.BetaHistory, i);        
+                obj.m_betaCoefficients(:,notFinished) = obj.interpolateNextBeta(obj.m_betaCoefficients(:,notFinished), Result.BetaHistory(:,notFinished,:), i);
                 % save population for the record
-                Result.PopulationHistory(:,:,i) = populationGuess;                
+                Result.PopulationHistory(:,:,i) = populationGuess;
                 % Calculate the new population based on the beta
-                % coefficients found and physical parameters. Calculate 
+                % coefficients found and physical parameters. Calculate
                 % only for unconverged densities               
                 requestOnlyNonConverged.CollisionPartnerDensities = PopulationRequest.CollisionPartnerDensities(notFinished);
                 populationGuess(:,notFinished) = SolveLevelsPopulation@LevelPopulationSolverOpticallyThin(obj, requestOnlyNonConverged);
@@ -94,8 +95,7 @@ classdef LevelPopulationSolverLVG < LevelPopulationSolverOpticallyThin
             Result.BetaHistory = Result.BetaHistory(:,:,1:i);            
             Result.PopulationHistory = Result.PopulationHistory(:,:,1:i);
             
-            Result.FinalTauCoefficients = tau;
-            Result.FinalBetaCoefficients = obj.m_betaCoefficients;
+            [Result.FinalBetaCoefficients, Result.FinalTauCoefficients] = obj.m_betaProvider.CalculateBetaCoefficients(populationGuess, PopulationRequest.MoleculeDensity, PopulationRequest.VelocityDerivative);
             Result.Population = populationGuess;
             Result.Converged = converged & ~ haywired;
             Result.Iterations = i;

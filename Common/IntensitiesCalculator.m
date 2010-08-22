@@ -24,12 +24,22 @@ classdef IntensitiesCalculator < handle
         end
         
         function Intensities = CalculateIntensitiesLVG(obj, LevelPopulation, BetaCoefficients, ColumnDensities)
+                        
+            numLevels = numel(obj.m_einsteinCoefficients);
+            numDensities = numel(LevelPopulation)/numLevels;
             
-            ratio = numel(LevelPopulation)/numel(obj.m_einsteinCoefficients);
-            repeatedEinsteinCoefficients = repmat(obj.m_einsteinCoefficients,[ratio 1]);
-            repeatedTransitionEnergies = repmat(obj.m_transitionEnergies,[ratio 1]);
+            if numel(ColumnDensities) ~= numDensities
+                ME = MException('VerifyInput:invalidInputParameter', ...
+                    'Error in input. ColumnDensities must be the same size as CollisionPartnerDensities. ColumnDensities contains [%g] elements, should contain [%g] elements', numel(ColumnDensities), numDensities);
+                throw(ME);
+            end
             
-            Intensities = (LevelPopulation.*repeatedEinsteinCoefficients.*repeatedTransitionEnergies.*BetaCoefficients*ColumnDensities)/(4*Constants.pi);
+            repeatedEinsteinCoefficients = repmat(obj.m_einsteinCoefficients,[numDensities 1]);
+            repeatedTransitionEnergies = repmat(obj.m_transitionEnergies,[numDensities 1]);
+            repeatedDensities = repmat(ColumnDensities, [numLevels 1]);
+            repeatedDensities = reshape(repeatedDensities, [numel(LevelPopulation) 1]);
+            
+            Intensities = (LevelPopulation.*repeatedEinsteinCoefficients.*repeatedTransitionEnergies.*BetaCoefficients.*repeatedDensities)/(4*Constants.pi);
 
         end
         

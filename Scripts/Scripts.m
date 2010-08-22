@@ -27,47 +27,59 @@ classdef Scripts
                 FinalResult.Intensities = zeros(size(FinalResult.Population));
             end
             
-            totalComputations = numel(PopulationRequest.VelocityDerivative)*numel(PopulationRequest.Temperature);
+            totalComputations = numel(PopulationRequest.VelocityDerivative)*numel(PopulationRequest.Temperature)*numel(PopulationRequest.CollisionPartnerDensities);
+            i = 0;
             
             for dvDrIndex=1:numel(PopulationRequest.VelocityDerivative)
                 
                 for tempIndex=1:numel(PopulationRequest.Temperature)
                     
-                    populationRequestCopy.Temperature = PopulationRequest.Temperature(tempIndex);
-                    populationRequestCopy.VelocityDerivative = PopulationRequest.VelocityDerivative(dvDrIndex);
-                    
-                    PopulationRequest.BetaProvider.IgnoreNegativeTau = true;                    
-                    NoNegativeTauResult = LVGSolver.SolveLevelsPopulation(populationRequestCopy);
-                    
-                    PopulationRequest.BetaProvider.IgnoreNegativeTau = false;
-                    populationRequestCopy.FirstPopulationGuess = NoNegativeTauResult.Population;
-                    Result = LVGSolverAccurate.SolveLevelsPopulation(populationRequestCopy);
-                    
-                    Indices = zeros(size(FinalResult.Population));
-                    IndicesConstTemperature = repmat(logical(Result.Converged),PopulationRequest.NumLevelsForSolution,1);
-                    Indices(:,tempIndex,:,dvDrIndex) = IndicesConstTemperature;
-                    FinalResult.Population(logical(Indices)) = Result.Population(IndicesConstTemperature);
-                    FinalResult.FinalBetaCoefficients(logical(Indices)) = Result.FinalBetaCoefficients(IndicesConstTemperature);
-                    FinalResult.FinalTauCoefficients(logical(Indices)) = Result.FinalTauCoefficients(IndicesConstTemperature);
-
-                    if (PopulationRequest.CalculateIntensities) 
-                        FinalResult.Intensities(logical(Indices)) = IntensitiesClc.CalculateIntensitiesLVG(Result.Population(IndicesConstTemperature), ...
-                            Result.FinalBetaCoefficients(IndicesConstTemperature), PopulationRequest.CloudColumnDensity);
+                    for densIndex=1:numel(PopulationRequest.CollisionPartnerDensities)
+                        
+                        populationRequestCopy.Temperature = PopulationRequest.Temperature(tempIndex);
+                        populationRequestCopy.VelocityDerivative = PopulationRequest.VelocityDerivative(dvDrIndex);
+                        populationRequestCopy.CollisionPartnerDensities = PopulationRequest.CollisionPartnerDensities(densIndex);
+                        populationRequestCopy.MoleculeDensity = PopulationRequest.MoleculeDensity(densIndex);
+                        populationRequestCopy.CloudColumnDensity = PopulationRequest.CloudColumnDensity(densIndex);
+                        populationRequestCopy.FirstPopulationGuess = [];                        
+                        populationRequestCopy.BetaProvider.IgnoreNegativeTau = true;
+                        
+                        NoNegativeTauResult = LVGSolver.SolveLevelsPopulation(populationRequestCopy);
+                        
+                        populationRequestCopy.BetaProvider.IgnoreNegativeTau = false;
+                        populationRequestCopy.FirstPopulationGuess = NoNegativeTauResult.Population;
+                        Result = LVGSolverAccurate.SolveLevelsPopulation(populationRequestCopy);
+                        
+                        if Result.Converged
+                            
+                            FinalResult.Population(:,tempIndex,densIndex,dvDrIndex) = Result.Population;
+                            FinalResult.FinalBetaCoefficients(:,tempIndex,densIndex,dvDrIndex) = Result.FinalBetaCoefficients;
+                            FinalResult.FinalTauCoefficients(:,tempIndex,densIndex,dvDrIndex) = Result.FinalTauCoefficients;
+                            
+                            if (PopulationRequest.CalculateIntensities)
+                                
+                                BetaProvider = LVGBetaProvider(PopulationRequest.MoleculeData, false, 1, 2.73);
+                                Result.FinalBetaCoefficients = BetaProvider.CalculateBetaCoefficients(Result.Population,populationRequestCopy.MoleculeDensity,populationRequestCopy.VelocityDerivative);
+                                
+                                FinalResult.Intensities(:,tempIndex,densIndex,dvDrIndex) = IntensitiesClc.CalculateIntensitiesLVG(Result.Population, ...
+                                    Result.FinalBetaCoefficients, populationRequestCopy.CloudColumnDensity);
+                            end
+                            
+                        end
+                        
+                        if totalComputations > 1     
+                            i=i+1;
+                            progress = i/totalComputations;
+                            fprintf(1, 'Progress: %%%3d\n', floor(100*progress));
+                        end
+                        
                     end
-
-                    if totalComputations > 1
-                        largeTick = 1/numel(PopulationRequest.VelocityDerivative);
-                        progress = ((dvDrIndex-1)+tempIndex/numel(PopulationRequest.Temperature))*largeTick;
-
-                        fprintf(1, 'Progress: %%%3.2g\n', 100*progress);
-                    end
-                    
                 end
                 
             end
             
         end
-        
+         
         function FinalResult = CalculateOpticallyThinPopulation (PopulationRequest)
             
             p = inputParser();
@@ -146,12 +158,12 @@ classdef Scripts
                             FinalResult.Population(1:end-1,tempIndex,densIndex,dvDrIndex) = Result.PopulationLow;
                             FinalResult.FinalTauCoefficients(2:end,tempIndex,densIndex,dvDrIndex) = Result.Tau;
                             
-                            FinalResult.Intensities(2:end,tempIndex,densIndex,dvDrIndex) = Result.Flux_erg_cm2_s;
+                            FinalResult.Intensities(2:end,tempIndex,densIndex,dvDrIndex) = Result.Flux_erg_cm2_s/4/Constants.pi;
                             
                         end
                         
                     end
-                    fprintf(1, 'Percent: %%%3g\n', 100*tempIndex/numel(PopulationRequest.Temperature));
+                    fprintf(1, 'Percent: %%%3d\n', floor(100*tempIndex/numel(PopulationRequest.Temperature)));
                 end                
             end
             
@@ -414,7 +426,7 @@ classdef Scripts
             
             titleName = Scripts.buildSEDTitleName(CollisionPartnerDensity, Temperature, [], dvdrKmParsecs);
             title(titleName);
-            %axis([0 maxSize 0 1]);
+            axis([0 maxSize 0 1]);
             
             legend('toggle');
             
@@ -446,6 +458,26 @@ classdef Scripts
             title(titleName);
             
             legend('toggle');
+            
+        end
+        
+        function Diff = PopulationDiff (pop1, pop2)
+            
+            minLength = min(numel(pop1), numel(pop2));
+            maxPopArr = max (pop1, pop2);
+            maxPop = max(maxPopArr);
+            
+            % Calculate difference between codes
+            pop1 = pop1(1:minLength);
+            pop2 = pop2(1:minLength);
+            
+            smallPop = maxPop*1e-3;
+            smallIndices = pop1 < smallPop | pop2 < smallPop;
+            
+            pop1(smallIndices) = 0;
+            pop2(smallIndices) = 0;
+            
+            Diff = (abs(pop1-pop2)./mean(maxPopArr(~smallIndices)));
             
         end
         
