@@ -41,6 +41,29 @@ classdef (Sealed) CollisionPartnersCodes
             end            
         end
         
+        
+        function Result = ToCodeFromRadexFormat (CollisionPartnerString)
+            switch CollisionPartnerString
+                case 'H2'
+                    Result = CollisionPartnersCodes.H2;
+                case 'p'
+                    Result = CollisionPartnersCodes.H2para;
+                case 'o'
+                    Result = CollisionPartnersCodes.H2ortho;
+                case 'e'
+                    Result = CollisionPartnersCodes.electrons;
+                case 'h'
+                    Result = CollisionPartnersCodes.H;
+                case 'he'
+                    Result = CollisionPartnersCodes.He;
+                case 'h+'
+                    Result = CollisionPartnersCodes.HPlus;
+                otherwise
+                    ME = MException('VerifyInput:unknownCollisionPartnerCode','Error in input. Collision partner code [%d] is unknown', CollisionPartnerCode);
+                    throw(ME);
+            end            
+        end
+        
     end
     
 end

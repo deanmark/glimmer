@@ -2,9 +2,9 @@ classdef MoleculeDataReaderLamdaFormat < MoleculeDataReader
 
     properties(Constant = true, Hidden=true)
         
-        MoleculeNameString = '!MOLECULE';
-        MoleculeEnergyLevelsString = '!NUMBER OF ENERGY LEVELS';
-        MoleculeRadiativeTransitionsString = '!NUMBER OF RADIATIVE TRANSITIONS';
+        MoleculeNameString = 'MOLECULE';
+        MoleculeEnergyLevelsString = 'NUMBER OF ENERGY LEVELS';
+        MoleculeRadiativeTransitionsString = 'NUMBER OF RADIATIVE TRANSITIONS';
         
     end
     
@@ -12,9 +12,9 @@ classdef MoleculeDataReaderLamdaFormat < MoleculeDataReader
         
         function Molecule = CreateMoleculeDataFromFile (FileName)
             
-            [MoleculeName, PhotonFrequencies, EinsteinCoefficients] = MoleculeDataReaderLamdaFormat.readMoleculeData(FileName);
+            [MoleculeName, PhotonFrequencies, EinsteinCoefficients, StatisticalWeights] = MoleculeDataReaderLamdaFormat.readMoleculeData(FileName);
             [pathstr, name, ext] = fileparts(FileName);
-            Molecule = MoleculeData(MoleculeName, PhotonFrequencies, EinsteinCoefficients, strcat(name, ext));
+            Molecule = MoleculeData(MoleculeName, PhotonFrequencies, EinsteinCoefficients, strcat(name, ext), StatisticalWeights);
            
         end
         
@@ -22,40 +22,49 @@ classdef MoleculeDataReaderLamdaFormat < MoleculeDataReader
     
     methods(Static=true,Access = private, Hidden=true)
         
-        function [MoleculeName, PhotonFrequencies, EinsteinCoefficients] = readMoleculeData(FileName)
+        function [MoleculeName, PhotonFrequencies, EinsteinCoefficients, StatisticalWeights] = readMoleculeData(FileName)
             
             fid = fopen(FileName);
             
             try
                 currentLine = fgetl(fid);
                 
-                if strcmp(currentLine, MoleculeDataReaderLamdaFormat.MoleculeNameString)==false
+                if isempty(strfind(upper(currentLine), MoleculeDataReaderLamdaFormat.MoleculeNameString))
                     ME = MException('MoleculeDataReaderLamdaFormat:MoleculeNameStringNotFound','Molecule name string was not found. Data file is not in the lamda format');
                     throw(ME);
                 end
                 
                 currentLine = fgetl(fid);
-                MoleculeName = currentLine;
+                MoleculeName = strtrim(currentLine);
                 
                 currentLine = FileIOHelper.JumpLinesInFile (fid,3);
                 
-                if strcmp(currentLine, MoleculeDataReaderLamdaFormat.MoleculeEnergyLevelsString)==false
+                if isempty(strfind(upper(currentLine), MoleculeDataReaderLamdaFormat.MoleculeEnergyLevelsString))
                     ME = MException('MoleculeDataReaderLamdaFormat:MoleculeEnergyLevelsStringNotFound','Molecule energy levels string was not found. Data file is not in the lamda format');
                     throw(ME);
                 end
                 
                 currentLine = fgetl(fid);
-                energyLevels = str2double (currentLine);
+                energyLevels = str2double (strtrim(currentLine));
+                StatisticalWeights = zeros(energyLevels, 1);
                 
-                currentLine = FileIOHelper.JumpLinesInFile(fid,energyLevels+2);
+                fgetl(fid);
                 
-                if strcmp(currentLine, MoleculeDataReaderLamdaFormat.MoleculeRadiativeTransitionsString)==false
+                for i=1:energyLevels
+                    currentLine = fgetl(fid);
+                    rowData = regexp(strtrim(currentLine),'\s+','split');
+                    StatisticalWeights(i) = str2double(rowData(3));
+                end
+                
+                currentLine = fgetl(fid);
+                
+                if isempty(strfind(upper(currentLine), MoleculeDataReaderLamdaFormat.MoleculeRadiativeTransitionsString))
                     ME = MException('MoleculeDataReaderLamdaFormat:MoleculeRadiativeTransitionsStringNotFound','Molecule radiative transitions string string was not found. Data file is not in the lamda format');
                     throw(ME);
                 end
                 
                 currentLine = fgetl(fid);
-                radiativeTransitions = str2double (currentLine);
+                radiativeTransitions = str2double (strtrim(currentLine));
                 
                 PhotonFrequencies = zeros(radiativeTransitions, 3);
                 EinsteinCoefficients = zeros(radiativeTransitions, 3);
@@ -66,7 +75,7 @@ classdef MoleculeDataReaderLamdaFormat < MoleculeDataReader
                     
                     currentLine = fgetl(fid);
                     
-                    rowData = regexp(strtrim(currentLine),' *','split');
+                    rowData = regexp(strtrim(currentLine),'\s+','split');
                     
                     for j=1:size(rowData,2)-2
                         

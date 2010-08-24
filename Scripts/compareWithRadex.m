@@ -1,34 +1,32 @@
 
-%our calculation
-%Temperatures = cat(2, 25:10:100, 100:100:2000);
-%Temperatures = cat(2, 1700:100:2000);
-%Temperatures = cat(2, 25:20:400, 400);
-%Temperatures = cat(2, 100);
-
-%Temperatures = CollisionRates_12CO_H2ortho.m_temperatures;
-Temperatures = CollisionRates_HCOplus_H2.m_temperatures;
-%Temperatures = CollisionRates_HCN_H2.m_temperatures;
-
-%CollisionPartnerDensities = 10.^(5);
-CollisionPartnerDensities = 10.^(2:1:7);
-%CollisionPartnerDensities = 10.^(2.8:0.2:7);
-
-ColumnDensities = [1];
-
 % Molecule = MoleculeData_12CO;
 % MoleculeToCollisionPartnerDensityRatio = 8e-5;
 % CollisionPartners = [CollisionRates_12CO_H2ortho,CollisionRates_12CO_H2para];
 % CollisionPartnerWeights = [3 1];
 %  
-Molecule = MoleculeData_HCOplus;
+Molecule = Molecules.Get('HCO+');
 MoleculeToCollisionPartnerDensityRatio = 10^-8;
-CollisionPartners = [CollisionRates_HCOplus_H2];
+CollisionPartners = [CollisionPartnersCodes.H2];
 CollisionPartnerWeights = [1];
 
 % Molecule = MoleculeData_HCN;
 % MoleculeToCollisionPartnerDensityRatio = 10^-8;
 % CollisionPartners = [CollisionRates_HCN_H2];
 % CollisionPartnerWeights = [1];
+
+
+%our calculation
+%Temperatures = cat(2, 25:10:100, 100:100:2000);
+%Temperatures = cat(2, 1700:100:2000);
+%Temperatures = cat(2, 25:20:400, 400);
+%Temperatures = cat(2, 100);
+Temperatures = Molecule.GetCollisionPartner(CollisionPartners(1)).Temperatures;
+
+%CollisionPartnerDensities = 10.^(5);
+CollisionPartnerDensities = 10.^(2:1:7);
+%CollisionPartnerDensities = 10.^(2.8:0.2:7);
+
+ColumnDensities = [1];
 
 %dvdrKmParsecArray = 1:0.05:1.05;
 dvdrKmParsecArray = 1;

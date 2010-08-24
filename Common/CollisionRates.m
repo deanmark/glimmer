@@ -3,9 +3,9 @@ classdef CollisionRates < handle
     properties (SetAccess = private)
         Molecule; % type MoleculeData
         CollisionPartnerCode; % type integer
-
+        Temperatures;
+        
         m_collisionRates;      
-        m_temperatures;
         
     end
     
@@ -22,7 +22,7 @@ classdef CollisionRates < handle
             
             CR.CollisionPartnerCode = CollisionPartner;
             CR.Molecule = MoleculeData;
-            CR.m_temperatures = CollisionRates(1,3:end);
+            CR.Temperatures = CollisionRates(1,3:end);
                         
             CR.m_collisionRates = CR.buildCollisionRatesArr(CollisionRates);
             
@@ -41,12 +41,12 @@ classdef CollisionRates < handle
             %temperatures, we do not interpolate, but use the value that is
             %closest to him
             
-            if Temperature <= min(obj.m_temperatures)  
+            if Temperature <= min(obj.Temperatures)  
                 temperatureCol = 1;
-            elseif Temperature >= max(obj.m_temperatures)
-                temperatureCol = numel(obj.m_temperatures);
+            elseif Temperature >= max(obj.Temperatures)
+                temperatureCol = numel(obj.Temperatures);
             else                          
-                temperatureCol = find (obj.m_temperatures==Temperature);
+                temperatureCol = find (obj.Temperatures==Temperature);
             end
             
             if ~isempty(temperatureCol) 
@@ -56,13 +56,13 @@ classdef CollisionRates < handle
                 %we need to interpolate. that is done with a simple linear
                 %interpolation.
                 
-                lowTempIndex = find(obj.m_temperatures < Temperature, 1, 'last' );
+                lowTempIndex = find(obj.Temperatures < Temperature, 1, 'last' );
                                 
                 lowTempQ = obj.m_collisionRates(LeftLevel, RightLevel, lowTempIndex);
                 highTempQ = obj.m_collisionRates(LeftLevel, RightLevel, lowTempIndex+1);
                 
-                lowTemp = obj.m_temperatures(lowTempIndex);
-                highTemp = obj.m_temperatures(lowTempIndex+1);
+                lowTemp = obj.Temperatures(lowTempIndex);
+                highTemp = obj.Temperatures(lowTempIndex+1);
                                 
                 ratio = (Temperature - lowTemp)/(highTemp-lowTemp);
                   
@@ -85,12 +85,12 @@ classdef CollisionRates < handle
             %temperatures, we do not interpolate, but use the temperature that is
             %closest to him as an approximation
             
-            if Temperature <= min(obj.m_temperatures)  
+            if Temperature <= min(obj.Temperatures)  
                 temperatureCol = 1;
-            elseif Temperature >= max(obj.m_temperatures)
-                temperatureCol = numel(obj.m_temperatures);
+            elseif Temperature >= max(obj.Temperatures)
+                temperatureCol = numel(obj.Temperatures);
             else                          
-                temperatureCol = find (obj.m_temperatures==Temperature);
+                temperatureCol = find (obj.Temperatures==Temperature);
             end
             
             if ~isempty(temperatureCol) 
@@ -100,13 +100,13 @@ classdef CollisionRates < handle
                 %we need to interpolate. that is done with a simple linear
                 %interpolation.
                 
-                lowTempIndex = find(obj.m_temperatures < Temperature, 1, 'last' );
+                lowTempIndex = find(obj.Temperatures < Temperature, 1, 'last' );
                                 
                 lowTempQ = obj.m_collisionRates(:,:,lowTempIndex);
                 highTempQ = obj.m_collisionRates(:,:,lowTempIndex+1);
                 
-                lowTemp = obj.m_temperatures(lowTempIndex);
-                highTemp = obj.m_temperatures(lowTempIndex+1);
+                lowTemp = obj.Temperatures(lowTempIndex);
+                highTemp = obj.Temperatures(lowTempIndex+1);
                                 
                 ratio = (Temperature - lowTemp)/(highTemp-lowTemp);
                   
@@ -125,33 +125,39 @@ classdef CollisionRates < handle
         %each column represents the left index.
         function Rates = buildCollisionRatesArr (obj, CollRates)
             
-            numTemperatures = numel(obj.m_temperatures);
+            numTemperatures = numel(obj.Temperatures);
             lvls = obj.Molecule.MolecularLevels;
             
-            Rates = zeros (lvls,lvls, numTemperatures);
+            Rates = zeros (lvls,lvls, numTemperatures);           
+            
+            highLevels = CollRates(2:end,1);
+            lowLevels = CollRates(2:end,2);
+            statisticalWeightsHigh = obj.Molecule.StatisticalWeight(highLevels);
+            statisticalWeightsLow = obj.Molecule.StatisticalWeight(lowLevels);            
+            
+            transitionEnergies = obj.Molecule.TransitionEnergy(highLevels,lowLevels);
             
             %temperature loop
             for i=1:numTemperatures
             
-                for j=2:size(CollRates,1);
+                RatesPerTemperature = zeros (lvls,lvls);
                 
-                    highLvl = CollRates(j,1);
-                    lowLvl = CollRates(j,2);
-                    
-                    %from high to low is as given in the table
-                    Rates(highLvl,lowLvl, i) = CollRates(j,i+2);
-                    
-                    %from low to high we need to use the principle of
-                    %detailed balance
-                    Rates(lowLvl,highLvl, i) = obj.computeReverseCollisionRate(highLvl, lowLvl, CollRates(j,i+2), obj.m_temperatures(i));
-                    
-                end
+                QHighToLow = CollRates(2:end,i+2);  
+                %computes the reverse collision rate with the principle of detailed balance
+                QLowToHigh = (statisticalWeightsHigh./statisticalWeightsLow).*QHighToLow.*exp(-1*transitionEnergies/(Constants.k*obj.Temperatures(i)));
+                                
+                ind = sub2ind(size(RatesPerTemperature),highLevels,lowLevels);
+                RatesPerTemperature(ind) = QHighToLow;
+                
+                ind = sub2ind(size(RatesPerTemperature),lowLevels,highLevels);
+                RatesPerTemperature(ind) = QLowToHigh;
+                Rates(:,:,i) = RatesPerTemperature;
                     
             end
             
         end
         
-        %computes the reverse collision rate with the principle of detailed balance
+        
         function QLowToHigh = computeReverseCollisionRate(obj, HighLvl, LowLvl, QHighToLow, Temperature)
             
             gHigh = obj.Molecule.StatisticalWeight(HighLvl);

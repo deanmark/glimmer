@@ -2,9 +2,10 @@ classdef CollisionRatesReaderLamdaFormat < CollisionRatesReader
     
     properties(Constant = true, Hidden=true)
         
-        CollisionTemperatureString = '!COLL TEMPS';
-        CollisionTransitionString = '!NUMBER OF COLL TRANS';
-        CollisionPartnerString = '!COLLISIONS BETWEEN';
+        CollisionTemperatureString = 'COLL TEMPS';
+        CollisionTransitionString = 'NUMBER OF COLL TRANS';
+        CollisionPartnerString = 'COLLISIONS BETWEEN';
+        NumberOfCollisionPartnerString = 'NUMBER OF COLL PARTNERS';
         
     end
     
@@ -19,6 +20,25 @@ classdef CollisionRatesReaderLamdaFormat < CollisionRatesReader
             Rates = CollisionRates(MoleculeData, CollisionPartner, collisionRates);
             
         end
+    
+        function CollisionPartners = ListAllCollisionPartners(FileName)
+            
+            fid = fopen(FileName);
+            
+            try
+                
+                CollisionRatesReaderLamdaFormat.getToNumberOfCollPartnersSection(fid);
+                
+                numColPartners = str2double(FileIOHelper.JumpLinesInFile(fid, 2));                
+                CollisionPartners = CollisionRatesReaderLamdaFormat.readCollisionPartnerCodes(fid, numColPartners);          
+                
+            catch ME
+                fclose(fid);
+                rethrow(ME);
+            end
+            
+            fclose(fid);
+        end
         
     end
     
@@ -29,7 +49,10 @@ classdef CollisionRatesReaderLamdaFormat < CollisionRatesReader
             fid = fopen(FileName);
             
             try
-                foundPartner = CollisionRatesReaderLamdaFormat.getToCollisionPartnerSection(fid,CollisionPartner);
+                CollisionRatesReaderLamdaFormat.getToNumberOfCollPartnersSection(fid);
+                numColPartners = str2double(FileIOHelper.JumpLinesInFile(fid, 2));
+                
+                foundPartner = CollisionRatesReaderLamdaFormat.getToCollisionPartnerSection(fid,CollisionPartner,numColPartners);
                 
                 if foundPartner
                     CollisionRates = CollisionRatesReaderLamdaFormat.readCollisionRatesSection(fid);
@@ -50,23 +73,49 @@ classdef CollisionRatesReaderLamdaFormat < CollisionRatesReader
             end
         end
         
-        function FoundSection = getToCollisionPartnerSection (fid, CollisionPartner)
+        function CollisionPartners = readCollisionPartnerCodes (fid, NumberOfCollisionPartners)
+            
+            CollisionPartners = zeros([1 NumberOfCollisionPartners]);
+            
+            for i=1:NumberOfCollisionPartners
+                
+                currentLine = FileIOHelper.JumpLinesInFile(fid, 2);
+                CollisionPartners(i) = CollisionRatesReaderLamdaFormat.convertCollisionLineToCollisionCode(currentLine);
+                
+                collisionalTransitions = str2double(FileIOHelper.JumpLinesInFile(fid, 2));
+                FileIOHelper.JumpLinesInFile(fid, collisionalTransitions+5);
+                
+            end
+
+        end
+        
+        function getToNumberOfCollPartnersSection (fid)
+            
+            energyLevels = str2double(FileIOHelper.JumpLinesInFile(fid, 6));
+            radiativeTransitions = str2double(FileIOHelper.JumpLinesInFile(fid, energyLevels + 3));
+            FileIOHelper.JumpLinesInFile(fid, radiativeTransitions + 1);
+            
+        end
+        
+        function FoundSection = getToCollisionPartnerSection (fid, CollisionPartner, NumberOfCollisionPartners)
             
             FoundSection = 0;
+            i = 0;
             
-            currentLine = fgetl(fid);
-            
-            while strcmp(currentLine,'-1') == false || feof(fid) ~= true
+            while i < NumberOfCollisionPartners && ~FoundSection
+               
+                currentLine = FileIOHelper.JumpLinesInFile(fid, 2);
+                currentCollPartner = CollisionRatesReaderLamdaFormat.convertCollisionLineToCollisionCode(currentLine);                
                 
-                if strcmp(currentLine, CollisionRatesReaderLamdaFormat.CollisionPartnerString)
-                    currentLine = fgetl(fid);
-                    if size (strmatch(num2str(CollisionPartner), currentLine), 1) == 1
-                        FoundSection = 1;
-                        return;
-                    end
+                if currentCollPartner == CollisionPartner
+                    FoundSection = 1;
+                    return;
                 end
                 
-                currentLine = fgetl(fid);
+                collisionalTransitions = str2double(FileIOHelper.JumpLinesInFile(fid, 2));
+                FileIOHelper.JumpLinesInFile(fid, collisionalTransitions+5);
+                
+                i=i+1;
                 
             end
             
@@ -75,11 +124,11 @@ classdef CollisionRatesReaderLamdaFormat < CollisionRatesReader
         function CollisionRates = readCollisionRatesSection (fid)
             
             currentLine = fgetl(fid);
-            
-            if strcmp(currentLine, CollisionRatesReaderLamdaFormat.CollisionTransitionString)==false
-                ME = MException('CollisionRatesReaderLamdaFormat:CollisionTransitionStringNotFound','Collision transition string was not found. Data file is not in the lamda format');
-                throw(ME);
-            end
+                        
+%             if isempty(strfind(upper(currentLine), CollisionRatesReaderLamdaFormat.CollisionTransitionString))
+%                 ME = MException('CollisionRatesReaderLamdaFormat:CollisionTransitionStringNotFound','Collision transition string was not found. Data file is not in the lamda format');
+%                 throw(ME);
+%             end
             
             currentLine = fgetl(fid);
             numCollisions = str2double(currentLine);
@@ -87,10 +136,10 @@ classdef CollisionRatesReaderLamdaFormat < CollisionRatesReader
             %arrive to temperature row
             currentLine = FileIOHelper.JumpLinesInFile(fid, 3);
             
-            if strcmp(currentLine, CollisionRatesReaderLamdaFormat.CollisionTemperatureString)==false
-                ME = MException('CollisionRatesReaderLamdaFormat:CollisionTemperatureStringNotFound','Collision temperature string was not found. Data file is not in the lamda format');
-                throw(ME);
-            end
+%             if isempty(strfind(upper(currentLine), CollisionRatesReaderLamdaFormat.CollisionTemperatureString))
+%                 ME = MException('CollisionRatesReaderLamdaFormat:CollisionTemperatureStringNotFound','Collision temperature string was not found. Data file is not in the lamda format');
+%                 throw(ME);
+%             end
             
             currentLine = fgetl(fid);
             temperatures = str2num(currentLine);
@@ -98,9 +147,7 @@ classdef CollisionRatesReaderLamdaFormat < CollisionRatesReader
             CollisionRates = zeros(numCollisions+1,size(temperatures,2)+2);
             
             %insert temperatures into array
-            for i=1:size(temperatures,2)
-                CollisionRates(1,i+2) = temperatures(i);
-            end
+            CollisionRates(1,3:end) = temperatures;
             
             fgetl(fid);
             
@@ -109,14 +156,27 @@ classdef CollisionRatesReaderLamdaFormat < CollisionRatesReader
                 
                 currentLine = fgetl(fid);
                 
-                rowData = regexp(strtrim(currentLine),' *','split');
+                rowData = regexp(strtrim(currentLine),'\s+','split');
                 
-                for j=1:size(rowData,2)-1
+                for j=1:numel(rowData)-1
                     CollisionRates(i+1,j) = str2double(rowData(j+1));
                 end
             end
         end
         
+        function CollisionPartner = convertCollisionLineToCollisionCode (currentLine)
+            
+            parts = regexp(currentLine,'\s','split');
+            CollisionPartner = str2double(parts{1});
+            
+            if isnan(CollisionPartner)
+                innerParts = regexp(parts{1},'-','split');
+                CollisionPartner = CollisionPartnersCodes.ToCodeFromRadexFormat(innerParts{2});
+            end
+            
+        end
+        
     end %methods
+    
     
 end %class

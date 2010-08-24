@@ -22,11 +22,16 @@ classdef MoleculeData < handle
         % Load h constant locally. This improves performance.
         m_hConstant; 
         
+        % Contains the collision partner rates of the molecule.
+        m_collisionPartners;
+        % Contains an array of the statistical weights, one for each level.
+        m_statisticalWeights;
+        
     end
     
     methods(Access = public)
          
-        function MD = MoleculeData(MoleculeName,PhotonFrequencies,EinsteinACoefficients,MoleculeFileName)
+        function MD = MoleculeData(MoleculeName,PhotonFrequencies,EinsteinACoefficients,MoleculeFileName,StatisticalWeights)
             % Constructor
             % Input:
             %    MoleculeName = Molecule name.
@@ -42,12 +47,14 @@ classdef MoleculeData < handle
             %    MoleculeFileName = Molecule file name.
             
             MD.MoleculeName = MoleculeName;
-            MD.MolecularLevels = max(PhotonFrequencies(:,1));
+            MD.MolecularLevels = numel(StatisticalWeights);
             MD.m_hConstant = Constants.h;
             MD.MoleculeFileName = MoleculeFileName;
-            
+                        
+            MD.m_statisticalWeights = StatisticalWeights;
             MD.m_photonFrequencies = MD.buildPhotonFrequenciesArr (PhotonFrequencies);
             MD.m_einsteinACoefficients = EinsteinACoefficients;
+            MD.m_collisionPartners = Hashtable();
             
         end
         
@@ -63,8 +70,9 @@ classdef MoleculeData < handle
                 ME = MException('VerifyInput:levelMismatch','Error in input. HighLevel [%d] should be larger than LowLevel [%d]', HighLevel, LowLevel);
                 throw(ME);
             end
-            
-            Frequency = obj.m_photonFrequencies(HighLevel, LowLevel);
+                        
+            ind = sub2ind(size(obj.m_photonFrequencies),HighLevel,LowLevel);
+            Frequency = obj.m_photonFrequencies(ind);
             
         end
   
@@ -81,7 +89,8 @@ classdef MoleculeData < handle
                 throw(ME);
             end
             
-            Energy = obj.m_hConstant*obj.m_photonFrequencies(HighLevel, LowLevel);
+            ind = sub2ind(size(obj.m_photonFrequencies),HighLevel,LowLevel);
+            Energy = obj.m_hConstant*obj.m_photonFrequencies(ind);
                                         
         end
                 
@@ -120,8 +129,24 @@ classdef MoleculeData < handle
             % Output:
             %    SW = The statistical weight
             
-            SW = 2*(Level-1) + 1;
+            SW = obj.m_statisticalWeights(Level);
             
+        end
+        
+        function AddCollisionPartners (obj, CollisionPartners)
+           
+            for i=1:numel(CollisionPartners)               
+                obj.m_collisionPartners.Put(num2str(CollisionPartners{i}.CollisionPartnerCode),CollisionPartners{i});
+            end
+            
+        end
+        
+        function CollPartnerCodes = CollisionPartnerCodes(obj)
+            CollPartnerCodes = str2double(obj.m_collisionPartners.Keys());
+        end
+        
+        function CollisionPartner = GetCollisionPartner(obj, CollisionPartnerCode)
+            CollisionPartner = obj.m_collisionPartners.Get(num2str(CollisionPartnerCode));
         end
         
     end

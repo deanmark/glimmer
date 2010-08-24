@@ -13,8 +13,9 @@ classdef Scripts
             
             LVGSolver = LevelPopulationSolverLVGSlowAccurate(PopulationRequest.MoleculeData, PopulationRequest.BetaProvider, p.Results.AlgorithmParamsInitial);
             LVGSolverAccurate = LevelPopulationSolverLVGSlowAccurate(PopulationRequest.MoleculeData, PopulationRequest.BetaProvider, p.Results.AlgorithmParamsConfirming);
-
+            
             populationRequestCopy = PopulationRequest.Copy();
+            Scripts.replaceCollisionPartnerCodesToRates(populationRequestCopy);
             
             FinalResult = LVGSolverPopulationResult();            
             FinalResult.Population = zeros(PopulationRequest.NumLevelsForSolution, numel(PopulationRequest.Temperature), ...
@@ -648,6 +649,21 @@ classdef Scripts
             end
             
             DisplayName = FileIOHelper.ConcatWithSeperator({densityDisplay tempDisplay colDensityDisplay}, ',');
+            
+        end
+        
+        function replaceCollisionPartnerCodesToRates (PopulationRequest)
+            
+            collisionPartnerCodes =  PopulationRequest.CollisionPartnerRates;
+            collisionPartnerRates = CollisionRates.empty(0,numel(collisionPartnerCodes));
+            
+            for i=1:numel(collisionPartnerCodes)
+               
+                collisionPartnerRates(i) = PopulationRequest.MoleculeData.GetCollisionPartner(collisionPartnerCodes(i));
+               
+            end
+            
+            PopulationRequest.CollisionPartnerRates = collisionPartnerRates;
             
         end
         
