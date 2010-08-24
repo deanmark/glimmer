@@ -86,7 +86,7 @@ classdef RadexSolver < handle
                 fprintf(fid,'%u\n',numel(CollisionParters));
                 
                 for i=1:numel(CollisionParters)
-                    fprintf(fid,'%s\n',CollisionPartnersCodes.ToStringRadexFormat(CollisionParters(i).CollisionPartnerCode));
+                    fprintf(fid,'%s\n',CollisionPartnersCodes.ToStringRadexFormat(CollisionParters(i)));
                     fprintf(fid,'%g\n',CollisionPartnerDensities(i));
                 end
                 
