@@ -18,6 +18,10 @@ classdef MoleculeData < handle
         % Rows represent upper level. Columns represent lower level
         % Cells contain Einstein A Coefficients [1/sec].
         m_einsteinACoefficients; 
+        % [MolecularLevels,MolecularLevels] Array of Einstein B Coefficients [1/sec]. 
+        % Rows represent upper level. Columns represent lower level
+        % Cells contain Einstein B Coefficients [1/sec].
+        m_einsteinBCoefficients; 
         
         % Load h constant locally. This improves performance.
         m_hConstant; 
@@ -53,8 +57,10 @@ classdef MoleculeData < handle
                         
             MD.m_statisticalWeights = StatisticalWeights;
             MD.m_photonFrequencies = MD.buildPhotonFrequenciesArr (PhotonFrequencies);
-            MD.m_einsteinACoefficients = EinsteinACoefficients;
             MD.m_collisionPartners = Hashtable();
+
+            MD.m_einsteinACoefficients = MD.buildEinsteinACoefficientsTable(EinsteinACoefficients);
+            MD.m_einsteinBCoefficients = MD.buildEinsteinBCoefficientsTable(EinsteinACoefficients);
             
         end
         
@@ -66,7 +72,7 @@ classdef MoleculeData < handle
             % Output:
             %    Frequency = Photon transition frequency [Hz]
             
-            if  LowLevel > HighLevel
+            if  any(LowLevel > HighLevel)
                 ME = MException('VerifyInput:levelMismatch','Error in input. HighLevel [%d] should be larger than LowLevel [%d]', HighLevel, LowLevel);
                 throw(ME);
             end
@@ -84,7 +90,7 @@ classdef MoleculeData < handle
             % Output:
             %    Frequency = Photon transition energy [erg]
             
-            if  LowLevel > HighLevel
+            if  any(LowLevel > HighLevel)
                 ME = MException('VerifyInput:levelMismatch','Error in input. HighLevel [%d] should be larger than LowLevel [%d]', HighLevel, LowLevel);
                 throw(ME);
             end
@@ -102,24 +108,23 @@ classdef MoleculeData < handle
             % Output:
             %    Einstein = Transition Einstein A Coefficient [1/sec]
             
-            if  LowLevel >= HighLevel
-                ME = MException('VerifyInput:levelMismatch','Error in input. HighLevel [%d] should be larger than LowLevel [%d]', HighLevel, LowLevel);
+            if  any(LowLevel >= HighLevel)
+                ind = find(LowLevel >= HighLevel);
+                ME = MException('VerifyInput:levelMismatch','Error in input. HighLevel [%d] should be larger than LowLevel [%d]', HighLevel(ind(1)), LowLevel(ind(1)));
                 throw(ME);
-                
-            elseif HighLevel ~= LowLevel + 1
-                ME = MException('VerifyInput:levelMismatch','Error in input. Level jumps larger than one are not supported. HighLevel [%d]. LowLevel [%d]', HighLevel, LowLevel);
-                throw(ME);
-            else
-                index = find (obj.m_einsteinACoefficients(:,1)==HighLevel);
-                
-                if numel(index) == 0
-                    ME = MException('VerifyInput:levelNotFound','Error in input. HighLevel [%d] not found in MoleculeData', HighLevel);
-                    throw(ME);
-                else
-                    Einstein = obj.m_einsteinACoefficients(index(1), 3);
-                end
             end
             
+            ind = sub2ind(size(obj.m_einsteinACoefficients),HighLevel,LowLevel);
+            Einstein = obj.m_einsteinACoefficients(ind);
+            
+        end
+        
+        function Einstein = EinsteinACoefficientMatrix(obj)
+            Einstein = obj.m_einsteinACoefficients;
+        end
+
+        function Einstein = EinsteinBCoefficientMatrix(obj)
+            Einstein = obj.m_einsteinBCoefficients;
         end
         
         function SW = StatisticalWeight(obj, Level)
@@ -167,26 +172,90 @@ classdef MoleculeData < handle
             %       Cells contain transition frequency [Hz] from upper level to lower level.
             
             lvls = obj.MolecularLevels;
-            
             FullPhotonFrequencies = zeros(lvls,lvls);
             
-            for i=1:lvls
-                for j = 1:i
-               
-                    if i ~= j
-                        levelTransitions = (j+1):i;
-                        
-                        indices = ismember(PhotonFrequencies(:,1),levelTransitions);
-                        
-                        frequencies = PhotonFrequencies(logical(indices), 3);
-                        FullPhotonFrequencies(i,j) = sum(frequencies);
-                    end
+            highLevels = PhotonFrequencies(:,1);
+            lowLevels = PhotonFrequencies(:,2);
+            freq = PhotonFrequencies(:,3);
+            
+            ind = sub2ind(size(FullPhotonFrequencies),highLevels,lowLevels);
+            FullPhotonFrequencies(ind) = freq;
+            sequentalTransitions = diag(FullPhotonFrequencies,-1);
+            
+            for i=3:lvls
+                for j = 1:i-2               
+                    
+                    FullPhotonFrequencies(i,j) = sum(sequentalTransitions(j:i-1));
                     
                 end
             end
                
         end
         
+        function EinsteinTable = buildEinsteinACoefficientsTable(obj, EinsteinACoefficients)
+            % Builds the full einstein A coefficients table.
+            % Input:
+            %    EinsteinACoefficients = [Transitions,3] array. 
+            %       First column contains upper level index. 
+            %       Second column contains lower level index. 
+            %       Third column contains einstein A coefficient from
+            %       upper level to lower level.
+            % Output:
+            %    EinsteinTable = [MolecularLevels,MolecularLevels] Array containing all einstein A coefficients.
+            %       Rows represent upper level. Columns represent lower level
+            %       Cells contain einstein A coefficients from upper
+            %       level to lower level.
+        
+            lvls = obj.MolecularLevels;
+            
+            EinsteinTable = zeros(lvls,lvls);
+            
+            highLevels = EinsteinACoefficients(:,1);
+            lowLevels = EinsteinACoefficients(:,2);
+            rates = EinsteinACoefficients(:,3);
+            
+            ind = sub2ind(size(EinsteinTable),highLevels,lowLevels);
+            EinsteinTable(ind) = rates;
+            
+        end
+        
+        function EinsteinTable = buildEinsteinBCoefficientsTable(obj, EinsteinACoefficients)
+            % Builds the full einstein B coefficients table.
+            % Input:
+            %    EinsteinACoefficients = [Transitions,3] array. 
+            %       First column contains upper level index. 
+            %       Second column contains lower level index. 
+            %       Third column contains einstein B coefficient from
+            %       upper level to lower level.
+            % Output:
+            %    EinsteinTable = [MolecularLevels,MolecularLevels] Array containing all einstein B coefficients.
+            %       Rows represent upper level. Columns represent lower level
+            %       Cells contain einstein B coefficients from upper
+            %       level to lower level.
+        
+            lvls = obj.MolecularLevels;
+            
+            EinsteinTable = zeros(lvls,lvls);
+            
+            highLevels = EinsteinACoefficients(:,1);
+            lowLevels = EinsteinACoefficients(:,2);
+            aRates = EinsteinACoefficients(:,3);
+            freq = obj.TransitionFrequency(highLevels,lowLevels);
+            bRates = (Constants.c^2 ./ (2*Constants.h .* freq.^3)) .* aRates;
+            
+            statWghtsUpper = obj.StatisticalWeight(highLevels);
+            statWghtsLower = obj.StatisticalWeight(lowLevels);
+            
+            bRatesReverse = (statWghtsUpper ./ statWghtsLower) .* bRates;            
+            
+            ind = sub2ind(size(EinsteinTable),highLevels,lowLevels);
+            EinsteinTable(ind) = bRates;
+            
+            ind = sub2ind(size(EinsteinTable),lowLevels,highLevels);
+            EinsteinTable(ind) = bRatesReverse;            
+            
+        end
+        
     end
     
-end 
+end

@@ -159,7 +159,7 @@ classdef CollisionRatesReaderLamdaFormat < CollisionRatesReader
                 rowData = regexp(strtrim(currentLine),'\s+','split');
                 
                 for j=1:numel(rowData)-1
-                    CollisionRates(i+1,j) = str2double(rowData(j+1));
+                    CollisionRates(i+1,j) = str2double(rowData{j+1});
                 end
             end
         end

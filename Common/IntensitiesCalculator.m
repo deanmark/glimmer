@@ -23,7 +23,7 @@ classdef IntensitiesCalculator < handle
             
         end
         
-        function Intensities = CalculateIntensitiesLVG(obj, LevelPopulation, BetaCoefficients, ColumnDensities)
+        function Intensities = CalculateIntensitiesLVG(obj, LevelPopulation, TauCoefficients, ColumnDensities)
                         
             numLevels = numel(obj.m_einsteinCoefficients);
             numDensities = numel(LevelPopulation)/numLevels;
@@ -38,6 +38,15 @@ classdef IntensitiesCalculator < handle
             repeatedTransitionEnergies = repmat(obj.m_transitionEnergies,[numDensities 1]);
             repeatedDensities = repmat(ColumnDensities, [numLevels 1]);
             repeatedDensities = reshape(repeatedDensities, [numel(LevelPopulation) 1]);
+            
+            smallNumbersLogicalIndex = (-10^-5 < TauCoefficients) & (TauCoefficients < 10^-5);
+            
+            BetaCoefficients = zeros(size(TauCoefficients));
+            %use taylor expansion for small numbers. because matlab doesn't
+            %handle small numbers well
+            BetaCoefficients(smallNumbersLogicalIndex) = 1-0.5*TauCoefficients(smallNumbersLogicalIndex);
+            
+            BetaCoefficients(~smallNumbersLogicalIndex) = (1-exp(-TauCoefficients(~smallNumbersLogicalIndex)))./TauCoefficients(~smallNumbersLogicalIndex);            
             
             Intensities = (LevelPopulation.*repeatedEinsteinCoefficients.*repeatedTransitionEnergies.*BetaCoefficients.*repeatedDensities)/(4*Constants.pi);
 

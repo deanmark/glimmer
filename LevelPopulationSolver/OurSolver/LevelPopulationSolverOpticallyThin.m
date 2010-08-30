@@ -74,9 +74,10 @@ classdef LevelPopulationSolverOpticallyThin < handle
             for i = 1: numel(CollisionPartnerRates)
                 
                 collisionRateMatrix = CollisionPartnerRates(i).CollisionRateMatrix(Temperature, Weights(i)/totalWeights);
+                collisionRateMatrix = transpose(collisionRateMatrix);
+                diagMembers = sum(collisionRateMatrix,1);
                 
-                diagMembers = - collisionRateMatrix * ones (size(collisionRateMatrix,1),1);
-                CollisionRateMatrix = CollisionRateMatrix + diag(diagMembers) + collisionRateMatrix';
+                CollisionRateMatrix = CollisionRateMatrix - diag(diagMembers) + collisionRateMatrix;
                 
             end
             
@@ -92,17 +93,11 @@ classdef LevelPopulationSolverOpticallyThin < handle
             
             EinsteinMatrix = zeros(moleculerLevels,moleculerLevels);
             
-            for eq=1:moleculerLevels
-                %First add the Einstein coefficients
-                if eq ~= 1
-                    EinsteinMatrix(eq,eq) = - obj.m_moleculeData.EinsteinACoefficient(eq, eq-1);
-                end
-                
-                if eq ~= moleculerLevels
-                    EinsteinMatrix(eq,eq+1) = obj.m_moleculeData.EinsteinACoefficient(eq+1, eq);
-                end
-                
-            end
+            partialEinsteinMatrix = obj.m_moleculeData.EinsteinACoefficientMatrix();
+            partialEinsteinMatrix = transpose(partialEinsteinMatrix);
+            diagMembers = sum(partialEinsteinMatrix,1);
+            
+            EinsteinMatrix = EinsteinMatrix + partialEinsteinMatrix - diag(diagMembers);
             
         end
         

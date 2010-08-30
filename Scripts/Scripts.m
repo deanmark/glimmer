@@ -7,11 +7,13 @@ classdef Scripts
             %validate input
             p = inputParser();
             p.addRequired('PopulationRequest', @(x)isa(x,'LVGSolverPopulationRequest'));
-            p.addParamValue('AlgorithmParamsInitial', LVGSolverAlgorithmParameters.DefaultInitialRunParams(), @(x)isa(x,'LVGSolverAlgorithmParameters'));
-            p.addParamValue('AlgorithmParamsConfirming', LVGSolverAlgorithmParameters.DefaultConfirmationRunParams(), @(x)isa(x,'LVGSolverAlgorithmParameters'));
+            p.addParamValue('AlgorithmParamsInitialLowExcitation', LVGSolverAlgorithmParameters.DefaultInitialRunParamsLowExcitation(), @(x)isa(x,'LVGSolverAlgorithmParameters'));
+            p.addParamValue('AlgorithmParamsInitialHighExcitation', LVGSolverAlgorithmParameters.DefaultInitialRunParamsHighExcitation(), @(x)isa(x,'LVGSolverAlgorithmParameters'));            
+            p.addParamValue('AlgorithmParamsConfirming', LVGSolverAlgorithmParameters.DefaultConfirmationRunParamsHighExcitation(), @(x)isa(x,'LVGSolverAlgorithmParameters'));
             p.parse(PopulationRequest, varargin{:});
             
-            LVGSolver = LevelPopulationSolverLVGSlowAccurate(PopulationRequest.MoleculeData, PopulationRequest.BetaProvider, p.Results.AlgorithmParamsInitial);
+            LVGSolverLowExcitation = LevelPopulationSolverLVGSlowAccurate(PopulationRequest.MoleculeData, PopulationRequest.BetaProvider, p.Results.AlgorithmParamsInitialLowExcitation);
+            LVGSolverHighExcitation = LevelPopulationSolverLVGSlowAccurate(PopulationRequest.MoleculeData, PopulationRequest.BetaProvider, p.Results.AlgorithmParamsInitialHighExcitation);
             LVGSolverAccurate = LevelPopulationSolverLVGSlowAccurate(PopulationRequest.MoleculeData, PopulationRequest.BetaProvider, p.Results.AlgorithmParamsConfirming);
             
             populationRequestCopy = PopulationRequest.Copy();
@@ -31,6 +33,8 @@ classdef Scripts
             totalComputations = numel(PopulationRequest.VelocityDerivative)*numel(PopulationRequest.Temperature)*numel(PopulationRequest.CollisionPartnerDensities);
             i = 0;
             
+            OThinWBckgrnd = LevelPopulationSolverOpticallyThinWithBackground(PopulationRequest.MoleculeData,populationRequestCopy.BetaProvider.m_cosmicBackgroundProvider.BackgroundTemperature);
+            
             for dvDrIndex=1:numel(PopulationRequest.VelocityDerivative)
                 
                 for tempIndex=1:numel(PopulationRequest.Temperature)
@@ -42,14 +46,34 @@ classdef Scripts
                         populationRequestCopy.CollisionPartnerDensities = PopulationRequest.CollisionPartnerDensities(densIndex);
                         populationRequestCopy.MoleculeDensity = PopulationRequest.MoleculeDensity(densIndex);
                         populationRequestCopy.CloudColumnDensity = PopulationRequest.CloudColumnDensity(densIndex);
-                        populationRequestCopy.FirstPopulationGuess = [];                        
+                        populationRequestCopy.FirstPopulationGuess = PopulationRequest.FirstPopulationGuess;
                         populationRequestCopy.BetaProvider.IgnoreNegativeTau = true;
+                                                
+                        populationRequestCopy.FirstPopulationGuess = OThinWBckgrnd.SolveLevelsPopulation(populationRequestCopy);
                         
-                        NoNegativeTauResult = LVGSolver.SolveLevelsPopulation(populationRequestCopy);
-                        
-                        populationRequestCopy.BetaProvider.IgnoreNegativeTau = false;
-                        populationRequestCopy.FirstPopulationGuess = NoNegativeTauResult.Population;
-                        Result = LVGSolverAccurate.SolveLevelsPopulation(populationRequestCopy);
+                        if populationRequestCopy.CollisionPartnerDensities >= 10
+                            populationRequestCopy.FirstPopulationGuess = [];
+                            NoNegativeTauResult = LVGSolverHighExcitation.SolveLevelsPopulation(populationRequestCopy);
+                            
+                            if ~NoNegativeTauResult.Converged
+                                display('arrgh!');
+                            end
+                            
+                            populationRequestCopy.BetaProvider.IgnoreNegativeTau = false;
+                            populationRequestCopy.FirstPopulationGuess = NoNegativeTauResult.Population;
+                            Result = LVGSolverAccurate.SolveLevelsPopulation(populationRequestCopy);
+                        else
+                            NoNegativeTauResult = LVGSolverLowExcitation.SolveLevelsPopulation(populationRequestCopy);
+                            
+                            if NoNegativeTauResult.Converged
+                                populationRequestCopy.FirstPopulationGuess = NoNegativeTauResult.Population;
+                            else
+                                display('arrgh!');
+                            end
+                            
+                            populationRequestCopy.BetaProvider.IgnoreNegativeTau = false;
+                            Result = LVGSolverAccurate.SolveLevelsPopulation(populationRequestCopy);
+                        end
                         
                         if Result.Converged
                             
@@ -59,11 +83,8 @@ classdef Scripts
                             
                             if (PopulationRequest.CalculateIntensities)
                                 
-                                BetaProvider = LVGBetaProvider(PopulationRequest.MoleculeData, false, 1, 2.73);
-                                Result.FinalBetaCoefficients = BetaProvider.CalculateBetaCoefficients(Result.Population,populationRequestCopy.MoleculeDensity,populationRequestCopy.VelocityDerivative);
-                                
                                 FinalResult.Intensities(:,tempIndex,densIndex,dvDrIndex) = IntensitiesClc.CalculateIntensitiesLVG(Result.Population, ...
-                                    Result.FinalBetaCoefficients, populationRequestCopy.CloudColumnDensity);
+                                    Result.FinalTauCoefficients, populationRequestCopy.CloudColumnDensity);
                             end
                             
                         end
@@ -128,6 +149,53 @@ classdef Scripts
             
         end
         
+        function FinalResult = CalculateLTEPopulation (PopulationRequest)
+            
+            p = inputParser();
+            p.addRequired('PopulationRequest', @(x)isa(x,'LVGSolverPopulationRequest'));
+            p.parse(PopulationRequest);
+            
+            % DvDr - 1/s
+            LTESolver = LevelPopulationSolverLTE(PopulationRequest.MoleculeData);
+            converged = ones(1, numel(PopulationRequest.CollisionPartnerDensities));  
+            
+            populationRequestCopy = PopulationRequest.Copy();
+            
+            FinalResult = LVGSolverPopulationResult();  
+            FinalResult.Population = zeros(PopulationRequest.NumLevelsForSolution, numel(PopulationRequest.Temperature), ...
+                numel(PopulationRequest.CollisionPartnerDensities), numel(PopulationRequest.VelocityDerivative));
+            FinalResult.FinalBetaCoefficients = ones(size(FinalResult.Population));
+            
+            if (PopulationRequest.CalculateIntensities)
+                IntensitiesClc = IntensitiesCalculator(PopulationRequest.MoleculeData); 
+                FinalResult.Intensities = zeros(size(FinalResult.Population));
+            end
+            
+            for dvdrIndex=1:numel(PopulationRequest.VelocityDerivative)
+                
+                for tempIndex=1:numel(PopulationRequest.Temperature)
+                    
+                    populationRequestCopy.Temperature = PopulationRequest.Temperature(tempIndex);
+                    populationRequestCopy.VelocityDerivative = PopulationRequest.VelocityDerivative(dvdrIndex);
+                    
+                    Population = LTESolver.SolveLevelsPopulation(populationRequestCopy);
+                                                          
+                    Indices = zeros(size(FinalResult.Population));
+                    IndicesConstTemperature = repmat(logical(converged),PopulationRequest.NumLevelsForSolution,1);
+                    Indices(:,tempIndex,:,dvdrIndex) = IndicesConstTemperature;
+                    FinalResult.Population(logical(Indices)) = Population(IndicesConstTemperature);
+                    
+                    if (PopulationRequest.CalculateIntensities)
+                        FinalResult.Intensities(logical(Indices)) = IntensitiesClc.CalculateIntensitiesLVG(Population(IndicesConstTemperature), ...
+                            FinalResult.FinalBetaCoefficients(IndicesConstTemperature), PopulationRequest.CloudColumnDensity);
+                    end
+                    
+                end
+                
+            end
+            
+        end
+        
         function FinalResult = CalculateRadexLVGPopulation (PopulationRequest)
             % DvDr - 1/s
             %validate input
@@ -143,6 +211,9 @@ classdef Scripts
             FinalResult.FinalTauCoefficients = zeros(size(FinalResult.Population));
             FinalResult.Intensities = zeros(size(FinalResult.Population));
             
+            totalComputations = numel(PopulationRequest.VelocityDerivative)*numel(PopulationRequest.Temperature)*numel(PopulationRequest.CollisionPartnerDensities);
+            i = 0;
+            
             for dvDrIndex=1:numel(PopulationRequest.VelocityDerivative)                
                 for tempIndex=1:numel(PopulationRequest.Temperature)                    
                     for densIndex=1:numel(PopulationRequest.CollisionPartnerDensities)
@@ -156,15 +227,20 @@ classdef Scripts
                         
                         if Converged
                             
-                            FinalResult.Population(1:end-1,tempIndex,densIndex,dvDrIndex) = Result.PopulationLow;
-                            FinalResult.FinalTauCoefficients(2:end,tempIndex,densIndex,dvDrIndex) = Result.Tau;
+                            FinalResult.Population(1:numel(Result.Population),tempIndex,densIndex,dvDrIndex) = Result.Population;
+                            FinalResult.FinalTauCoefficients(2:end,tempIndex,densIndex,dvDrIndex) = Result.Tau(1:PopulationRequest.NumLevelsForSolution-1);
                             
-                            FinalResult.Intensities(2:end,tempIndex,densIndex,dvDrIndex) = Result.Flux_erg_cm2_s/4/Constants.pi;
+                            FinalResult.Intensities(2:end,tempIndex,densIndex,dvDrIndex) = Result.Flux_erg_cm2_s(1:PopulationRequest.NumLevelsForSolution-1)/4/Constants.pi;
                             
                         end
                         
                     end
-                    fprintf(1, 'Percent: %%%3d\n', floor(100*tempIndex/numel(PopulationRequest.Temperature)));
+                    
+                    if totalComputations > 1
+                        i=i+1;
+                        progress = i/totalComputations;
+                        fprintf(1, 'Progress: %%%3d\n', floor(100*progress));
+                    end
                 end                
             end
             
@@ -401,12 +477,12 @@ classdef Scripts
             
         end
      
-        function CompareWithRadex (RadexPopLow, OurPopulation, CollisionPartnerDensity, Temperature, dvdrKmParsecs, FileName)
+        function CompareWithRadex (RadexPop, OurPopulation, CollisionPartnerDensity, Temperature, dvdrKmParsecs, FileName)
         
-            maxSize = max([numel(RadexPopLow) numel(OurPopulation)]);
+            maxSize = max([numel(RadexPop) numel(OurPopulation)]);
             
-            if (numel(RadexPopLow) < maxSize)
-                RadexPopLow = cat(1, RadexPopLow, zeros(maxSize - numel(RadexPopLow),1));
+            if (numel(RadexPop) < maxSize)
+                RadexPop = cat(1, RadexPop, zeros(maxSize - numel(RadexPop),1));
             end
             
             if (numel(OurPopulation) < maxSize)
@@ -416,7 +492,7 @@ classdef Scripts
             xValues = 0:(maxSize-1);
             
             plot(xValues, OurPopulation, 'DisplayName', 'Our'); hold all;
-            h = plot(xValues, RadexPopLow, 'DisplayName', 'Radex Lower'); %hold all;
+            h = plot(xValues, RadexPop, 'DisplayName', 'Radex'); %hold all;
             
                              
             hold off;
@@ -427,7 +503,8 @@ classdef Scripts
             
             titleName = Scripts.buildSEDTitleName(CollisionPartnerDensity, Temperature, [], dvdrKmParsecs);
             title(titleName);
-            axis([0 maxSize 0 1]);
+            %axis([0 maxSize-1 0 1]);
+            %set(gca,'XTick',xValues)
             
             legend('toggle');
             
@@ -473,13 +550,12 @@ classdef Scripts
             pop2 = pop2(1:minLength);
             
             smallPop = maxPop*1e-3;
-            smallIndices = pop1 < smallPop | pop2 < smallPop;
+            smallIndices = pop1 < smallPop & pop2 < smallPop;
             
             pop1(smallIndices) = 0;
             pop2(smallIndices) = 0;
             
             Diff = (abs(pop1-pop2)./mean(maxPopArr(~smallIndices)));
-            
         end
         
     end

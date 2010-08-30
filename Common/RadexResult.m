@@ -19,8 +19,7 @@ classdef RadexResult < handle
         ExcitationTemperature; % T_EX (K)
         Tau; % TAU
         RadiationTemeperature; % T_R (K)
-        PopulationUp; % POP UP
-        PopulationLow; % POP LOW
+        Population;
         Flux_K_km_s; % FLUX (K*km/s)
         Flux_erg_cm2_s;% FLUX (erg/cm2/s)
         
@@ -64,16 +63,16 @@ classdef RadexResult < handle
                 Result.Geometry = strtrim(rowData(2));
                 
                 currentLine = fgetl(fid);
-                rowData = regexp(strtrim(currentLine),' *','split');
+                rowData = regexp(strtrim(currentLine),'\s*','split');
                 [pathstr, name, ext] = fileparts(char(rowData(6)));
                 Result.MoleculeDataFile = strcat(name,ext);
                 
                 currentLine = fgetl(fid);
-                rowData = regexp(strtrim(currentLine),' *','split');
+                rowData = regexp(strtrim(currentLine),'\s*','split');
                 Result.Temperature = str2double(rowData(4));
                 
                 currentLine = fgetl(fid);
-                rowData = regexp(strtrim(currentLine),' *','split');
+                rowData = regexp(strtrim(currentLine),'\s*','split');
                 i=1;
                 
                 while strcmp(rowData(2),'Density')
@@ -82,17 +81,17 @@ classdef RadexResult < handle
                     i=i+1;
                     
                     currentLine = fgetl(fid);
-                    rowData = regexp(strtrim(currentLine),' *','split');
+                    rowData = regexp(strtrim(currentLine),'\s*','split');
                 end
                 
                 Result.TBackground = str2double(rowData(4));
                 
                 currentLine = fgetl(fid);
-                rowData = regexp(strtrim(currentLine),' *','split');
+                rowData = regexp(strtrim(currentLine),'\s*','split');
                 Result.ColumnDensity = str2double(rowData(5));
 
                 currentLine = fgetl(fid);
-                rowData = regexp(strtrim(currentLine),' *','split');
+                rowData = regexp(strtrim(currentLine),'\s*','split');
                 Result.LineWidth = str2double(rowData(5));
                 
                 currentLine = FileIOHelper.JumpLinesInFile(fid,4);
@@ -100,22 +99,27 @@ classdef RadexResult < handle
                 
                 while currentLine ~= -1
                                     
-                    rowData = regexp(strtrim(currentLine),' *','split');
+                    rowData = regexp(strtrim(currentLine),'\s*','split');
                     
+                    upperLevel(i,1) = str2double(rowData{1}) + 1;
+                    lowerLevel(i,1) = str2double(rowData{3}) + 1;
                     Result.UpperStateEnergy(i,1) = str2double(rowData{4});
                     Result.Frquency(i,1) = str2double(rowData{5});
                     Result.WaveLength(i,1) = str2double(rowData{6});
                     Result.ExcitationTemperature(i,1) = str2double(rowData{7});
                     Result.Tau(i,1) = str2double(rowData{8});
                     Result.RadiationTemeperature(i,1) = str2double(rowData{9});
-                    Result.PopulationUp(i,1) = str2double(rowData{10});
-                    Result.PopulationLow(i,1) = str2double(rowData{11});
+                    populationUp(i,1) = str2double(rowData{10});
+                    populationLow(i,1) = str2double(rowData{11});
                     Result.Flux_K_km_s(i,1) = str2double(rowData{12});
                     Result.Flux_erg_cm2_s(i,1) = str2double(rowData{13});
                     
                     currentLine = fgetl(fid);                    
                     i = i+1;
                 end
+                
+                Result.Population(upperLevel) = populationUp;
+                Result.Population(lowerLevel) = populationLow;                
                 
             catch
                 fclose(fid);

@@ -13,6 +13,7 @@ classdef LevelPopulationSolverLVG < LevelPopulationSolverOpticallyThin
         m_collisionRateMatrix;
         m_betaCoefficients;
         m_collisionPartnerDensities;
+        m_lteSolver;
         
     end
     
@@ -23,6 +24,7 @@ classdef LevelPopulationSolverLVG < LevelPopulationSolverOpticallyThin
             LVG@LevelPopulationSolverOpticallyThin(MoleculeData);
             LVG.m_betaProvider = BetaProvider;
             LVG.m_algorithmParameters = LVGAlgorithmParameters;
+            LVG.m_lteSolver = LevelPopulationSolverLTE(MoleculeData);
             
         end
         
@@ -36,7 +38,7 @@ classdef LevelPopulationSolverLVG < LevelPopulationSolverOpticallyThin
             obj.m_betaCoefficients = ones(PopulationRequest.NumLevelsForSolution, numDensities);
             
             if (isempty(PopulationRequest.FirstPopulationGuess))
-                populationGuess = SolveLevelsPopulation@LevelPopulationSolverOpticallyThin(obj, PopulationRequest);
+                populationGuess = obj.m_lteSolver.SolveLevelsPopulation(PopulationRequest);
             else               
                 populationGuess = PopulationRequest.FirstPopulationGuess;
             end
@@ -135,7 +137,8 @@ classdef LevelPopulationSolverLVG < LevelPopulationSolverOpticallyThin
                 sgnfLvlsIndex = ones(numel(Pop1),1);
             end
             
-            diffRatio = abs(Pop1-Pop2)./Pop1;
+            maxPop = max(Pop1, Pop2);            
+            diffRatio = abs(Pop1-Pop2)./maxPop;
             diffRatio(~sgnfLvlsIndex) = 0;
             
             MeanDifferenceRatio = sum(diffRatio,1)./sum(sgnfLvlsIndex,1);

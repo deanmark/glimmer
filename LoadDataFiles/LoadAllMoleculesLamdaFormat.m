@@ -22,7 +22,7 @@ for i=1:numel(dataFiles)
             Molecules.Put(dataFiles(i).name,mol);
         catch ME
             errorLoading = 1;
-            display(ME);
+            display(ME.getReport);
         end
     else
         mol = Molecules.Get(dataFiles(i).name);

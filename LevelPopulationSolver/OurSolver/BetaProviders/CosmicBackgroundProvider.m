@@ -29,7 +29,8 @@ classdef CosmicBackgroundProvider < handle
             %range of 0 to 1. Sometimes the calculation goes wrong and this
             %does not happen. In these cases we set the beta multiplication
             %factor to 1. In the stable solution this should not occur.
-            ModifiedBeta(ModifiedBeta < 0 | ModifiedBeta > 1 | isnan(ModifiedBeta)) = 1;
+            ModifiedBeta(ModifiedBeta > 1 | isnan(ModifiedBeta) | isinf(ModifiedBeta)) = 1;
+            ModifiedBeta(ModifiedBeta < 0) = 1e-4;            
            
             ModifiedBeta = Beta.*ModifiedBeta;
             

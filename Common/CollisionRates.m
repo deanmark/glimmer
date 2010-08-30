@@ -130,11 +130,16 @@ classdef CollisionRates < handle
             
             Rates = zeros (lvls,lvls, numTemperatures);           
             
-            highLevels = CollRates(2:end,1);
-            lowLevels = CollRates(2:end,2);
+            highLevelsColumn = CollRates(2:end,1);
+            lowLevelsColumn = CollRates(2:end,2);
+            
+            goodValues = highLevelsColumn > lowLevelsColumn;
+            
+            highLevels = highLevelsColumn(goodValues);
+            lowLevels = lowLevelsColumn(goodValues);            
+            
             statisticalWeightsHigh = obj.Molecule.StatisticalWeight(highLevels);
             statisticalWeightsLow = obj.Molecule.StatisticalWeight(lowLevels);            
-            
             transitionEnergies = obj.Molecule.TransitionEnergy(highLevels,lowLevels);
             
             %temperature loop
@@ -144,13 +149,18 @@ classdef CollisionRates < handle
                 
                 QHighToLow = CollRates(2:end,i+2);  
                 %computes the reverse collision rate with the principle of detailed balance
-                QLowToHigh = (statisticalWeightsHigh./statisticalWeightsLow).*QHighToLow.*exp(-1*transitionEnergies/(Constants.k*obj.Temperatures(i)));
-                                
-                ind = sub2ind(size(RatesPerTemperature),highLevels,lowLevels);
-                RatesPerTemperature(ind) = QHighToLow;
+                QLowToHigh = (statisticalWeightsHigh./statisticalWeightsLow).*QHighToLow(goodValues).*exp(-1*transitionEnergies/(Constants.k*obj.Temperatures(i)));
                 
                 ind = sub2ind(size(RatesPerTemperature),lowLevels,highLevels);
                 RatesPerTemperature(ind) = QLowToHigh;
+                
+                ind = sub2ind(size(RatesPerTemperature),highLevels,lowLevels);
+                RatesPerTemperature(ind) = QHighToLow(goodValues);
+                
+                %directly input explicit reverse rates.
+                ind = sub2ind(size(RatesPerTemperature),highLevelsColumn(~goodValues),lowLevelsColumn(~goodValues));
+                RatesPerTemperature(ind) = QHighToLow(~goodValues);
+                                
                 Rates(:,:,i) = RatesPerTemperature;
                     
             end

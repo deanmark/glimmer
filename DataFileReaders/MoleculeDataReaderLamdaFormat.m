@@ -47,14 +47,21 @@ classdef MoleculeDataReaderLamdaFormat < MoleculeDataReader
                 currentLine = fgetl(fid);
                 energyLevels = str2double (strtrim(currentLine));
                 StatisticalWeights = zeros(energyLevels, 1);
+                energies = zeros(energyLevels, 1); %energy in cm^-1
+                PhotonFrequencies = zeros(energyLevels-1, 3); % frequency in Hz
                 
                 fgetl(fid);
                 
                 for i=1:energyLevels
                     currentLine = fgetl(fid);
                     rowData = regexp(strtrim(currentLine),'\s+','split');
-                    StatisticalWeights(i) = str2double(rowData(3));
+                    StatisticalWeights(i) = str2double(rowData{3});
+                    energies(i) = str2double(rowData{2});
                 end
+                
+                PhotonFrequencies(:,1) = 2:energyLevels; %upper levels
+                PhotonFrequencies(:,2) = 1:energyLevels-1; %lower levels
+                PhotonFrequencies(:,3) = (energies(2:end) - energies(1:end-1))*Constants.c; % take delta(energy) and convert cm^-1 to Hz
                 
                 currentLine = fgetl(fid);
                 
@@ -66,7 +73,6 @@ classdef MoleculeDataReaderLamdaFormat < MoleculeDataReader
                 currentLine = fgetl(fid);
                 radiativeTransitions = str2double (strtrim(currentLine));
                 
-                PhotonFrequencies = zeros(radiativeTransitions, 3);
                 EinsteinCoefficients = zeros(radiativeTransitions, 3);
                 
                 fgetl(fid);
@@ -76,19 +82,9 @@ classdef MoleculeDataReaderLamdaFormat < MoleculeDataReader
                     currentLine = fgetl(fid);
                     
                     rowData = regexp(strtrim(currentLine),'\s+','split');
-                    
-                    for j=1:size(rowData,2)-2
-                        
-                        if j==1 || j==2
-                            PhotonFrequencies(i,j) = str2double(rowData(j+1));
-                            EinsteinCoefficients(i,j) = str2double(rowData(j+1));
-                        elseif j==3
-                            EinsteinCoefficients(i,3) = str2double(rowData(j+1));
-                        elseif j==4
-                            PhotonFrequencies(i,3) = 10^9*str2double(rowData(j+1)); %frequency is in GHz, should be in Hz
-                        end
-                        
-                    end
+                    EinsteinCoefficients(i,1) = str2double(rowData{2});
+                    EinsteinCoefficients(i,2) = str2double(rowData{3});
+                    EinsteinCoefficients(i,3) = str2double(rowData{4});
                     
                 end
                 

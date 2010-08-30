@@ -1,7 +1,7 @@
-Temperature = 500;
+Temperature = 2000;
 
-Molecule = MoleculeData_12CO;
+Molecule = Molecules.Get('hco+@xpol.dat');
 
-CollisionRates = CollisionRates_12CO_H2ortho;
+CollisionRates = Molecule.GetCollisionPartner(CollisionPartnersCodes.H2);
 
 NCritical = Scripts.DrawCriticalDensities(Temperature, Molecule, CollisionRates);
