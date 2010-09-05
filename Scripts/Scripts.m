@@ -2,277 +2,72 @@ classdef Scripts
     
     methods (Access=public, Static=true)
         
-        function FinalResult = CalculateLVGPopulation (PopulationRequest, varargin)
-            % DvDr - 1/s
-            %validate input
-            p = inputParser();
-            p.addRequired('PopulationRequest', @(x)isa(x,'LVGSolverPopulationRequest'));
-            p.addParamValue('AlgorithmParamsInitialLowExcitation', LVGSolverAlgorithmParameters.DefaultInitialRunParamsLowExcitation(), @(x)isa(x,'LVGSolverAlgorithmParameters'));
-            p.addParamValue('AlgorithmParamsInitialHighExcitation', LVGSolverAlgorithmParameters.DefaultInitialRunParamsHighExcitation(), @(x)isa(x,'LVGSolverAlgorithmParameters'));            
-            p.addParamValue('AlgorithmParamsConfirming', LVGSolverAlgorithmParameters.DefaultConfirmationRunParamsHighExcitation(), @(x)isa(x,'LVGSolverAlgorithmParameters'));
-            p.parse(PopulationRequest, varargin{:});
-            
-            LVGSolverLowExcitation = LevelPopulationSolverLVGSlowAccurate(PopulationRequest.MoleculeData, PopulationRequest.BetaProvider, p.Results.AlgorithmParamsInitialLowExcitation);
-            LVGSolverHighExcitation = LevelPopulationSolverLVGSlowAccurate(PopulationRequest.MoleculeData, PopulationRequest.BetaProvider, p.Results.AlgorithmParamsInitialHighExcitation);
-            LVGSolverAccurate = LevelPopulationSolverLVGSlowAccurate(PopulationRequest.MoleculeData, PopulationRequest.BetaProvider, p.Results.AlgorithmParamsConfirming);
-            
-            populationRequestCopy = PopulationRequest.Copy();
-            Scripts.replaceCollisionPartnerCodesToRates(populationRequestCopy);
-            
-            FinalResult = LVGSolverPopulationResult();            
-            FinalResult.Population = zeros(PopulationRequest.NumLevelsForSolution, numel(PopulationRequest.Temperature), ...
-                numel(PopulationRequest.CollisionPartnerDensities), numel(PopulationRequest.VelocityDerivative));
-            FinalResult.FinalBetaCoefficients = zeros(size(FinalResult.Population));
-            FinalResult.FinalTauCoefficients = zeros(size(FinalResult.Population));
-            
-            if (PopulationRequest.CalculateIntensities)
-                IntensitiesClc = IntensitiesCalculator(PopulationRequest.MoleculeData); 
-                FinalResult.Intensities = zeros(size(FinalResult.Population));
-            end
-            
-            totalComputations = numel(PopulationRequest.VelocityDerivative)*numel(PopulationRequest.Temperature)*numel(PopulationRequest.CollisionPartnerDensities);
-            i = 0;
-            
-            OThinWBckgrnd = LevelPopulationSolverOpticallyThinWithBackground(PopulationRequest.MoleculeData,populationRequestCopy.BetaProvider.m_cosmicBackgroundProvider.BackgroundTemperature);
-            
-            for dvDrIndex=1:numel(PopulationRequest.VelocityDerivative)
-                
-                for tempIndex=1:numel(PopulationRequest.Temperature)
-                    
-                    for densIndex=1:numel(PopulationRequest.CollisionPartnerDensities)
-                        
-                        populationRequestCopy.Temperature = PopulationRequest.Temperature(tempIndex);
-                        populationRequestCopy.VelocityDerivative = PopulationRequest.VelocityDerivative(dvDrIndex);
-                        populationRequestCopy.CollisionPartnerDensities = PopulationRequest.CollisionPartnerDensities(densIndex);
-                        populationRequestCopy.MoleculeDensity = PopulationRequest.MoleculeDensity(densIndex);
-                        populationRequestCopy.CloudColumnDensity = PopulationRequest.CloudColumnDensity(densIndex);
-                        populationRequestCopy.FirstPopulationGuess = PopulationRequest.FirstPopulationGuess;
-                        populationRequestCopy.BetaProvider.IgnoreNegativeTau = true;
-                                                
-                        populationRequestCopy.FirstPopulationGuess = OThinWBckgrnd.SolveLevelsPopulation(populationRequestCopy);
-                        
-                        if populationRequestCopy.CollisionPartnerDensities >= 10
-                            populationRequestCopy.FirstPopulationGuess = [];
-                            NoNegativeTauResult = LVGSolverHighExcitation.SolveLevelsPopulation(populationRequestCopy);
-                            
-                            if ~NoNegativeTauResult.Converged
-                                display('arrgh!');
-                            end
-                            
-                            populationRequestCopy.BetaProvider.IgnoreNegativeTau = false;
-                            populationRequestCopy.FirstPopulationGuess = NoNegativeTauResult.Population;
-                            Result = LVGSolverAccurate.SolveLevelsPopulation(populationRequestCopy);
-                        else
-                            NoNegativeTauResult = LVGSolverLowExcitation.SolveLevelsPopulation(populationRequestCopy);
-                            
-                            if NoNegativeTauResult.Converged
-                                populationRequestCopy.FirstPopulationGuess = NoNegativeTauResult.Population;
-                            else
-                                display('arrgh!');
-                            end
-                            
-                            populationRequestCopy.BetaProvider.IgnoreNegativeTau = false;
-                            Result = LVGSolverAccurate.SolveLevelsPopulation(populationRequestCopy);
-                        end
-                        
-                        if Result.Converged
-                            
-                            FinalResult.Population(:,tempIndex,densIndex,dvDrIndex) = Result.Population;
-                            FinalResult.FinalBetaCoefficients(:,tempIndex,densIndex,dvDrIndex) = Result.FinalBetaCoefficients;
-                            FinalResult.FinalTauCoefficients(:,tempIndex,densIndex,dvDrIndex) = Result.FinalTauCoefficients;
-                            
-                            if (PopulationRequest.CalculateIntensities)
-                                
-                                FinalResult.Intensities(:,tempIndex,densIndex,dvDrIndex) = IntensitiesClc.CalculateIntensitiesLVG(Result.Population, ...
-                                    Result.FinalTauCoefficients, populationRequestCopy.CloudColumnDensity);
-                            end
-                            
-                        end
-                        
-                        if totalComputations > 1     
-                            i=i+1;
-                            progress = i/totalComputations;
-                            fprintf(1, 'Progress: %%%3d\n', floor(100*progress));
-                        end
-                        
-                    end
-                end
-                
-            end
-            
-        end
-         
-        function FinalResult = CalculateOpticallyThinPopulation (PopulationRequest)
-            
-            p = inputParser();
-            p.addRequired('PopulationRequest', @(x)isa(x,'LVGSolverPopulationRequest'));
-            p.parse(PopulationRequest);
-            
-            % DvDr - 1/s
-            OThin = LevelPopulationSolverOpticallyThin(PopulationRequest.MoleculeData);
-            converged = ones(1, numel(PopulationRequest.CollisionPartnerDensities));  
-            
-            populationRequestCopy = PopulationRequest.Copy();
-            
-            FinalResult = LVGSolverPopulationResult();  
-            FinalResult.Population = zeros(PopulationRequest.NumLevelsForSolution, numel(PopulationRequest.Temperature), ...
-                numel(PopulationRequest.CollisionPartnerDensities), numel(PopulationRequest.VelocityDerivative));
-            FinalResult.FinalBetaCoefficients = ones(size(FinalResult.Population));
-            
-            if (PopulationRequest.CalculateIntensities)
-                IntensitiesClc = IntensitiesCalculator(PopulationRequest.MoleculeData); 
-                FinalResult.Intensities = zeros(size(FinalResult.Population));
-            end
-            
-            for dvdrIndex=1:numel(PopulationRequest.VelocityDerivative)
-                
-                for tempIndex=1:numel(PopulationRequest.Temperature)
-                    
-                    populationRequestCopy.Temperature = PopulationRequest.Temperature(tempIndex);
-                    populationRequestCopy.VelocityDerivative = PopulationRequest.VelocityDerivative(dvdrIndex);
-                    
-                    Population = OThin.SolveLevelsPopulation(populationRequestCopy);
-                                                          
-                    Indices = zeros(size(FinalResult.Population));
-                    IndicesConstTemperature = repmat(logical(converged),PopulationRequest.NumLevelsForSolution,1);
-                    Indices(:,tempIndex,:,dvdrIndex) = IndicesConstTemperature;
-                    FinalResult.Population(logical(Indices)) = Population(IndicesConstTemperature);
-                    
-                    if (PopulationRequest.CalculateIntensities)
-                        FinalResult.Intensities(logical(Indices)) = IntensitiesClc.CalculateIntensitiesLVG(Population(IndicesConstTemperature), ...
-                            FinalResult.FinalBetaCoefficients(IndicesConstTemperature), PopulationRequest.CloudColumnDensity);
-                    end
-                    
-                end
-                
-            end
-            
-        end
-        
-        function FinalResult = CalculateLTEPopulation (PopulationRequest)
-            
-            p = inputParser();
-            p.addRequired('PopulationRequest', @(x)isa(x,'LVGSolverPopulationRequest'));
-            p.parse(PopulationRequest);
-            
-            % DvDr - 1/s
-            LTESolver = LevelPopulationSolverLTE(PopulationRequest.MoleculeData);
-            converged = ones(1, numel(PopulationRequest.CollisionPartnerDensities));  
-            
-            populationRequestCopy = PopulationRequest.Copy();
-            
-            FinalResult = LVGSolverPopulationResult();  
-            FinalResult.Population = zeros(PopulationRequest.NumLevelsForSolution, numel(PopulationRequest.Temperature), ...
-                numel(PopulationRequest.CollisionPartnerDensities), numel(PopulationRequest.VelocityDerivative));
-            FinalResult.FinalBetaCoefficients = ones(size(FinalResult.Population));
-            
-            if (PopulationRequest.CalculateIntensities)
-                IntensitiesClc = IntensitiesCalculator(PopulationRequest.MoleculeData); 
-                FinalResult.Intensities = zeros(size(FinalResult.Population));
-            end
-            
-            for dvdrIndex=1:numel(PopulationRequest.VelocityDerivative)
-                
-                for tempIndex=1:numel(PopulationRequest.Temperature)
-                    
-                    populationRequestCopy.Temperature = PopulationRequest.Temperature(tempIndex);
-                    populationRequestCopy.VelocityDerivative = PopulationRequest.VelocityDerivative(dvdrIndex);
-                    
-                    Population = LTESolver.SolveLevelsPopulation(populationRequestCopy);
-                                                          
-                    Indices = zeros(size(FinalResult.Population));
-                    IndicesConstTemperature = repmat(logical(converged),PopulationRequest.NumLevelsForSolution,1);
-                    Indices(:,tempIndex,:,dvdrIndex) = IndicesConstTemperature;
-                    FinalResult.Population(logical(Indices)) = Population(IndicesConstTemperature);
-                    
-                    if (PopulationRequest.CalculateIntensities)
-                        FinalResult.Intensities(logical(Indices)) = IntensitiesClc.CalculateIntensitiesLVG(Population(IndicesConstTemperature), ...
-                            FinalResult.FinalBetaCoefficients(IndicesConstTemperature), PopulationRequest.CloudColumnDensity);
-                    end
-                    
-                end
-                
-            end
-            
-        end
-        
-        function FinalResult = CalculateRadexLVGPopulation (PopulationRequest)
-            % DvDr - 1/s
-            %validate input
-            p = inputParser();
-            p.addRequired('PopulationRequest', @(x)isa(x,'LVGSolverPopulationRequest'));
-            p.parse(PopulationRequest);
-            
-            populationRequestCopy = PopulationRequest.Copy();
-            
-            FinalResult = LVGSolverPopulationResult();            
-            FinalResult.Population = zeros(PopulationRequest.NumLevelsForSolution, numel(PopulationRequest.Temperature), ...
-                numel(PopulationRequest.CollisionPartnerDensities), numel(PopulationRequest.VelocityDerivative));
-            FinalResult.FinalTauCoefficients = zeros(size(FinalResult.Population));
-            FinalResult.Intensities = zeros(size(FinalResult.Population));
-            
-            totalComputations = numel(PopulationRequest.VelocityDerivative)*numel(PopulationRequest.Temperature)*numel(PopulationRequest.CollisionPartnerDensities);
-            i = 0;
-            
-            for dvDrIndex=1:numel(PopulationRequest.VelocityDerivative)                
-                for tempIndex=1:numel(PopulationRequest.Temperature)                    
-                    for densIndex=1:numel(PopulationRequest.CollisionPartnerDensities)
-                        
-                        populationRequestCopy.Temperature = PopulationRequest.Temperature(tempIndex);
-                        populationRequestCopy.VelocityDerivative = PopulationRequest.VelocityDerivative(dvDrIndex);
-                        populationRequestCopy.CollisionPartnerDensities = PopulationRequest.CollisionPartnerDensities(densIndex);
-                        populationRequestCopy.MoleculeDensity = PopulationRequest.MoleculeDensity(densIndex);
-                        
-                        [ Result, Converged, RuntimeMessage ] = RadexSolver.CalculateLVGPopulation(populationRequestCopy);
-                        
-                        if Converged
-                            
-                            FinalResult.Population(1:numel(Result.Population),tempIndex,densIndex,dvDrIndex) = Result.Population;
-                            FinalResult.FinalTauCoefficients(2:end,tempIndex,densIndex,dvDrIndex) = Result.Tau(1:PopulationRequest.NumLevelsForSolution-1);
-                            
-                            FinalResult.Intensities(2:end,tempIndex,densIndex,dvDrIndex) = Result.Flux_erg_cm2_s(1:PopulationRequest.NumLevelsForSolution-1)/4/Constants.pi;
-                            
-                        end
-                        
-                    end
-                    
-                    if totalComputations > 1
-                        i=i+1;
-                        progress = i/totalComputations;
-                        fprintf(1, 'Progress: %%%3d\n', floor(100*progress));
-                    end
-                end                
-            end
-            
-        end
-        
-        function DrawContours1Molecule(Temperatures, Densities, dvdrKmParsecs, LevelPairs, ContourLevels, Intensities, MoleculeData)
+        function DrawContours1Molecule(PopulationResult, LevelPairs, ContourLevels)
+            %Temperatures, Densities, dvdrKmParsecs, LevelPairs, ContourLevels, Intensities, MoleculeData)
+            originalRequest = PopulationResult.OriginalRequest;
+            MoleculeData = WorkspaceHelper.GetMoleculeDataFromWorkspace(originalRequest.MoleculeFileName);            
             
             %only one of the three:dvdrKmParsecs, Densities, Temperatures,
             %should contain one element
-            if (Scripts.onlyOneIsSingle(dvdrKmParsecs, Densities, Temperatures))
+            if (Scripts.onlyOneIsSingle(originalRequest.VelocityDerivative, originalRequest.CollisionPartnerDensities, originalRequest.Temperature))
                 ME = MException('DrawContours:InputArgumentError','Error in input. One of the following should be constant: dvdrKmParsecs, Densities, Temperatures');
                 throw(ME);
             end
             
-            [x,y,xName,yName,titleName] = Scripts.contourParameters (Temperatures, Densities, dvdrKmParsecs);
+            [x,y,xName,yName,titleName] = Scripts.contourParameters (originalRequest.Temperature, originalRequest.CollisionPartnerDensities, originalRequest.VelocityDerivative/Constants.dVdRConversionFactor);
             
-            Ratios = zeros(size(Intensities,2),size(Intensities,3),size(Intensities,4),size(LevelPairs,1));
+            Ratios = zeros(size(PopulationResult.Intensities,2),size(PopulationResult.Intensities,3),size(PopulationResult.Intensities,4),size(LevelPairs,1));
             RatiosTitles = cell(1,size(LevelPairs,1));
             
             for pairsIndex=1:size(LevelPairs,1)
-                Ratios(:,:,:,pairsIndex) = squeeze(Intensities(LevelPairs(pairsIndex,1),:,:,:)./Intensities(LevelPairs(pairsIndex,2),:,:,:));
+                Ratios(:,:,:,pairsIndex) = squeeze(PopulationResult.Intensities(LevelPairs(pairsIndex,1),:,:,:)./PopulationResult.Intensities(LevelPairs(pairsIndex,2),:,:,:));
                 RatiosTitles{pairsIndex} = sprintf(['Ratio: ',MoleculeData.MoleculeName,' I%d/',MoleculeData.MoleculeName, ' I%d'], [LevelPairs(pairsIndex,1),LevelPairs(pairsIndex,2)]);
             end
             
             figure;
             
             for i=1:size(Ratios,4)
-                [C,h] = contour3 (x, y, squeeze(Ratios(:,:,:,i)), ContourLevels{i}, Scripts.lineStyleChooser(i)); hold all;
+                z = squeeze(Ratios(:,:,:,i));
+                [C,h] = contour3 (x, y, z, ContourLevels{i}, Scripts.lineStyleChooser(i)); hold all;
                 hGroup = hggroup;
                 set(h,'Parent',hGroup);
                 set(get(get(hGroup,'Annotation'),'LegendInformation'),'IconDisplayStyle','on'); 
                 set(hGroup,'DisplayName', RatiosTitles{i});
+                %if (numel(ContourLevels{i})>1); clabel(C,h,'Rotation',0); end;
+            end
+            
+            hold off;figure(gcf);
+            
+            xlabel(xName);
+            ylabel(yName);
+            
+            title(titleName);
+            legend('toggle');
+           
+        end
+        
+        function DrawMax1Molecule(PopulationResult, ContourLevels)
+            %Temperatures, Densities, dvdrKmParsecs, LevelPairs, ContourLevels, Intensities, MoleculeData)
+            originalRequest = PopulationResult.OriginalRequest;
+            
+            %only one of the three:dvdrKmParsecs, Densities, Temperatures,
+            %should contain one element
+            if (Scripts.onlyOneIsSingle(originalRequest.VelocityDerivative, originalRequest.CollisionPartnerDensities, originalRequest.Temperature))
+                ME = MException('DrawContours:InputArgumentError','Error in input. One of the following should be constant: dvdrKmParsecs, Densities, Temperatures');
+                throw(ME);
+            end
+            
+            [x,y,xName,yName,titleName] = Scripts.contourParameters (originalRequest.Temperature, originalRequest.CollisionPartnerDensities, originalRequest.VelocityDerivative);
+            
+            [values,MaxIndices] =max(PopulationResult.Intensities);
+            
+            figure;
+            
+            for i=1:size(MaxIndices,4)
+                [C,h] = contour3 (x, y, squeeze(MaxIndices(:,:,:,i)), ContourLevels{i}, Scripts.lineStyleChooser(i)); hold all;
+                hGroup = hggroup;
+                set(h,'Parent',hGroup);
+                set(get(get(hGroup,'Annotation'),'LegendInformation'),'IconDisplayStyle','on'); 
                 if (numel(ContourLevels{i})>1); clabel(C,h,'Rotation',0); end;
             end
             
@@ -295,7 +90,7 @@ classdef Scripts
                 throw(ME);
             end
             
-            [x,y,xName,yName,titleName] = Scripts.contourParameters (Temperatures, Densities, dvdrKmParsecs);
+            [x,y,xName,yName,titleName] = Scripts.contourParameters (Temperatures, Densities, dvdrKmParsecs/Constants.dVdRConversionFactor);
             
             Ratios = zeros(size(Intensities1,2),size(Intensities1,3),size(Intensities1,4),size(LevelPairs,1));
             RatiosTitles = cell(1,size(LevelPairs,1));
@@ -501,7 +296,50 @@ classdef Scripts
             xlabel('J');
             ylabel('x - Fractional population');
             
-            titleName = Scripts.buildSEDTitleName(CollisionPartnerDensity, Temperature, [], dvdrKmParsecs);
+            titleName = Scripts.buildSEDTitleName(CollisionPartnerDensity, Temperature, [], dvdrKmParsecs/Constants.dVdRConversionFactor);
+            title(titleName);
+            axis([0 maxSize-1 0 1]);
+            
+            ticks = get(gca,'XTick');
+            if any(~(floor(ticks)==ticks))
+                set(gca,'XTick',xValues)
+            end
+            
+            legend('toggle');
+            
+            if nargin > 5 && ~isempty(FileName)
+               saveas (h,FileName);
+            end
+        end
+
+        function CompareWithPACS (Pacs, OurPopulation, CollisionPartnerDensity, Temperature, dvdrKmParsecs, FileName)
+        
+            maxSize = max([numel(Pacs) numel(OurPopulation)]);
+            
+            if (numel(Pacs) < maxSize)
+                Pacs = cat(1, Pacs, zeros(maxSize - numel(Pacs),1));
+            end
+            
+            if (numel(OurPopulation) < maxSize)
+                OurPopulation = cat(1, OurPopulation, zeros(maxSize - numel(OurPopulation)));
+            end                
+                  
+            xValues = 0:(maxSize-1);
+            
+            plot(xValues, OurPopulation, '--', 'DisplayName', 'LVG Model - '); hold all;
+            h = plot(xValues, Pacs, 'xk', ...
+                'LineWidth',2,...
+                'MarkerSize',10,...
+                'DisplayName', 'PACS NGC1068'); %hold all;
+                             
+            hold off;
+            figure(gcf);
+            
+            xlabel('J_U_p_p_e_r');
+            %ylabel('x - Fractional population');
+            ylabel('Intensity [W m^-^2]');
+            
+            titleName = Scripts.buildSEDTitleName(CollisionPartnerDensity, Temperature, [], dvdrKmParsecs/Constants.dVdRConversionFactor);
             title(titleName);
             %axis([0 maxSize-1 0 1]);
             %set(gca,'XTick',xValues)
@@ -512,6 +350,7 @@ classdef Scripts
                saveas (h,FileName);
             end
         end
+        
         
         function DrawPopulation (Population, Densities, Temperatures)
             
@@ -727,22 +566,7 @@ classdef Scripts
             DisplayName = FileIOHelper.ConcatWithSeperator({densityDisplay tempDisplay colDensityDisplay}, ',');
             
         end
-        
-        function replaceCollisionPartnerCodesToRates (PopulationRequest)
-            
-            collisionPartnerCodes =  PopulationRequest.CollisionPartnerRates;
-            collisionPartnerRates = CollisionRates.empty(0,numel(collisionPartnerCodes));
-            
-            for i=1:numel(collisionPartnerCodes)
-               
-                collisionPartnerRates(i) = PopulationRequest.MoleculeData.GetCollisionPartner(collisionPartnerCodes(i));
-               
-            end
-            
-            PopulationRequest.CollisionPartnerRates = collisionPartnerRates;
-            
-        end
-        
+                
     end
     
 end

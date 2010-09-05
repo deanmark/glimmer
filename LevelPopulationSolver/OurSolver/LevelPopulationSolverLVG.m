@@ -13,7 +13,7 @@ classdef LevelPopulationSolverLVG < LevelPopulationSolverOpticallyThin
         m_collisionRateMatrix;
         m_betaCoefficients;
         m_collisionPartnerDensities;
-        m_lteSolver;
+        m_initialSolver;
         
     end
     
@@ -24,13 +24,16 @@ classdef LevelPopulationSolverLVG < LevelPopulationSolverOpticallyThin
             LVG@LevelPopulationSolverOpticallyThin(MoleculeData);
             LVG.m_betaProvider = BetaProvider;
             LVG.m_algorithmParameters = LVGAlgorithmParameters;
-            LVG.m_lteSolver = LevelPopulationSolverLTE(MoleculeData);
             
+            if BetaProvider.IncludeBackgroundRadiation
+                LVG.m_initialSolver = LevelPopulationSolverOpticallyThinWithBackground(MoleculeData,BetaProvider.BackgroundTemperature);
+            else
+                LVG.m_initialSolver = LevelPopulationSolverOpticallyThin(MoleculeData);
+            end
         end
         
         function Result = SolveLevelsPopulation(obj, PopulationRequest)
             
-            Result = LVGSolverPopulationResult();
             numDensities = numel(PopulationRequest.CollisionPartnerDensities);
             
             obj.m_collisionRateMatrix = 0;
@@ -38,13 +41,14 @@ classdef LevelPopulationSolverLVG < LevelPopulationSolverOpticallyThin
             obj.m_betaCoefficients = ones(PopulationRequest.NumLevelsForSolution, numDensities);
             
             if (isempty(PopulationRequest.FirstPopulationGuess))
-                populationGuess = obj.m_lteSolver.SolveLevelsPopulation(PopulationRequest);
+                populationGuess = obj.m_initialSolver.SolveLevelsPopulation(PopulationRequest);
             else               
                 populationGuess = PopulationRequest.FirstPopulationGuess;
             end
             
             i = 0;
-            
+
+            Result = LVGSolverPopulationResult();
             Result.MaxDiffPercentHistory = zeros (numDensities, obj.m_algorithmParameters.MaxIterations);
             Result.PopulationHistory = zeros (PopulationRequest.NumLevelsForSolution, numDensities, obj.m_algorithmParameters.MaxIterations);
             Result.TauHistory = zeros (PopulationRequest.NumLevelsForSolution, numDensities, obj.m_algorithmParameters.MaxIterations);

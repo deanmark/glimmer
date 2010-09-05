@@ -2,11 +2,7 @@ classdef RadexSolver < handle
     
     properties (Constant)
         
-        LVG = 1;
-        UniformSphere = 2;
-        PlaneParallelSlab = 3;
-        
-        RadexLVGFileName = 'radexLVG.exe';
+        RadexExpandingSphereFileName = 'radexExpandingSphere.exe';
         RadexUniformSphereFileName = 'radexUniformSphere.exe';
         RadexPlaneParallelSlabFileName = 'radexPlaneParallelSlab.exe';
         InputFileName = 'radex.inp';
@@ -22,15 +18,13 @@ classdef RadexSolver < handle
             RadexDirectory = RadexSolver.getRadexDirectory();
             userDir = cd;
             cd(RadexDirectory);
-            
-            backgroundTemperature = RadexSolver.computeBackgroundTemperature(PopulationRequest.BetaProvider);
-            betaType = RadexSolver.convertBetaClassToBetaType(PopulationRequest.BetaProvider);
-            radexFileName = RadexSolver.convertBetaTypeToFileName(betaType);
+
+            radexFileName = RadexSolver.convertBetaTypeToFileName(PopulationRequest.BetaTypeCode);
             [inputDensity, inputDvDr] = RadexSolver.computeDensityAndDvDrParams(PopulationRequest);
             collisionPartnerDensities = PopulationRequest.CollisionPartnerDensities*PopulationRequest.Weights/(sum(PopulationRequest.Weights));
             
-            RadexSolver.buildRadexInputFile(RadexSolver.InputFileName, PopulationRequest.MoleculeData.MoleculeFileName, RadexSolver.OutputFileName, 0, 0, PopulationRequest.Temperature, ...
-                PopulationRequest.CollisionPartnerRates, collisionPartnerDensities, backgroundTemperature, inputDensity, inputDvDr);
+            RadexSolver.buildRadexInputFile(RadexSolver.InputFileName, PopulationRequest.MoleculeFileName, RadexSolver.OutputFileName, 0, 0, PopulationRequest.Temperature, ...
+                PopulationRequest.CollisionPartners, collisionPartnerDensities, PopulationRequest.BackgroundTemperature, inputDensity, inputDvDr);
             
             RuntimeMessage = evalc(sprintf('!%s < %s',radexFileName, RadexSolver.InputFileName));
             
@@ -86,7 +80,7 @@ classdef RadexSolver < handle
                 fprintf(fid,'%u\n',numel(CollisionParters));
                 
                 for i=1:numel(CollisionParters)
-                    fprintf(fid,'%s\n',CollisionPartnersCodes.ToStringRadexFormat(CollisionParters(i)));
+                    fprintf(fid,'%s\n',CollisionPartnersCodes.ToStringRadexFormat(CollisionParters(i).CollisionPartnerCode));
                     fprintf(fid,'%g\n',CollisionPartnerDensities(i));
                 end
                 
@@ -107,30 +101,15 @@ classdef RadexSolver < handle
         function FileName = convertBetaTypeToFileName (BetaType)
             
             switch BetaType
-                case RadexSolver.LVG
+                case BetaTypeCodes.ExpandingSphere
                     FileName = RadexSolver.RadexLVGFileName;
-                case RadexSolver.UniformSphere
+                case BetaTypeCodes.UniformSphere
                     FileName = RadexSolver.RadexUniformSphereFileName;
-                case RadexSolver.PlaneParallelSlab
+                case BetaTypeCodes.HomogeneousSlab
                     FileName = RadexSolver.RadexPlaneParallelSlabFileName;
                 otherwise
                     ME = MException('VerifyInput:BetaTypeUnkown','Error in input. BetaType is unknown. Input: [%g]', BetaType);
                     throw(ME);
-            end
-            
-        end
-        
-        function BetaType = convertBetaClassToBetaType(BetaProvider)
-           
-            if isa(BetaProvider,'UniformSphereBetaProvider')
-                BetaType = RadexSolver.UniformSphere;
-            elseif isa(BetaProvider,'HomogeneousSlabBetaProvider')
-                BetaType = RadexSolver.PlaneParallelSlab;
-            elseif isa(BetaProvider,'LVGBetaProvider')
-                BetaType = RadexSolver.LVG;
-            else
-                ME = MException('VerifyInput:BetaTypeUnkown','Error in input. BetaProvider is not of a supported type. Input: [%g]', class(BetaProvider));
-                throw(ME);
             end
             
         end
@@ -165,16 +144,6 @@ classdef RadexSolver < handle
             else
                 Converged = 1;
             end
-        end
-        
-        function BackgroundTemperature = computeBackgroundTemperature(BetaProvider)
-           
-            BackgroundTemperature = 0;
-            
-            if ~isempty(BetaProvider.m_cosmicBackgroundProvider)
-                BackgroundTemperature = BetaProvider.m_cosmicBackgroundProvider.BackgroundTemperature;
-            end
-            
         end
         
         function RadexDir = getRadexDirectory()

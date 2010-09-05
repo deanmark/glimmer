@@ -22,7 +22,7 @@ classdef LevelPopulationSolverOpticallyThin < handle
         %solution is requested
         function Population = SolveLevelsPopulation(obj, PopulationRequest)
             
-            matrix = obj.createEquationMatrix(PopulationRequest.CollisionPartnerRates, PopulationRequest.Weights, PopulationRequest.Temperature, ...
+            matrix = obj.createEquationMatrix(PopulationRequest.CollisionPartners, PopulationRequest.Weights, PopulationRequest.Temperature, ...
                 PopulationRequest.CollisionPartnerDensities, PopulationRequest.NumLevelsForSolution);            
             
             Population = zeros(PopulationRequest.NumLevelsForSolution,numel(PopulationRequest.CollisionPartnerDensities));

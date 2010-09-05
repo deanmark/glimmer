@@ -57,7 +57,7 @@ classdef LVGSolverAlgorithmParameters < handle
             
             Result = LVGSolverAlgorithmParameters();
             Result.MinIterations = 4;
-            Result.MaxIterations = 5000;
+            Result.MaxIterations = 3000;
             Result.ChangePercent = 1e-4;
             Result.ConvergenceThreshold = 1e-6;
             Result.SignificantPopulationThreshold = 0.001;

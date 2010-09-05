@@ -1,17 +1,19 @@
+function generateComparisonResport(Temperatures, CollisionPartnerDensities, DiffGrid)
+
 p = mfilename('fullpath'); %returns path of current script.
 ScriptsDirectory = fileparts(p);
 radexComparePath = fullfile(ScriptsDirectory, '..', 'Results', 'RadexCompareOutput');
 
-data = cell(size(Results));
+data = cell(size(DiffGrid));
 
-for i=1:size(Results,1)
-    for j=1:size(Results,2)
-       data{i,j} = sprintf('<a href="./pics/Temperature%g_%g.jpg">%2.2f</a>', Temperatures(i), j, Results(i,j));
-    end    
+for i=1:size(DiffGrid,1)
+    for j=1:size(DiffGrid,2)
+        data{i,j} = sprintf('<a href="./pics/Temperature%g_%g.jpg">%2.2f</a>', Temperatures(i), j, DiffGrid(i,j));
+    end
 end
 
 % colheads = cell(size(dvdrKmParsecArray));
-% 
+%
 % for i=1:numel(dvdrKmParsecArray)
 %     colheads{i} = sprintf('%4.3g [km s-1 pc-1]',dvdrKmParsecArray(i));
 % end
@@ -33,3 +35,5 @@ rowheads = transpose(rowheads);
 table_cell = [[cell(1);rowheads] [colheads; num2cell(data)]];
 
 html_table(table_cell, fullfile(radexComparePath,'index.html'),'FirstRowIsHeading',1, 'FirstColIsHeading',1);
+
+end

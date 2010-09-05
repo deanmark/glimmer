@@ -2,10 +2,13 @@ classdef LVGSolverPopulationRequest < handle
     
     properties (Access = public)
         
-        MoleculeData; 
-        BetaProvider;
+        RunTypeCode;
+        MoleculeFileName; 
         
-        CollisionPartnerRates; 
+        BetaTypeCode;
+        BackgroundTemperature;
+        
+        CollisionPartners; 
         Weights; 
         Temperature; 
         CollisionPartnerDensities; 
@@ -20,15 +23,18 @@ classdef LVGSolverPopulationRequest < handle
     
     methods(Access=public)
         
-        function Req = LVGSolverPopulationRequest(MoleculeData, BetaProvider, CollisionPartnerRates, Weights, Temperature, CollisionPartnerDensities, ...
+        function Req = LVGSolverPopulationRequest(RunTypeCode, MoleculeFileName, BetaTypeCode, BackgroundTemperature, CollisionPartners, Weights, Temperature, CollisionPartnerDensities, ...
                 VelocityDerivative, MoleculeDensity, NumLevelsForSolution, FirstPopulationGuess, CalculateIntensities, CloudColumnDensity)
             
             if nargin ~= 0
                 
-                Req.MoleculeData = MoleculeData;
-                Req.BetaProvider = BetaProvider;               
+                Req.RunTypeCode = RunTypeCode;
+                Req.MoleculeFileName = MoleculeFileName;
                 
-                Req.CollisionPartnerRates = CollisionPartnerRates;
+                Req.BetaTypeCode = BetaTypeCode;               
+                Req.BackgroundTemperature = BackgroundTemperature;               
+                
+                Req.CollisionPartners = CollisionPartners;
                 Req.Weights = Weights;
                 Req.Temperature = Temperature;
                 Req.CollisionPartnerDensities = CollisionPartnerDensities;

@@ -27,8 +27,8 @@ classdef Hashtable < handle
         
         function h = Hashtable(Keys, Data)
             %HASHTABLE Constructor for HashTable class
-            %   hash = hashtable - Default constructor, empty hash table
-            %   hash = hashtable(keys,data) - keys and data are N-by-1 lists
+            %   hash = Hashtable() - Default constructor, empty hash table
+            %   hash = Hashtable(keys,data) - keys and data are N-by-1 lists
             
             if nargin == 0
                 h.keys = {};
@@ -48,9 +48,8 @@ classdef Hashtable < handle
             
         end
         
-        function hash = Clear(hash)
+        function Clear(hash)
             %CLEAR Clear hash table
-            %   hash = clear(hash)
 
             hash.keys = {};
             hash.data = {};
@@ -58,7 +57,6 @@ classdef Hashtable < handle
         
         function data = Elements(hash)
             %ELEMENTS Get all hash table elements
-            %   data = values(hash)
             %
             % Get all hash table elements in a N-by-2 cell matrix where N is the number of
             % elements, first column contains the element keys, and second column contains
@@ -71,7 +69,6 @@ classdef Hashtable < handle
         
         function data = Get(hash,key)
             %GET Get data from the hash table
-            %   data = get(hash,key)
             
             index = find(strcmp(hash.keys,key));
             if isempty(index)
@@ -83,14 +80,12 @@ classdef Hashtable < handle
         
         function bool = IsEmpty(hash)
             %ISEMPTY Check to see if the hash is empty
-            %   bool = isempty(hash)
             
             bool = isempty(hash.keys);
         end
         
         function bool = IsKey(hash,key)
             %ISKEY Check to see if the hash is currently using a key
-            %   bool = iskey(hash,key)
             
             index = find(strcmp(hash.keys,key), 1);
             bool = ~isempty(index);
@@ -99,15 +94,13 @@ classdef Hashtable < handle
         
         function keys = Keys(hash)
             %KEYS Get all the keys currently being used in the hash
-            %   keys = keys(hash)
             
             keys = hash.keys;
             
         end
         
-        function hash = Put(hash,key,data)
+        function Put(hash,key,data)
             %PUT Put data in the hash table
-            %   hash = put(hash,key,data)
             
             if ~ischar(key)
                 ME = MException('VerifyInput:invalidInputParameter', 'Error in input. key must be of type string');
@@ -128,9 +121,8 @@ classdef Hashtable < handle
             end
         end
         
-        function hash = Remove(hash,key)
+        function Remove(hash,key)
             %REMOVE Remove element from the hash
-            %   hash = remove(hash,key)
             
             index = find(strcmp(hash.keys,key));
             if ~isempty(index)
@@ -141,7 +133,6 @@ classdef Hashtable < handle
         
         function data = Values(hash)
             %VALUES Get all data contained in the hash table
-            %   data = values(hash)
             
             data = hash.data;
             

@@ -1,30 +1,10 @@
-classdef LVGBetaProvider < OpticalDepthProvider
-    
-    properties (SetAccess = public)
-        
-        IgnoreNegativeTau;
-        IncludeBackgroundRadiation;
-        
-    end
-    
-    properties (SetAccess = private)
-        
-        m_cosmicBackgroundProvider;
-        
-    end
+classdef ExpandingSphereBetaProvider < LVGBetaProvider
     
     methods(Access=public)
         
-        function LVGBeta = LVGBetaProvider(MoleculeData, IgnoreNegativeTau, IncludeBackgroundRadiation, BackgroundTemperature)
+        function BetaProvider = ExpandingSphereBetaProvider(MoleculeData, IgnoreNegativeTau, IncludeBackgroundRadiation, BackgroundTemperature)
             
-            LVGBeta@OpticalDepthProvider(MoleculeData);
-            
-            LVGBeta.IgnoreNegativeTau = IgnoreNegativeTau;
-            LVGBeta.IncludeBackgroundRadiation = IncludeBackgroundRadiation;
-            
-            if (IncludeBackgroundRadiation)
-                LVGBeta.m_cosmicBackgroundProvider = CosmicBackgroundProvider(MoleculeData, BackgroundTemperature);
-            end
+            BetaProvider@LVGBetaProvider(MoleculeData, IgnoreNegativeTau, IncludeBackgroundRadiation, BackgroundTemperature);
             
         end
         

@@ -1,30 +1,10 @@
-classdef UniformSphereBetaProvider < OpticalDepthProvider
-    
-    properties (SetAccess = public)
-        
-        IgnoreNegativeTau;
-        IncludeBackgroundRadiation;
-        
-    end
-    
-    properties (SetAccess = private)
-        
-        m_cosmicBackgroundProvider;
-        
-    end
-    
+classdef UniformSphereBetaProvider < LVGBetaProvider
+   
     methods(Access=public)
         
-        function USphereBeta = UniformSphereBetaProvider(MoleculeData, IgnoreNegativeTau, IncludeBackgroundRadiation, BackgroundTemperature)
+        function BetaProvider = UniformSphereBetaProvider(MoleculeData, IgnoreNegativeTau, IncludeBackgroundRadiation, BackgroundTemperature)
             
-            USphereBeta@OpticalDepthProvider(MoleculeData);
-            
-            USphereBeta.IgnoreNegativeTau = IgnoreNegativeTau;
-            USphereBeta.IncludeBackgroundRadiation = IncludeBackgroundRadiation;
-            
-            if (IncludeBackgroundRadiation)
-                USphereBeta.m_cosmicBackgroundProvider = CosmicBackgroundProvider(MoleculeData, BackgroundTemperature);
-            end
+            BetaProvider@LVGBetaProvider(MoleculeData, IgnoreNegativeTau, IncludeBackgroundRadiation, BackgroundTemperature);
             
         end
         

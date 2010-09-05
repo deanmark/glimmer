@@ -2,6 +2,8 @@ classdef LVGSolverPopulationResult < handle
     
     properties (Access = public)
         
+        OriginalRequest;
+        
         Population; 
         FinalBetaCoefficients; 
         FinalTauCoefficients;

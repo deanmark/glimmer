@@ -1,31 +1,10 @@
-classdef HomogeneousSlabBetaProvider < OpticalDepthProvider
-    
-    properties (SetAccess = public)
-        
-        IgnoreNegativeTau;
-        IncludeBackgroundRadiation;
-        
-    end
-    
-    properties (SetAccess = private)
-        
-        m_cosmicBackgroundProvider;
-        
-    end
-    
+classdef HomogeneousSlabBetaProvider < LVGBetaProvider
     
     methods(Access=public)
         
-        function HSlabBeta = HomogeneousSlabBetaProvider(MoleculeData, IgnoreNegativeTau, IncludeBackgroundRadiation, BackgroundTemperature)
+        function BetaProvider = HomogeneousSlabBetaProvider(MoleculeData, IgnoreNegativeTau, IncludeBackgroundRadiation, BackgroundTemperature)
             
-            HSlabBeta@OpticalDepthProvider(MoleculeData);
-            
-            HSlabBeta.IgnoreNegativeTau = IgnoreNegativeTau;
-            HSlabBeta.IncludeBackgroundRadiation = IncludeBackgroundRadiation;
-            
-            if (IncludeBackgroundRadiation)
-                HSlabBeta.m_cosmicBackgroundProvider = CosmicBackgroundProvider(MoleculeData, BackgroundTemperature);
-            end
+            BetaProvider@LVGBetaProvider(MoleculeData, IgnoreNegativeTau, IncludeBackgroundRadiation, BackgroundTemperature);
             
         end
         
