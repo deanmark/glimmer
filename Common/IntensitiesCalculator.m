@@ -25,8 +25,8 @@ classdef IntensitiesCalculator < handle
         
         function Intensities = CalculateIntensitiesLVG(obj, LevelPopulation, TauCoefficients, ColumnDensities)
                         
-            numLevels = numel(obj.m_einsteinCoefficients);
-            numDensities = numel(LevelPopulation)/numLevels;
+            numLevels = size(LevelPopulation,1);
+            numDensities = size(LevelPopulation,2);
             
             if numel(ColumnDensities) ~= numDensities
                 ME = MException('VerifyInput:invalidInputParameter', ...
@@ -34,10 +34,9 @@ classdef IntensitiesCalculator < handle
                 throw(ME);
             end
             
-            repeatedEinsteinCoefficients = repmat(obj.m_einsteinCoefficients,[numDensities 1]);
-            repeatedTransitionEnergies = repmat(obj.m_transitionEnergies,[numDensities 1]);
+            repeatedEinsteinCoefficients = repmat(obj.m_einsteinCoefficients,[1 numDensities]);
+            repeatedTransitionEnergies = repmat(obj.m_transitionEnergies,[1 numDensities]);
             repeatedDensities = repmat(ColumnDensities, [numLevels 1]);
-            repeatedDensities = reshape(repeatedDensities, [numel(LevelPopulation) 1]);
             
             smallNumbersLogicalIndex = (-10^-5 < TauCoefficients) & (TauCoefficients < 10^-5);
             

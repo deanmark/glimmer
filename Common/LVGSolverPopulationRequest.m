@@ -7,18 +7,21 @@ classdef LVGSolverPopulationRequest < handle
         
         BetaTypeCode;
         BackgroundTemperature;
-        
-        CollisionPartners; 
-        Weights; 
-        Temperature; 
-        CollisionPartnerDensities; 
-        VelocityDerivative; 
-        MoleculeDensity; 
+                
         NumLevelsForSolution; 
         FirstPopulationGuess;
         CalculateIntensities;
-        CloudColumnDensity;
+        DebugIndicators;
         
+        CollisionPartners; 
+        Weights;         
+        Temperature; 
+        VelocityDerivative; 
+        
+        CollisionPartnerDensities;         
+        MoleculeDensity; 
+        CloudColumnDensity;
+                
     end
     
     methods(Access=public)
@@ -45,6 +48,8 @@ classdef LVGSolverPopulationRequest < handle
                 Req.CalculateIntensities = CalculateIntensities;
                 Req.CloudColumnDensity = CloudColumnDensity;
                 
+                Req.DebugIndicators = 0;
+                
             end
         end
         
@@ -61,6 +66,34 @@ classdef LVGSolverPopulationRequest < handle
                 ReqCopy.(fns{i}) = rhs.(fns{i});
             end
             
+        end
+        
+        
+        
+    end
+    
+    methods(Static, Access=public)
+    
+        function [EqualParameters] = EqualParameterSpace(lhs, rhs)
+            
+            p = inputParser();
+            p.addRequired('lhs', @(x)isa(x,'LVGSolverPopulationRequest'));
+            p.addRequired('rhs', @(x)isa(x,'LVGSolverPopulationRequest'));
+            p.parse(lhs, rhs);
+            
+            EqualParameters = LVGSolverPopulationRequest.areArraysIdentical(lhs.Temperature,lhs.Temperature) && ...
+                LVGSolverPopulationRequest.areArraysIdentical(lhs.CollisionPartnerDensities,lhs.CollisionPartnerDensities) && ...
+                LVGSolverPopulationRequest.areArraysIdentical(lhs.VelocityDerivative,lhs.VelocityDerivative) && ...
+                LVGSolverPopulationRequest.areArraysIdentical(lhs.MoleculeDensity,lhs.MoleculeDensity);
+        end
+        
+    end
+    
+    methods(Static, Access=private)
+        
+        function Result = areArraysIdentical(lhs, rhs)            
+            Result = all(size(lhs)==size(rhs)) && ...
+                all(lhs == rhs);            
         end
         
     end

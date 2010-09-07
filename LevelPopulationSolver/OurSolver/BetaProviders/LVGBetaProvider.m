@@ -1,4 +1,4 @@
-classdef LVGBetaProvider < OpticalDepthProvider
+classdef LVGBetaProvider < handle
     
     properties (SetAccess = public)
         
@@ -11,6 +11,7 @@ classdef LVGBetaProvider < OpticalDepthProvider
     properties (SetAccess = private)
         
         m_cosmicBackgroundProvider;
+        m_opticalDepthProvider;
         
     end
     
@@ -18,11 +19,10 @@ classdef LVGBetaProvider < OpticalDepthProvider
         
         function BetaProvider = LVGBetaProvider(MoleculeData, IgnoreNegativeTau, IncludeBackgroundRadiation, BackgroundTemperature)
             
-            BetaProvider@OpticalDepthProvider(MoleculeData);
-            
             BetaProvider.IgnoreNegativeTau = IgnoreNegativeTau;
             BetaProvider.IncludeBackgroundRadiation = IncludeBackgroundRadiation;
             BetaProvider.BackgroundTemperature = BackgroundTemperature;
+            BetaProvider.m_opticalDepthProvider = OpticalDepthProvider(MoleculeData);
             
             if (IncludeBackgroundRadiation)
                 BetaProvider.m_cosmicBackgroundProvider = CosmicBackgroundProvider(MoleculeData, BackgroundTemperature);
@@ -40,4 +40,3 @@ classdef LVGBetaProvider < OpticalDepthProvider
     end
     
 end
-

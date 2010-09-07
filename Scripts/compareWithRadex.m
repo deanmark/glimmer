@@ -29,12 +29,12 @@ CollisionPartnerWeights = [MoleculeToCollisionPartnerDensityRatio, MoleculeToCol
 % CollisionPartners = [CollisionPartnersCodes.H2ortho,CollisionPartnersCodes.H2para];
 % CollisionPartnerWeights = [3 1];
 % %
-% Molecule = Molecules.Get('hco+@xpol.dat');
+% MoleculeFileName = 'hco+@xpol.dat';
 % MoleculeToCollisionPartnerDensityRatio = 10^-8;
 % CollisionPartners = [CollisionPartnersCodes.H2];
 % CollisionPartnerWeights = [1];
 % % % % % 
-% Molecule = Molecules.Get('hcn.dat');
+% MoleculeFileName = 'hcn.dat';
 % MoleculeToCollisionPartnerDensityRatio = 10^-8;
 % CollisionPartners = [CollisionPartnersCodes.H2];
 % CollisionPartnerWeights = [1];

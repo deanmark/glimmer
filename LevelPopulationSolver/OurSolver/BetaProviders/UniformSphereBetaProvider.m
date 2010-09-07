@@ -10,7 +10,7 @@ classdef UniformSphereBetaProvider < LVGBetaProvider
         
         function [BetaCoefficients, TauCoefficients] = CalculateBetaCoefficients (obj, Population, MoleculeDensity, VelocityDerivative)
             
-            TauCoefficients = obj.CalculateTauCoefficients(Population, MoleculeDensity, VelocityDerivative);
+            TauCoefficients = obj.m_opticalDepthProvider.CalculateTauCoefficients(Population, MoleculeDensity, VelocityDerivative);
             
             if (obj.IgnoreNegativeTau)
                 TauCoefficients(TauCoefficients < 0) = 0;
