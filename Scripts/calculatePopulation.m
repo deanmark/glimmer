@@ -28,6 +28,9 @@ req = LVGSolverPopulationRequest(RunTypeCodes.LVG, MoleculeFileName, BetaTypeCod
     dvdrArray , MoleculeDensity, Molecule.MolecularLevels, [], true, ColumnDensities);
 
 LVGResults = WorkspaceHelper.GetLVGResultsHashFromWorkspace();
-LVGResults.Put('HCN - T60K x 2',PopulationSolverHelper.ProcessPopulationRequest(req));
+solver = PopulationSolverHelper();
+
+LVGResults.Put('HCN - T60K x 2',solver.ProcessPopulationRequest(req));
+
 
 end

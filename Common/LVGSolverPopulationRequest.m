@@ -2,24 +2,41 @@ classdef LVGSolverPopulationRequest < handle
     
     properties (Access = public)
         
+        %Specifies which calculation type to use for the computation.
         RunTypeCode;
+        %LAMDA molecule file name
         MoleculeFileName; 
+        %Specifies a unique title name for the request
+        RequestName;
         
+        %Specifies what type of beta calculation to use
         BetaTypeCode;
+        %Specifies the cosmic background radiation temperature. Set = 0 to ignore background radiation. Units: Kelvin
         BackgroundTemperature;
                 
+        %Sets the number of molecule levels to use in the solution. Leave empty for the maximum number of levels.
         NumLevelsForSolution; 
+        %This is an internal property. Leave this empty in normal use. It sets the first fractional population guess for the LVG iterative solution. Should be of size NumLevelsForSolution.
         FirstPopulationGuess;
+        %Sets whether the intensities should be calculated.
         CalculateIntensities;
+        %This is an internal property. Leave this empty in normal use. This sets whether debug indicators should be returned after an LVG run. WARNING: This slows the code down by a factor of ~4.
         DebugIndicators;
         
+        %Specifies the collision partner codes
         CollisionPartners; 
+        %Sets the relative weight of each collision partner in the total collision partner density
         Weights;         
+        %Sets the cloud kinetic temperature. This affects the collision rates. Leave empty to set to the temperatures in the LAMDA file. Units: Kelvin
         Temperature; 
+        %Sets the velocity derivative of the cloud. Units: s^-1
         VelocityDerivative; 
         
+        %Sets the Collision Partner Density. Units: cm^-3
         CollisionPartnerDensities;         
+        %Sets the Molecule Density. Units: cm^-3
         MoleculeDensity; 
+        %Sets the Cloud Column Density. This only affects the calculation of the intensity. Units: cm^-3
         CloudColumnDensity;
                 
     end
@@ -85,6 +102,52 @@ classdef LVGSolverPopulationRequest < handle
                 LVGSolverPopulationRequest.areArraysIdentical(lhs.CollisionPartnerDensities,lhs.CollisionPartnerDensities) && ...
                 LVGSolverPopulationRequest.areArraysIdentical(lhs.VelocityDerivative,lhs.VelocityDerivative) && ...
                 LVGSolverPopulationRequest.areArraysIdentical(lhs.MoleculeDensity,lhs.MoleculeDensity);
+        end
+        
+        function Req = DefaultRequest()
+            
+            MoleculeFileName = 'hcn.dat';
+            %MoleculeFileName = 'hco+@xpol.dat';
+            %MoleculeToCollisionPartnerDensityRatio = 10^-8;
+            CollisionPartners = [CollisionPartnersCodes.H2];
+            CollisionPartnerWeights = [1];
+            
+            Molecule = WorkspaceHelper.GetMoleculeDataFromWorkspace(MoleculeFileName);
+            %Temperatures = Molecule.GetCollisionPartner(CollisionPartners(1)).Temperatures;
+            Temperatures = 60;
+            
+            %CollisionPartnerDensities = 15e3:1000:20e3;
+            a=(1:2:10)'*(10.^(3:1:7));
+            CollisionPartnerDensities = [a(:)'];
+            %CollisionPartnerDensities = 1e4:1000:4e4;
+            
+            %MoleculeDensity = CollisionPartnerDensities*MoleculeToCollisionPartnerDensityRatio;
+            MoleculeDensity = ones(size(CollisionPartnerDensities)).*10^6*2;
+            ColumnDensities = MoleculeDensity;
+            
+            %dvdrKmParsecArray = 1:0.05:1.05 .* Constants.dVdRConversionFactor;
+            dvdrArray = 10.^[ -5:1:1 ];
+            
+            BackgroundTemperature = 2.73;
+            
+            Req = LVGSolverPopulationRequest();
+            constructor(Req, ... 
+                'RunTypeCode', RunTypeCodes.LVG, ...
+                'MoleculeFileName', MoleculeFileName,...
+                'BetaTypeCode', BetaTypeCodes.UniformSphere,...
+                'BackgroundTemperature', BackgroundTemperature,...
+                'CollisionPartners', CollisionPartners,...
+                'Weights', CollisionPartnerWeights,...
+                'Temperature',Temperatures,...
+                'CollisionPartnerDensities',CollisionPartnerDensities,...
+                'VelocityDerivative',dvdrArray,...
+                'MoleculeDensity',MoleculeDensity,...
+                'NumLevelsForSolution',0,...
+                'FirstPopulationGuess',[],...
+                'CalculateIntensities',true,...
+                'CloudColumnDensity',ColumnDensities,...
+                'DebugIndicators',false);
+            
         end
         
     end

@@ -1,19 +1,25 @@
 classdef WorkspaceHelper
     
+    properties(Constant)
+       
+        ws = 'base';
+        MoleculesVariableName = 'Molecules';
+        ResultsVariableName = 'LVGResults';
+        RequestsVariableName = 'LVGRequests';
+        
+    end
+    
     methods(Static=true)
         
         function MoleculesHash = GetMoleculesHashFromWorkspace ()
             
-            ws = 'base';
-            moleculesVariableName = 'Molecules';
-            
-            moleculesVariableExists = ~isempty(evalin(ws, sprintf('who(''%s'')', moleculesVariableName)));
+            moleculesVariableExists = ~isempty(evalin(WorkspaceHelper.ws, sprintf('who(''%s'')', WorkspaceHelper.MoleculesVariableName)));
             
             if moleculesVariableExists
-                [MoleculesHash] = evalin(ws, moleculesVariableName);
+                [MoleculesHash] = evalin(WorkspaceHelper.ws, WorkspaceHelper.MoleculesVariableName);
             else
                 MoleculesHash = Hashtable();
-                assignin(ws, moleculesVariableName, MoleculesHash);
+                assignin(WorkspaceHelper.ws, WorkspaceHelper.MoleculesVariableName, MoleculesHash);
             end
             
         end
@@ -27,16 +33,13 @@ classdef WorkspaceHelper
         
         function LVGResultsHash = GetLVGResultsHashFromWorkspace()
             
-            ws = 'base';
-            resultsVariableName = 'LVGResults';
-            
-            resultsVariableExists = ~isempty(evalin(ws, sprintf('who(''%s'')', resultsVariableName)));
+            resultsVariableExists = ~isempty(evalin(WorkspaceHelper.ws, sprintf('who(''%s'')', WorkspaceHelper.ResultsVariableName)));
             
             if resultsVariableExists
-                [LVGResultsHash] = evalin(ws, resultsVariableName);
+                [LVGResultsHash] = evalin(WorkspaceHelper.ws, WorkspaceHelper.ResultsVariableName);
             else
                 LVGResultsHash = Hashtable();
-                assignin(ws, resultsVariableName, LVGResultsHash);
+                assignin(WorkspaceHelper.ws, WorkspaceHelper.ResultsVariableName, LVGResultsHash);
             end
             
         end
@@ -45,6 +48,24 @@ classdef WorkspaceHelper
             
             Hash = WorkspaceHelper.GetLVGResultsHashFromWorkspace();
             LVGResult = Hash.Get(ResultIdentifier);
+            
+        end
+        
+        function SetRequestsListToWorkspace (Requests)
+            
+            assignin(WorkspaceHelper.ws, WorkspaceHelper.RequestsVariableName, Requests);
+            
+        end
+
+        function Requests = GetRequestsListFromWorkspace ()
+            
+            resultsVariableExists = ~isempty(evalin(WorkspaceHelper.ws, sprintf('who(''%s'')', WorkspaceHelper.RequestsVariableName)));
+            
+            if resultsVariableExists
+                Requests = evalin(WorkspaceHelper.ws, WorkspaceHelper.RequestsVariableName);
+            else
+                Requests = [];
+            end
             
         end
         

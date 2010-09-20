@@ -1,8 +1,15 @@
-classdef PopulationSolverHelper
+classdef PopulationSolverHelper < handle
     
-    methods (Access=public, Static=true)
+    properties
         
-        function FinalResult = CalculateLVGPopulation (PopulationRequest)
+        ProgressFraction = 0;
+        StopOperation = false;
+        
+    end
+    
+    methods (Access=public)
+        
+        function FinalResult = CalculateLVGPopulation (this, PopulationRequest)
             
             PopulationSolverHelper.validateInput(PopulationRequest);
             [MoleculeData, BetaProvider, innerRequest ] = PopulationSolverHelper.changeRequestToInnerRequest (PopulationRequest);
@@ -70,7 +77,9 @@ classdef PopulationSolverHelper
                         end
                         
                         i=i+1;
-                        PopulationSolverHelper.showProgress(i, totalComputations);
+                                                
+                        this.showProgress(i, totalComputations);
+                        this.checkForStopFlag();                        
                         
                     end
                 end
@@ -79,11 +88,11 @@ classdef PopulationSolverHelper
             
         end
         
-        function FinalResult = CalculateLVGPopulationDensityParallel (PopulationRequest)
+        function FinalResult = CalculateLVGPopulationDensityParallel (this, PopulationRequest)
             
             PopulationSolverHelper.validateInput(PopulationRequest);
             [MoleculeData, BetaProvider, innerRequest ] = PopulationSolverHelper.changeRequestToInnerRequest (PopulationRequest);
-            FinalResult = PopulationSolverHelper.initializeResult(PopulationRequest);
+            FinalResult = PopulationSolverHelper.initializeResult(innerRequest);
             
             LVGSolverLowExcitation = LevelPopulationSolverLVG(MoleculeData, BetaProvider, LVGSolverAlgorithmParameters.DefaultInitialRunParamsLowExcitation());
             LVGSolverHighExcitation = LevelPopulationSolverLVG(MoleculeData, BetaProvider, LVGSolverAlgorithmParameters.DefaultInitialRunParamsHighExcitation);
@@ -140,7 +149,8 @@ classdef PopulationSolverHelper
                     end
                                         
                     i=i+1;
-                    PopulationSolverHelper.showProgress(i, totalComputations);
+                    this.showProgress(i, totalComputations);                         
+                    this.checkForStopFlag();
                     
                 end
                 
@@ -148,7 +158,7 @@ classdef PopulationSolverHelper
             
         end
          
-        function FinalResult = CalculateOpticallyThinPopulation (PopulationRequest)
+        function FinalResult = CalculateOpticallyThinPopulation (this, PopulationRequest)
             
             PopulationSolverHelper.validateInput(PopulationRequest);
             [MoleculeData, BetaProvider, innerRequest ] = PopulationSolverHelper.changeRequestToInnerRequest (PopulationRequest);
@@ -184,7 +194,8 @@ classdef PopulationSolverHelper
                     end
                     
                     i=i+1;
-                    PopulationSolverHelper.showProgress(i, totalComputations);
+                    this.showProgress(i, totalComputations);                         
+                    this.checkForStopFlag();
                     
                 end
                 
@@ -192,7 +203,7 @@ classdef PopulationSolverHelper
             
         end
         
-        function FinalResult = CalculateLTEPopulation (PopulationRequest)
+        function FinalResult = CalculateLTEPopulation (this, PopulationRequest)
             
             PopulationSolverHelper.validateInput(PopulationRequest);
             [MoleculeData, BetaProvider, innerRequest ] = PopulationSolverHelper.changeRequestToInnerRequest (PopulationRequest);
@@ -228,7 +239,8 @@ classdef PopulationSolverHelper
                     end
                     
                     i=i+1;
-                    PopulationSolverHelper.showProgress(i, totalComputations);
+                    this.showProgress(i, totalComputations);                         
+                    this.checkForStopFlag();
                     
                 end
                 
@@ -236,7 +248,7 @@ classdef PopulationSolverHelper
             
         end
         
-        function FinalResult = CalculateRadexLVGPopulation (PopulationRequest)
+        function FinalResult = CalculateRadexLVGPopulation (this, PopulationRequest)
             
             PopulationSolverHelper.validateInput(PopulationRequest);
             [MoleculeData, BetaProvider, innerRequest ] = PopulationSolverHelper.changeRequestToInnerRequest (PopulationRequest);
@@ -268,27 +280,31 @@ classdef PopulationSolverHelper
                         end
                         
                         i=i+1;
-                        PopulationSolverHelper.showProgress(i, totalComputations);                    
+                        this.showProgress(i, totalComputations);                         
+                        this.checkForStopFlag();                    
                         
                     end
                 end
             end            
         end
         
-        function FinalResult = ProcessPopulationRequest (PopulationRequest)
+        function FinalResult = ProcessPopulationRequest (this, PopulationRequest)
+            
+            this.ProgressFraction = 0;
+            this.StopOperation = 0;
             
             switch PopulationRequest.RunTypeCode
                 case RunTypeCodes.LVG
-                    FinalResult = PopulationSolverHelper.CalculateLVGPopulationDensityParallel(PopulationRequest);
+                    FinalResult = this.CalculateLVGPopulationDensityParallel(PopulationRequest);
                     
                 case RunTypeCodes.OpticallyThin
-                    FinalResult = PopulationSolverHelper.CalculateOpticallyThinPopulation(PopulationRequest);
+                    FinalResult = this.CalculateOpticallyThinPopulation(PopulationRequest);
                     
                 case RunTypeCodes.LTE
-                    FinalResult = PopulationSolverHelper.CalculateLTEPopulation(PopulationRequest);
+                    FinalResult = this.CalculateLTEPopulation(PopulationRequest);
                     
                 case RunTypeCodes.Radex
-                    FinalResult = PopulationSolverHelper.CalculateRadexLVGPopulation(PopulationRequest);
+                    FinalResult = this.CalculateRadexLVGPopulation(PopulationRequest);
                     
                 otherwise
                     ME = MException('VerifyInput:UnknownRunTypeCode','Error in input. Run Type Code [%d] is unknown', PopulationRequest.RunTypeCode);
@@ -296,6 +312,41 @@ classdef PopulationSolverHelper
             end
             
         end
+        
+    end
+    
+    methods (Access=private)
+        
+        function showProgress(this, Iteration, TotalComputations)
+            
+            progress = Iteration/TotalComputations;
+            progressPercent = floor(100*progress);
+            
+            if TotalComputations > 1
+                
+                if Iteration==1
+                    fprintf(1, 'Progress: %%%3d', progressPercent);
+                else
+                    fprintf(1, '\b\b\b%3d', progressPercent);
+                end
+                
+                if Iteration==TotalComputations
+                    fprintf(1, '\n');
+                end
+            end
+            
+            this.ProgressFraction = progress;
+            
+        end
+        
+        function checkForStopFlag (this)
+           
+            if this.StopOperation
+                error('PopulationSolverHelper:OperationTerminated', 'Operation terminated by user.'); 
+            end
+            
+        end
+            
         
     end
     
@@ -340,6 +391,11 @@ classdef PopulationSolverHelper
             BetaProvider = PopulationSolverHelper.createBetaProvider(PopulationRequest.BetaTypeCode, Molecule, PopulationRequest.BackgroundTemperature);
             
             InnerRequest = PopulationRequest.Copy();
+            
+            if isempty(PopulationRequest.NumLevelsForSolution) || PopulationRequest.NumLevelsForSolution == 0
+                InnerRequest.NumLevelsForSolution = Molecule.MolecularLevels;
+            end
+            
             PopulationSolverHelper.replaceCollisionPartnerCodesToRates(InnerRequest,Molecule);            
             
         end
@@ -372,25 +428,6 @@ classdef PopulationSolverHelper
             end
             
             PopulationRequest.CollisionPartners = collisionPartnerRates;
-            
-        end
-        
-        function showProgress(Iteration, TotalComputations)
-            
-            if TotalComputations > 1
-                
-                progress = Iteration/TotalComputations;
-                
-                if Iteration==1
-                    fprintf(1, 'Progress: %%%3d', floor(100*progress));
-                else
-                    fprintf(1, '\b\b\b%3d', floor(100*progress));
-                end
-                
-                if Iteration==TotalComputations
-                    fprintf(1, '\n');
-                end
-            end
             
         end
         
