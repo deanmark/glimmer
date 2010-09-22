@@ -5,11 +5,11 @@ lamdaDataFilesFileEnding = '*.dat';
 
 Molecules = WorkspaceHelper.GetMoleculesHashFromWorkspace();
 
-p = mfilename('fullpath');
-path = fileparts(p);
-lamdaFilesPath = fullfile(path, '..', 'DataFiles', 'Lamda');
+lamdaFilesPath = FileIOHelper.LamdaMolecularDataFilesPath();
 lamdaFilesSearchString = fullfile(lamdaFilesPath, lamdaDataFilesFileEnding);
 dataFiles = dir (lamdaFilesSearchString);
+
+dlg = ProgressDialog('StatusMessage', 'Loading moldata files', 'ShowTimeLeft', true, 'FractionComplete', 0);
 
 for i=1:numel(dataFiles)
     
@@ -24,8 +24,14 @@ for i=1:numel(dataFiles)
         catch ME
             fprintf(1, 'Error!\n%s\n', ME.getReport);
         end
+    else
+        fprintf(1, 'Already Loaded\n');
     end
-        
+       
+    dlg.FractionComplete = i/numel(dataFiles);
+    
 end
+
+delete(dlg);
 
 end

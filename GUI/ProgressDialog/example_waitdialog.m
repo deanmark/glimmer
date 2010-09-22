@@ -30,7 +30,7 @@ dlg = ProgressDialog( ...
     'StatusMessage', 'Please wait until operation terminates...', ...
     'FractionComplete', 0.25);
 pause(2);
-timer
+
 % hide status message
 dlg.StatusMessage = [];
 dlg.FractionComplete = 1;

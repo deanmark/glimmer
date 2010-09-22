@@ -54,7 +54,6 @@ function ProcessRequests_OpeningFcn(hObject, eventdata, handles, varargin)
 
 % Choose default command line output for ProcessRequests
 handles.output = hObject;
-handles.ViewedRequestIndex = [];
 
 % Update handles structure
 guidata(hObject, handles);
@@ -87,6 +86,11 @@ newRequestString = genvarname('Request', requestStrings);
 innerRequest = LVGSolverPopulationRequest.DefaultRequest();
 innerRequest.RequestName = newRequestString;
 guiReq = RequestPropertyGrid.ConvertRequestToGUIRequest(innerRequest);
+
+if ~isfield(handles,'ViewedRequestIndex')
+    handles.ViewedRequestIndex = [];
+    guidata(hObject, handles);
+end
 
 RequestsListboxHelper.AddRequestToListBox(handles.requestsListbox,guiReq,handles.ViewedRequestIndex);
 

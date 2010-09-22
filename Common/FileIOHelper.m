@@ -2,6 +2,20 @@ classdef FileIOHelper
     
     methods(Static=true)
         
+        function Path = ResultsPath ()            
+            %returns path of current script.
+            p = mfilename('fullpath'); 
+            CommonDirectory = fileparts(p);
+            Path = fullfile(CommonDirectory, '..', 'Results');            
+        end
+        
+        function Path = LamdaMolecularDataFilesPath ()            
+            %returns path of current script.
+            p = mfilename('fullpath'); 
+            CommonDirectory = fileparts(p);
+            Path = fullfile(CommonDirectory, '..', 'DataFiles', 'Lamda');            
+        end
+        
         function CurrentLine = JumpLinesInFile(fid,JumpSize)
             %returns the line that is JumpSize steps ahead of the current
             %line
