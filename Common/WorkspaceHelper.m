@@ -50,13 +50,7 @@ classdef WorkspaceHelper
             LVGResult = Hash.Get(ResultIdentifier);
             
         end
-        
-        function SetRequestsListToWorkspace (Requests)
-            
-            assignin(WorkspaceHelper.ws, WorkspaceHelper.RequestsVariableName, Requests);
-            
-        end
-
+   
         function Requests = GetRequestsListFromWorkspace ()
             
             resultsVariableExists = ~isempty(evalin(WorkspaceHelper.ws, sprintf('who(''%s'')', WorkspaceHelper.RequestsVariableName)));

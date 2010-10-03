@@ -3,6 +3,8 @@ function downloadAllLamdaDataFiles (lamdaWebsite)
 % get all moldata links
 %lamda = 'http://www.strw.leidenuniv.nl/~moldata/';
 
+lamdaWebsite = lamdaWebsite{1};
+
 dlg = ProgressDialog( ...
     'StatusMessage', 'Downloading main page', ...
     'Indeterminate', true);
@@ -33,7 +35,7 @@ for i=1:numel(distilledLinks)
     fprintf(1,'%g/%g : %s\n', i, numel(distilledLinks), distilledLinks{i});  
     
 end
-
+delete(dlg);
 dlg = ProgressDialog('StatusMessage', 'Downloading and converting moldata files', 'ShowTimeLeft', true, 'FractionComplete', 0);
 
 % download all moldata files

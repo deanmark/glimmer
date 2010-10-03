@@ -22,7 +22,7 @@ function varargout = ProcessRequests(varargin)
 
 % Edit the above text to modify the response to help ProcessRequests
 
-% Last Modified by GUIDE v2.5 20-Sep-2010 13:50:24
+% Last Modified by GUIDE v2.5 23-Sep-2010 22:48:00
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -87,10 +87,10 @@ innerRequest = LVGSolverPopulationRequest.DefaultRequest();
 innerRequest.RequestName = newRequestString;
 guiReq = RequestPropertyGrid.ConvertRequestToGUIRequest(innerRequest);
 
-if ~isfield(handles,'ViewedRequestIndex')
-    handles.ViewedRequestIndex = [];
-    guidata(hObject, handles);
-end
+% if ~isfield(handles,'ViewedRequestIndex')
+%     handles.ViewedRequestIndex = [];
+%     guidata(hObject, handles);
+% end
 
 RequestsListboxHelper.AddRequestToListBox(handles.requestsListbox,guiReq,handles.ViewedRequestIndex);
 
@@ -246,6 +246,8 @@ if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgr
 end
 
 set(hObject,'UserData',LVGSolverPopulationRequest.empty(0, 1));
+handles.ViewedRequestIndex = [];
+guidata(hObject, handles);
 
 % --- Executes on button press in removeButton.
 function removeButton_Callback(hObject, eventdata, handles)
@@ -273,18 +275,15 @@ if ~isempty(handles.ViewedRequestIndex)
     RequestsListboxHelper.ReplaceRequestInListBox(handles.requestsListbox,handles.ViewedRequestIndex,handles.requestPropertiesEditor.Item);
 end
 
+
 % --- Executes during object creation, after setting all properties.
-function processRequestsFigure_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to processRequestsFigure (see GCBO)
+function requestPropertiesPanel_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to requestPropertiesPanel (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
 
-h = PropertyGrid(hObject, ...
-    'Position', ...
-    [0.49108367626886135,...
-    0.17,...
-    0.4883401920438957,...
-    0.7949367088607595]);
+h = PropertyGrid(hObject);
 
-handles.requestPropertiesEditor = h;
+handles.requestPropertiesEditor = h; 
+
 guidata(hObject,handles);

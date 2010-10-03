@@ -54,7 +54,6 @@ function LVGGUI_OpeningFcn(hObject, eventdata, handles, varargin)
 
 % Choose default command line output for LVGGUI
 handles.output = hObject;
-CallCreateFunction(handles.requestsListbox, handles);
 % Update handles structure
 guidata(hObject, handles);
 
@@ -77,61 +76,48 @@ function varargout = LVGGUI_OutputFcn(hObject, eventdata, handles)
 % Get default command line output from handles structure
 varargout{1} = handles.output;
 
-
-% --------------------------------------------------------------------
-function FileMenuItem_Callback(hObject, eventdata, handles)
-% hObject    handle to FileMenuItem (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-
-% --------------------------------------------------------------------
-function NewMenuItem_Callback(hObject, eventdata, handles)
-% hObject    handle to NewMenuItem (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-
 % --------------------------------------------------------------------
 function OpenMenuItem_Callback(hObject, eventdata, handles)
 % hObject    handle to OpenMenuItem (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-
-
-% --------------------------------------------------------------------
-function SaveMenuItem_Callback(hObject, eventdata, handles)
-% hObject    handle to SaveMenuItem (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
+uiopen('load');
 
 % --------------------------------------------------------------------
 function SaveAsMenuItem_Callback(hObject, eventdata, handles)
 % hObject    handle to SaveAsMenuItem (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-
+uisave();
 
 % --------------------------------------------------------------------
 function ExitMenuItem_Callback(hObject, eventdata, handles)
 % hObject    handle to ExitMenuItem (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-
-
-% --------------------------------------------------------------------
-function DataMenuItem_Callback(hObject, eventdata, handles)
-% hObject    handle to DataMenuItem (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
+selection = questdlg('Do you want to close the GUI?',...
+                     'Close Request Function',...
+                     'Yes','No','Yes');
+switch selection,
+   case 'Yes',
+    delete(gcf)
+   case 'No'
+     return
+end
 
 % --------------------------------------------------------------------
 function DownloadMoldataMenuItem_Callback(hObject, eventdata, handles)
 % hObject    handle to DownloadMoldataMenuItem (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+
+prompt={'Enter Lamda main website:'};
+name='Input for download function';
+numlines=1;
+defaultanswer={'http://www.strw.leidenuniv.nl/~moldata/'};
+options.Resize='on';
+answer=inputdlg(prompt,name,numlines,defaultanswer,options);
+downloadAllLamdaDataFiles (answer);
 
 
 % --------------------------------------------------------------------
@@ -140,7 +126,7 @@ function LoadMoldataMenuItem_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-
+LoadAllMoleculesLamdaFormat();
 
 function TabPlaceHolder_Callback(hObject, eventdata, handles)
 % hObject    handle to TabPlaceHolder (see GCBO)
