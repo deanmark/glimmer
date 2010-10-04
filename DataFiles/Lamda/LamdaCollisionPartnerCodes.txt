@@ -1,0 +1,10 @@
+This file is not used by the program. It's here for future reference.
+
+Collision partner codes in LAMDA:
+
+1 - H2;
+2 - para H2;
+3 - ortho H2;
+4 - electrons;
+5 - H;
+6 - He;
