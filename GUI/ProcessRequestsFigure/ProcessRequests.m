@@ -22,7 +22,7 @@ function varargout = ProcessRequests(varargin)
 
 % Edit the above text to modify the response to help ProcessRequests
 
-% Last Modified by GUIDE v2.5 23-Sep-2010 22:48:00
+% Last Modified by GUIDE v2.5 06-Oct-2010 13:01:46
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -74,9 +74,9 @@ function varargout = ProcessRequests_OutputFcn(hObject, eventdata, handles)
 varargout{1} = handles.output;
 
 
-% --- Executes on button press in addButton.
-function addButton_Callback(hObject, eventdata, handles)
-% hObject    handle to addButton (see GCBO)
+% --- Executes on button press in addRequestsButton.
+function addRequestsButton_Callback(hObject, eventdata, handles)
+% hObject    handle to addRequestsButton (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
@@ -85,20 +85,14 @@ newRequestString = genvarname('Request', requestStrings);
 
 innerRequest = LVGSolverPopulationRequest.DefaultRequest();
 innerRequest.RequestName = newRequestString;
-guiReq = RequestPropertyGrid.ConvertRequestToGUIRequest(innerRequest);
 
-% if ~isfield(handles,'ViewedRequestIndex')
-%     handles.ViewedRequestIndex = [];
-%     guidata(hObject, handles);
-% end
-
-RequestsListboxHelper.AddRequestToListBox(handles.requestsListbox,guiReq,handles.ViewedRequestIndex);
+RequestsListboxHelper.AddRequestToListBox(handles.requestsListbox,innerRequest,handles.ViewedRequestIndex);
 
 
 
-% --- Executes on button press in copyButton.
-function copyButton_Callback(hObject, eventdata, handles)
-% hObject    handle to copyButton (see GCBO)
+% --- Executes on button press in copyRequestsButton.
+function copyRequestsButton_Callback(hObject, eventdata, handles)
+% hObject    handle to copyRequestsButton (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
@@ -106,52 +100,24 @@ if (~isempty(handles.ViewedRequestIndex))
     RequestsListboxHelper.DuplicateRequestInListBox(handles.requestsListbox, handles.ViewedRequestIndex);    
 end
 
-
-% --- Executes on button press in saveButton.
-function saveButton_Callback(hObject, eventdata, handles)
-% hObject    handle to saveButton (see GCBO)
+% --- Executes on button press in loadRequestsButton.
+function refreshRequestsButton_Callback(hObject, eventdata, handles)
+% hObject    handle to loadRequestsButton (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-[filename, pathname, filterindex] = uiputfile({'*.mat','MAT-files (*.mat)';'*.*',  'All Files (*.*)'});
+internalRequests = WorkspaceHelper.GetLVGRequestsListFromWorkspace();
 
-if (~isequal(filename,0) && ~isequal(pathname,0) && ~isequal(filterindex,0))
-    requests = get(handles.requestsListbox,'UserData');
-    
-    LVGRequests = RequestPropertyGrid.ConvertRequestToInternalRequest(requests);    
-    save(fullfile(pathname,filename),'LVGRequests');    
-end
+RequestPropertyGrid.ResetGripProperties(handles.requestPropertiesEditor);
 
+RequestsListboxHelper.SetRequestsToListBox(handles.requestsListbox, internalRequests);
 
-% --- Executes on button press in loadButton.
-function loadButton_Callback(hObject, eventdata, handles)
-% hObject    handle to loadButton (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
+handles.ViewedRequestIndex = [];
+guidata(hObject, handles);
 
-[filename, pathname, filterindex] = uigetfile({'*.mat','MAT-files (*.mat)';'*.*',  'All Files (*.*)'});
-
-if (~isequal(filename,0) && ~isequal(pathname,0) && ~isequal(filterindex,0))
-   
-    S = load(fullfile(pathname,filename), '-mat');
-    
-    if isfield(S,'LVGRequests')
-        internalRequests = S.LVGRequests;
-        guiRequests = RequestPropertyGrid.ConvertRequestToGUIRequest(internalRequests);
-        
-        RequestPropertyGrid.ResetGripProperties(handles.requestPropertiesEditor);
-        
-        RequestsListboxHelper.SetRequestsToListBox(handles.requestsListbox, guiRequests);
-        
-        handles.ViewedRequestIndex = [];
-        guidata(hObject, handles);
-    end
-end
-
-
-% --- Executes on button press in runButton.
-function runButton_Callback(hObject, eventdata, handles)
-% hObject    handle to runButton (see GCBO)
+% --- Executes on button press in runRequestsButton.
+function runRequestsButton_Callback(hObject, eventdata, handles)
+% hObject    handle to runRequestsButton (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
@@ -167,8 +133,7 @@ progressUpdateTimer.UserData = data;
 LVGResults = WorkspaceHelper.GetLVGResultsHashFromWorkspace();
 ME = [];
 
-requests = get(handles.requestsListbox,'UserData');
-internalRequests = RequestPropertyGrid.ConvertRequestToInternalRequest(requests);
+internalRequests = WorkspaceHelper.GetLVGRequestsListFromWorkspace();
 
 start(progressUpdateTimer);
 
@@ -220,13 +185,14 @@ function requestsListbox_Callback(hObject, eventdata, handles)
 %        contents{get(hObject,'Value')} returns selected item from requestsListbox
 
 selectedRequestIndex = get(hObject,'Value');
-allRequests = get(hObject,'UserData');
+allRequests = WorkspaceHelper.GetLVGRequestsListFromWorkspace();
 
 %load new request
 if ~isempty(selectedRequestIndex)
-    request = allRequests(selectedRequestIndex);
-    copyReq = request.Copy();
-    RequestPropertyGrid.SetGridProperties(handles.requestPropertiesEditor, copyReq, false);    
+    internalRequest = allRequests(selectedRequestIndex);
+    guiRequest = RequestPropertyGrid.ConvertRequestToGUIRequest(internalRequest);
+    
+    RequestPropertyGrid.SetGridProperties(handles.requestPropertiesEditor, guiRequest, false);    
     handles.ViewedRequestIndex = selectedRequestIndex;
 end
 
@@ -245,13 +211,18 @@ if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgr
     set(hObject,'BackgroundColor','white');
 end
 
-set(hObject,'UserData',LVGSolverPopulationRequest.empty(0, 1));
+% refreshCallback = get(handles.refreshRequestsButton, 'Callback');
+% refreshCallback(handles.refreshRequestsButton, []);
+
+internalRequests = WorkspaceHelper.GetLVGRequestsListFromWorkspace();
+RequestsListboxHelper.SetRequestsToListBox(hObject, internalRequests);
+
 handles.ViewedRequestIndex = [];
 guidata(hObject, handles);
 
-% --- Executes on button press in removeButton.
-function removeButton_Callback(hObject, eventdata, handles)
-% hObject    handle to removeButton (see GCBO)
+% --- Executes on button press in removeRequestsButton.
+function removeRequestsButton_Callback(hObject, eventdata, handles)
+% hObject    handle to removeRequestsButton (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
@@ -264,9 +235,9 @@ if (~isempty(handles.ViewedRequestIndex))
     guidata(hObject, handles);
 end
 
-% --- Executes on button press in saveChangesButton.
-function saveChangesButton_Callback(hObject, eventdata, handles)
-% hObject    handle to saveChangesButton (see GCBO)
+% --- Executes on button press in saveRequestsChangesButton.
+function saveRequestsChangesButton_Callback(hObject, eventdata, handles)
+% hObject    handle to saveRequestsChangesButton (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
@@ -275,15 +246,18 @@ if ~isempty(handles.ViewedRequestIndex)
     RequestsListboxHelper.ReplaceRequestInListBox(handles.requestsListbox,handles.ViewedRequestIndex,handles.requestPropertiesEditor.Item);
 end
 
-
 % --- Executes during object creation, after setting all properties.
-function requestPropertiesPanel_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to requestPropertiesPanel (see GCBO)
+function processRequestsFigure_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to processRequestsFigure (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
 
-h = PropertyGrid(hObject);
+h = PropertyGrid(hObject, ...
+    'Position', ...
+    [0.49108367626886135,...
+    0.17,...
+    0.4883401920438957,...
+    0.7949367088607595]);
 
-handles.requestPropertiesEditor = h; 
-
+handles.requestPropertiesEditor = h;
 guidata(hObject,handles);

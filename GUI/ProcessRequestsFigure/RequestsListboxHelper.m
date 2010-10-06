@@ -2,16 +2,16 @@ classdef RequestsListboxHelper
     
     methods(Static)
                 
-        function AddRequestToListBox (ListBoxHandle, GUIRequest, CurrentlyViewedIndex)
+        function AddRequestToListBox (ListBoxHandle, LVGPopRequest, CurrentlyViewedIndex)
             
             requestStrings = get(ListBoxHandle,'String');
-            requests = get(ListBoxHandle,'UserData');
+            requests = WorkspaceHelper.GetLVGRequestsListFromWorkspace();
             
-            requestStrings{end+1} = GUIRequest.RequestName;
-            requests(end+1) = GUIRequest;
+            requestStrings{end+1} = LVGPopRequest.RequestName;
+            requests(end+1) = LVGPopRequest;
             
             set(ListBoxHandle,'String',requestStrings);
-            set(ListBoxHandle,'UserData',requests);
+            WorkspaceHelper.SetLVGRequestsListInWorkspace(requests);
             
             if (isempty(CurrentlyViewedIndex))
                 set(ListBoxHandle,'Value',1);
@@ -20,31 +20,33 @@ classdef RequestsListboxHelper
         
         function ReplaceRequestInListBox(ListBoxHandle, OldRequestIndex, NewGUIRequest)
             
-            requestStrings = get(ListBoxHandle,'String');
-            requests = get(ListBoxHandle,'UserData');
+            newReq = RequestPropertyGrid.ConvertRequestToInternalRequest(NewGUIRequest);  
             
-            requestStrings{OldRequestIndex} = NewGUIRequest.RequestName;
-            requests(OldRequestIndex) = NewGUIRequest;
+            requestStrings = get(ListBoxHandle,'String');
+            requests = WorkspaceHelper.GetLVGRequestsListFromWorkspace();
+            
+            requestStrings{OldRequestIndex} = newReq.RequestName;
+            requests(OldRequestIndex) = newReq;
             
             set(ListBoxHandle,'String',requestStrings);
-            set(ListBoxHandle,'UserData',requests);
+            WorkspaceHelper.SetLVGRequestsListInWorkspace(requests);
         end
         
         function RemoveRequestFromListBox (ListBoxHandle, CurrentlyViewedIndex)
             
             requestStrings = get(ListBoxHandle,'String');
-            requests = get(ListBoxHandle,'UserData');
+            requests = WorkspaceHelper.GetLVGRequestsListFromWorkspace();
             
             requestStrings(CurrentlyViewedIndex) = [];
             requests(CurrentlyViewedIndex) = [];
             
             set(ListBoxHandle,'String',requestStrings);
-            set(ListBoxHandle,'UserData',requests);
+            WorkspaceHelper.SetLVGRequestsListInWorkspace(requests);
             
-            if CurrentlyViewedIndex>1
+            if CurrentlyViewedIndex > numel(requests)
                 newViewIndex = CurrentlyViewedIndex-1;
             else
-                newViewIndex = 1;
+                newViewIndex = CurrentlyViewedIndex;
             end
             
             set(ListBoxHandle,'Value',newViewIndex);
@@ -53,7 +55,7 @@ classdef RequestsListboxHelper
         function DuplicateRequestInListBox (ListBoxHandle, CurrentlyViewedIndex)
             
             requestStrings = get(ListBoxHandle,'String');
-            requests = get(ListBoxHandle,'UserData');
+            requests = WorkspaceHelper.GetLVGRequestsListFromWorkspace();
             
             requestStrings(CurrentlyViewedIndex+2:end+1) = requestStrings(CurrentlyViewedIndex+1:end);
             requests(CurrentlyViewedIndex+2:end+1) = requests(CurrentlyViewedIndex+1:end);
@@ -62,7 +64,7 @@ classdef RequestsListboxHelper
             requests(CurrentlyViewedIndex+1) = requests(CurrentlyViewedIndex).Copy();
             
             set(ListBoxHandle,'String',requestStrings);
-            set(ListBoxHandle,'UserData',requests);
+            WorkspaceHelper.SetLVGRequestsListInWorkspace(requests);
         end
         
         function SetRequestsToListBox (ListBoxHandle, Requests)
@@ -75,8 +77,6 @@ classdef RequestsListboxHelper
             
             set(ListBoxHandle,'Value',1);
             set(ListBoxHandle,'String',requestStrings);
-            set(ListBoxHandle,'UserData',Requests);
-            
             
         end
         

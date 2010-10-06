@@ -126,7 +126,7 @@ classdef LVGSolverPopulationRequest < handle
             ColumnDensities = MoleculeDensity;
             
             %dvdrKmParsecArray = 1:0.05:1.05 .* Constants.dVdRConversionFactor;
-            dvdrArray = 10.^[ -5:1:1 ];
+            dvdrArray = 10.^[ -5:1:1 ] * Constants.dVdRConversionFactor;
             
             BackgroundTemperature = 2.73;
             

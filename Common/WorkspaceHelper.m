@@ -51,15 +51,22 @@ classdef WorkspaceHelper
             
         end
    
-        function Requests = GetRequestsListFromWorkspace ()
+        function Requests = GetLVGRequestsListFromWorkspace ()
             
             resultsVariableExists = ~isempty(evalin(WorkspaceHelper.ws, sprintf('who(''%s'')', WorkspaceHelper.RequestsVariableName)));
             
             if resultsVariableExists
                 Requests = evalin(WorkspaceHelper.ws, WorkspaceHelper.RequestsVariableName);
             else
-                Requests = [];
+                Requests = LVGSolverPopulationRequest.empty(1,0);
+                assignin(WorkspaceHelper.ws, WorkspaceHelper.RequestsVariableName, Requests);
             end
+            
+        end
+        
+        function SetLVGRequestsListInWorkspace (Requests)
+            
+            assignin(WorkspaceHelper.ws, WorkspaceHelper.RequestsVariableName, Requests);
             
         end
         

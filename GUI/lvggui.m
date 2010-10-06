@@ -22,7 +22,7 @@ function varargout = LVGGUI(varargin)
 
 % Edit the above text to modify the response to help LVGGUI
 
-% Last Modified by GUIDE v2.5 21-Sep-2010 12:11:52
+% Last Modified by GUIDE v2.5 06-Oct-2010 13:20:58
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -58,13 +58,7 @@ handles.output = hObject;
 guidata(hObject, handles);
 
 % UIWAIT makes LVGGUI wait for user response (see UIRESUME)
-% uiwait(handles.figure1);
-
-function CallCreateFunction(hObject, handles)
-
-CreateFcn = get(hObject,'CreateFcn');
-[a1] = CreateFcn(hObject, []);
-'tst';
+% uiwait(handles.lvgMainFigure);
 
 % --- Outputs from this function are returned to the command line.
 function varargout = LVGGUI_OutputFcn(hObject, eventdata, handles) 
@@ -83,12 +77,34 @@ function OpenMenuItem_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 uiopen('load');
 
+if ~isempty(who(WorkspaceHelper.MoleculesVariableName))
+    eval(sprintf('assignin(''base'', WorkspaceHelper.MoleculesVariableName, %s);', WorkspaceHelper.MoleculesVariableName));
+end
+if ~isempty(who(WorkspaceHelper.ResultsVariableName))
+    eval(sprintf('assignin(''base'', WorkspaceHelper.ResultsVariableName, %s);', WorkspaceHelper.ResultsVariableName));
+end
+if ~isempty(who(WorkspaceHelper.RequestsVariableName))
+    eval(sprintf('assignin(''base'', WorkspaceHelper.RequestsVariableName, %s);', WorkspaceHelper.RequestsVariableName));
+end
+
 % --------------------------------------------------------------------
 function SaveAsMenuItem_Callback(hObject, eventdata, handles)
 % hObject    handle to SaveAsMenuItem (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-uisave();
+
+choice = questdlg('Please choose variables to save:', ...
+	'Save As...', 'Molecules','Requests & Results','Cancel','Cancel');
+% Handle response
+switch choice
+    case 'Molecules'
+        eval([WorkspaceHelper.MoleculesVariableName '= WorkspaceHelper.GetMoleculesHashFromWorkspace();']);        
+        uisave({WorkspaceHelper.MoleculesVariableName}, WorkspaceHelper.MoleculesVariableName);
+    case 'Requests & Results'
+        eval([WorkspaceHelper.ResultsVariableName '= WorkspaceHelper.GetLVGResultsHashFromWorkspace();']);    
+        eval([WorkspaceHelper.RequestsVariableName '= WorkspaceHelper.GetLVGRequestsListFromWorkspace();']);  
+        uisave({WorkspaceHelper.ResultsVariableName, WorkspaceHelper.RequestsVariableName});
+end
 
 % --------------------------------------------------------------------
 function ExitMenuItem_Callback(hObject, eventdata, handles)
@@ -96,7 +112,7 @@ function ExitMenuItem_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 selection = questdlg('Do you want to close the GUI?',...
-                     'Close Request Function',...
+                     'Close',...
                      'Yes','No','Yes');
 switch selection,
    case 'Yes',
@@ -148,3 +164,12 @@ function TabPlaceHolder_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
+
+
+% --- Executes on button press in calculateButton.
+function calculateButton_Callback(hObject, eventdata, handles)
+% hObject    handle to calculateButton (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+ProcessRequests;

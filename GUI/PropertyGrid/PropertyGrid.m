@@ -75,22 +75,22 @@ classdef PropertyGrid < UIControl
                 parent = figure;
             end
             
-            set(parent,  'Tag', '__PropertyGrid__');
-            set(parent,  'UserData', self);
-            self.Container = parent;
-             
-%             self.Container = uipanel(parent, ...
-%                 'Units', 'normalized', ...
-%                 'Position', [0 0 1 1], ...
-%                 'Tag', '__PropertyGrid__', ...
-%                 'UserData', self);
-
+            %             set(parent,  'Tag', '__PropertyGrid__');
+            %             set(parent,  'UserData', self);
+            %             self.Container = parent;
+            
+            self.Container = uipanel(parent, ...
+                'Units', 'normalized', ...
+                'Position', [0 0 1 1], ...
+                'Tag', '__PropertyGrid__', ...
+                'UserData', self);
+            
             % initialize JIDE
             com.mathworks.mwswing.MJUtilities.initJIDE;
             com.jidesoft.grid.CellEditorManager.registerEditor(javaclass('cellstr',1), com.jidesoft.grid.StringArrayCellEditor);
             com.jidesoft.grid.CellEditorManager.registerEditor(javaclass('char',1), com.jidesoft.grid.MultilineStringCellEditor, com.jidesoft.grid.MultilineStringCellEditor.CONTEXT);
             com.jidesoft.grid.CellRendererManager.registerRenderer(javaclass('char',1), com.jidesoft.grid.MultilineStringCellRenderer, com.jidesoft.grid.MultilineStringCellEditor.CONTEXT);
-
+            
             % create JIDE property pane
             self.Table = handle(objectEDT('com.jidesoft.grid.PropertyTable'), 'CallbackProperties');  % property grid (without table model)
             self.Pane = objectEDT('com.jidesoft.grid.PropertyPane', self.Table);  % property pane (with icons at top and help panel at bottom)

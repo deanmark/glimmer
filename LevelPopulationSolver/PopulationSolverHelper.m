@@ -9,10 +9,11 @@ classdef PopulationSolverHelper < handle
     
     methods (Access=public)
         
-        function FinalResult = CalculateLVGPopulation (this, PopulationRequest)
+        function FinalResult = CalculateLVGPopulation (this, UnfixedPopulationRequest)
             
-            PopulationSolverHelper.validateInput(PopulationRequest);
-            [MoleculeData, BetaProvider, innerRequest ] = PopulationSolverHelper.changeRequestToInnerRequest (PopulationRequest);
+            PopulationSolverHelper.validateInput(UnfixedPopulationRequest);
+            [MoleculeData, BetaProvider, PopulationRequest] = PopulationSolverHelper.changeRequestToInnerRequest (UnfixedPopulationRequest);
+            innerRequest = PopulationRequest.Copy();
             FinalResult = PopulationSolverHelper.initializeResult(PopulationRequest);
             
             LVGSolverLowExcitation = LevelPopulationSolverLVG(MoleculeData, BetaProvider, LVGSolverAlgorithmParameters.DefaultInitialRunParamsLowExcitation());
@@ -88,10 +89,11 @@ classdef PopulationSolverHelper < handle
             
         end
         
-        function FinalResult = CalculateLVGPopulationDensityParallel (this, PopulationRequest)
+        function FinalResult = CalculateLVGPopulationDensityParallel (this, UnfixedPopulationRequest)
             
-            PopulationSolverHelper.validateInput(PopulationRequest);
-            [MoleculeData, BetaProvider, innerRequest ] = PopulationSolverHelper.changeRequestToInnerRequest (PopulationRequest);
+            PopulationSolverHelper.validateInput(UnfixedPopulationRequest);
+            [MoleculeData, BetaProvider, PopulationRequest] = PopulationSolverHelper.changeRequestToInnerRequest (UnfixedPopulationRequest);
+            innerRequest = PopulationRequest.Copy();
             FinalResult = PopulationSolverHelper.initializeResult(innerRequest);
             
             LVGSolverLowExcitation = LevelPopulationSolverLVG(MoleculeData, BetaProvider, LVGSolverAlgorithmParameters.DefaultInitialRunParamsLowExcitation());
@@ -158,10 +160,11 @@ classdef PopulationSolverHelper < handle
             
         end
          
-        function FinalResult = CalculateOpticallyThinPopulation (this, PopulationRequest)
+        function FinalResult = CalculateOpticallyThinPopulation (this, UnfixedPopulationRequest)
             
-            PopulationSolverHelper.validateInput(PopulationRequest);
-            [MoleculeData, BetaProvider, innerRequest ] = PopulationSolverHelper.changeRequestToInnerRequest (PopulationRequest);
+            PopulationSolverHelper.validateInput(UnfixedPopulationRequest);
+            [MoleculeData, BetaProvider, PopulationRequest] = PopulationSolverHelper.changeRequestToInnerRequest (UnfixedPopulationRequest);
+            innerRequest = PopulationRequest.Copy();
             FinalResult = PopulationSolverHelper.initializeResult(PopulationRequest);
             
             OThin = LevelPopulationSolverOpticallyThin(MoleculeData);
@@ -203,10 +206,11 @@ classdef PopulationSolverHelper < handle
             
         end
         
-        function FinalResult = CalculateLTEPopulation (this, PopulationRequest)
+        function FinalResult = CalculateLTEPopulation (this, UnfixedPopulationRequest)
             
-            PopulationSolverHelper.validateInput(PopulationRequest);
-            [MoleculeData, BetaProvider, innerRequest ] = PopulationSolverHelper.changeRequestToInnerRequest (PopulationRequest);
+            PopulationSolverHelper.validateInput(UnfixedPopulationRequest);
+            [MoleculeData, BetaProvider, PopulationRequest] = PopulationSolverHelper.changeRequestToInnerRequest (UnfixedPopulationRequest);
+            innerRequest = PopulationRequest.Copy();
             FinalResult = PopulationSolverHelper.initializeResult(PopulationRequest);
             
             LTESolver = LevelPopulationSolverLTE(MoleculeData);
@@ -248,17 +252,18 @@ classdef PopulationSolverHelper < handle
             
         end
         
-        function FinalResult = CalculateRadexLVGPopulation (this, PopulationRequest)
+        function FinalResult = CalculateRadexLVGPopulation (this, UnfixedPopulationRequest)
             
-            PopulationSolverHelper.validateInput(PopulationRequest);
-            [MoleculeData, BetaProvider, innerRequest ] = PopulationSolverHelper.changeRequestToInnerRequest (PopulationRequest);
+            PopulationSolverHelper.validateInput(UnfixedPopulationRequest);
+            [MoleculeData, BetaProvider, PopulationRequest] = PopulationSolverHelper.changeRequestToInnerRequest (UnfixedPopulationRequest);
+            innerRequest = PopulationRequest.Copy();
             FinalResult = PopulationSolverHelper.initializeResult(PopulationRequest);
                         
             totalComputations = numel(PopulationRequest.VelocityDerivative)*numel(PopulationRequest.Temperature)*numel(PopulationRequest.CollisionPartnerDensities);
             i = 0;
             
-            for dvDrIndex=1:numel(PopulationRequest.VelocityDerivative)                
-                for tempIndex=1:numel(PopulationRequest.Temperature)                    
+            for dvDrIndex=1:numel(PopulationRequest.VelocityDerivative)
+                for tempIndex=1:numel(PopulationRequest.Temperature)
                     for densIndex=1:numel(PopulationRequest.CollisionPartnerDensities)
                         
                         innerRequest.Temperature = PopulationRequest.Temperature(tempIndex);
@@ -280,12 +285,12 @@ classdef PopulationSolverHelper < handle
                         end
                         
                         i=i+1;
-                        this.showProgress(i, totalComputations);                         
-                        this.checkForStopFlag();                    
+                        this.showProgress(i, totalComputations);
+                        this.checkForStopFlag();
                         
                     end
                 end
-            end            
+            end
         end
         
         function FinalResult = ProcessPopulationRequest (this, PopulationRequest)
@@ -385,18 +390,23 @@ classdef PopulationSolverHelper < handle
             
         end
         
-        function [Molecule, BetaProvider, InnerRequest] = changeRequestToInnerRequest (PopulationRequest)
+        function [Molecule, BetaProvider, InternalPopulationRequest] = changeRequestToInnerRequest (PopulationRequest)
             
             Molecule = WorkspaceHelper.GetMoleculeDataFromWorkspace(PopulationRequest.MoleculeFileName);            
             BetaProvider = PopulationSolverHelper.createBetaProvider(PopulationRequest.BetaTypeCode, Molecule, PopulationRequest.BackgroundTemperature);
             
-            InnerRequest = PopulationRequest.Copy();
+            InternalPopulationRequest = PopulationRequest.Copy();
             
-            if isempty(PopulationRequest.NumLevelsForSolution) || PopulationRequest.NumLevelsForSolution == 0
-                InnerRequest.NumLevelsForSolution = Molecule.MolecularLevels;
+            if isempty(InternalPopulationRequest.NumLevelsForSolution) || InternalPopulationRequest.NumLevelsForSolution == 0
+                InternalPopulationRequest.NumLevelsForSolution = Molecule.MolecularLevels;
             end
             
-            PopulationSolverHelper.replaceCollisionPartnerCodesToRates(InnerRequest,Molecule);            
+            if isempty(InternalPopulationRequest.Temperature) || InternalPopulationRequest.Temperature == 0                
+                collPartners = Molecule.CollisionPartnerCodes();
+                InternalPopulationRequest.Temperature = Molecule.GetCollisionPartner(collPartners(1)).Temperatures;
+            end
+            
+            PopulationSolverHelper.replaceCollisionPartnerCodesToRates(InternalPopulationRequest,Molecule);            
             
         end
         
