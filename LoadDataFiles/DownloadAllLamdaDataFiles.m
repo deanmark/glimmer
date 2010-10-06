@@ -1,4 +1,4 @@
-function downloadAllLamdaDataFiles (lamdaWebsite)
+function DownloadAllLamdaDataFiles (lamdaWebsite)
 
 % get all moldata links
 %lamda = 'http://www.strw.leidenuniv.nl/~moldata/';
