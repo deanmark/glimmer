@@ -4,7 +4,7 @@ classdef RequestPropertyGrid
     
     properties(Constant)
         
-        PropertyOrderList = {'RequestName','MoleculeFileName','RunTypeCode','BetaTypeCode','Temperature','VelocityDerivative',...
+        PropertyOrderList = {'RequestName','MoleculeFileName','RunTypeCode','BetaTypeCode','Temperature','VelocityDerivativeUnits','VelocityDerivative',...
             'CollisionPartners','Weights','CollisionPartnerDensities','MoleculeDensity','CloudColumnDensity','BackgroundTemperature',...
             'CalculateIntensities','NumLevelsForSolution','FirstPopulationGuess','DebugIndicators'};
         
@@ -12,10 +12,11 @@ classdef RequestPropertyGrid
     
     methods(Static)
         
-        function [Names, Values] = GetClassConstants (CurrentClass)
+        function [Names, Values, Description] = GetClassConstants (CurrentClass, getDescription)
             
             Names = {};
             Values = [];
+            Description = {};
             
             getMetaDataCommand = sprintf('?%s',CurrentClass);
             metaData = eval(getMetaDataCommand);
@@ -28,19 +29,13 @@ classdef RequestPropertyGrid
                     Names{end+1} = property.Name;
                     getConstantValueCommand = sprintf('%s.%s',CurrentClass,property.Name);
                     Values(end+1) = eval(getConstantValueCommand);
+                    
+                    if (getDescription)
+                        Description(end+1) = helptext(getConstantValueCommand);
+                    end
                 end
             end
             
-        end
-        
-        function Property = FindPropertyByName (Properties, PropertyName)
-            
-            for i=1:numel(Properties)
-                if strcmpi(Properties(i).Name, PropertyName)
-                    Property = Properties(i);
-                    return;
-                end
-            end
         end
         
         function GUIRequest = ConvertRequestToGUIRequest (LVGRequest)
@@ -52,15 +47,19 @@ classdef RequestPropertyGrid
                 GUIRequest(i) = LVGRequest(i).Copy();
                 
                 %Run Type
-                [runTypeNames,runTypeValues] = RequestPropertyGrid.GetClassConstants('RunTypeCodes');
+                [runTypeNames,runTypeValues] = RequestPropertyGrid.GetClassConstants('RunTypeCodes', false);
                 GUIRequest(i).RunTypeCode = runTypeNames{runTypeValues==GUIRequest(i).RunTypeCode};
                 
                 %Beta Type
-                [betaTypeNames,betaTypeValues] = RequestPropertyGrid.GetClassConstants('BetaTypeCodes');
+                [betaTypeNames,betaTypeValues] = RequestPropertyGrid.GetClassConstants('BetaTypeCodes', false);
                 GUIRequest(i).BetaTypeCode = betaTypeNames{betaTypeValues==GUIRequest(i).BetaTypeCode};
                 
+                %Velocity Derivate Type
+                [dvdrTypeNames,dvdrTypeValues, dvdrDescription] = RequestPropertyGrid.GetClassConstants('VelocityDerivativeUnits',true);
+                GUIRequest(i).VelocityDerivativeUnits = dvdrDescription{dvdrTypeValues==GUIRequest(i).VelocityDerivativeUnits};
+                
                 %Collision partners & weights
-                [collisionPartnerNames,collisionPartnerValues] = RequestPropertyGrid.GetClassConstants('CollisionPartnersCodes');
+                [collisionPartnerNames,collisionPartnerValues] = RequestPropertyGrid.GetClassConstants('CollisionPartnersCodes', false);
                 
                 collPartnersWithWeights = zeros(numel(GUIRequest(i).CollisionPartners),2);
                 collPartnersWithWeights(1:end,1) = GUIRequest(i).CollisionPartners;
@@ -82,15 +81,19 @@ classdef RequestPropertyGrid
                 LVGRequest(i) = GUIRequest(i).Copy();
                 
                 %Run Type
-                [runTypeNames,runTypeValues] = RequestPropertyGrid.GetClassConstants('RunTypeCodes');
+                [runTypeNames,runTypeValues] = RequestPropertyGrid.GetClassConstants('RunTypeCodes',false);
                 LVGRequest(i).RunTypeCode = runTypeValues(strcmpi(runTypeNames,GUIRequest(i).RunTypeCode));
                 
                 %Beta Type
-                [betaTypeNames,betaTypeValues] = RequestPropertyGrid.GetClassConstants('BetaTypeCodes');
+                [betaTypeNames,betaTypeValues] = RequestPropertyGrid.GetClassConstants('BetaTypeCodes',false);
                 LVGRequest(i).BetaTypeCode = betaTypeValues(strcmpi(betaTypeNames,GUIRequest(i).BetaTypeCode));
                 
+                %Velocity Derivate Type
+                [dvdrTypeNames,dvdrTypeValues, dvdrDescription] = RequestPropertyGrid.GetClassConstants('VelocityDerivativeUnits',true);
+                LVGRequest(i).VelocityDerivativeUnits = dvdrTypeValues(strcmpi(dvdrDescription,GUIRequest(i).VelocityDerivativeUnits));
+                
                 %Collision partners & weights
-                [collisionPartnerNames,collisionPartnerValues] = RequestPropertyGrid.GetClassConstants('CollisionPartnersCodes');
+                [collisionPartnerNames,collisionPartnerValues] = RequestPropertyGrid.GetClassConstants('CollisionPartnersCodes',false);
                 LVGRequest(i).CollisionPartners = collisionPartnerValues(GUIRequest(i).CollisionPartners);
                
             end
@@ -113,15 +116,19 @@ classdef RequestPropertyGrid
                 prop.Value = '';
             end
             
-            [runTypeNames,runTypeValues] = RequestPropertyGrid.GetClassConstants('RunTypeCodes');            
+            [runTypeNames,runTypeValues] = RequestPropertyGrid.GetClassConstants('RunTypeCodes',false);            
             prop =properties.FindByName('RunTypeCode');
             prop.Type = PropertyType('char', 'row', runTypeNames);
             
-            [betaTypeNames,betaTypeValues] = RequestPropertyGrid.GetClassConstants('BetaTypeCodes');
+            [betaTypeNames,betaTypeValues] = RequestPropertyGrid.GetClassConstants('BetaTypeCodes',false);
             prop =properties.FindByName('BetaTypeCode');
             prop.Type = PropertyType('char', 'row', betaTypeNames);
             
-            [collisionPartnerNames,collisionPartnerValues] = RequestPropertyGrid.GetClassConstants('CollisionPartnersCodes');
+            [dvdrTypeNames,dvdrTypeValues, dvdrDescription] = RequestPropertyGrid.GetClassConstants('VelocityDerivativeUnits',true);
+            prop = properties.FindByName('VelocityDerivativeUnits');
+            prop.Type = PropertyType('char', 'row', dvdrDescription);            
+            
+            [collisionPartnerNames,collisionPartnerValues] = RequestPropertyGrid.GetClassConstants('CollisionPartnersCodes',false);
             prop =properties.FindByName('CollisionPartners');
             prop.Type = PropertyType('logical', 'row', collisionPartnerNames);
 
@@ -166,4 +173,3 @@ classdef RequestPropertyGrid
     end
     
 end
-

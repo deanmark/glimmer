@@ -29,7 +29,9 @@ classdef LVGSolverPopulationRequest < handle
         Weights;         
         %Sets the cloud kinetic temperature. This affects the collision rates. Leave empty to set to the temperatures in the LAMDA file. Units: Kelvin
         Temperature; 
-        %Sets the velocity derivative of the cloud. Units: s^-1
+        %Sets the units of the velocity derivative.
+        VelocityDerivativeUnits;
+        %Sets the velocity derivative of the cloud.
         VelocityDerivative; 
         
         %Sets the Collision Partner Density. Units: cm^-3
@@ -126,7 +128,8 @@ classdef LVGSolverPopulationRequest < handle
             ColumnDensities = MoleculeDensity;
             
             %dvdrKmParsecArray = 1:0.05:1.05 .* Constants.dVdRConversionFactor;
-            dvdrArray = 10.^[ -5:1:1 ] * Constants.dVdRConversionFactor;
+            dvdrArray = 10.^[ -5:1:1 ];
+            dvdrArrayUnits = VelocityDerivativeUnits.kmSecParsec;
             
             BackgroundTemperature = 2.73;
             
@@ -140,6 +143,7 @@ classdef LVGSolverPopulationRequest < handle
                 'Weights', CollisionPartnerWeights,...
                 'Temperature',Temperatures,...
                 'CollisionPartnerDensities',CollisionPartnerDensities,...
+                'VelocityDerivativeUnits',dvdrArrayUnits,...
                 'VelocityDerivative',dvdrArray,...
                 'MoleculeDensity',MoleculeDensity,...
                 'NumLevelsForSolution',0,...

@@ -33,7 +33,7 @@ classdef PopulationSolverHelper < handle
                     
                     for densIndex=1:numel(PopulationRequest.CollisionPartnerDensities)
                         
-                        PopulationSolverHelper.fillInnerRequest(innerRequest,PopulationRequest.Temperature(tempIndex),PopulationRequest.VelocityDerivative(dvDrIndex),...
+                        PopulationSolverHelper.fillInnerRequest(innerRequest,PopulationRequest.Temperature(tempIndex),PopulationRequest.VelocityDerivative(dvDrIndex),PopulationRequest.VelocityDerivativeUnits,...
                             PopulationRequest.CollisionPartnerDensities(densIndex),PopulationRequest.MoleculeDensity(densIndex),PopulationRequest.CloudColumnDensity(densIndex), PopulationRequest.FirstPopulationGuess)
                         BetaProvider.IgnoreNegativeTau = true;
                         
@@ -94,7 +94,7 @@ classdef PopulationSolverHelper < handle
             PopulationSolverHelper.validateInput(UnfixedPopulationRequest);
             [MoleculeData, BetaProvider, PopulationRequest] = PopulationSolverHelper.changeRequestToInnerRequest (UnfixedPopulationRequest);
             innerRequest = PopulationRequest.Copy();
-            FinalResult = PopulationSolverHelper.initializeResult(innerRequest);
+            FinalResult = PopulationSolverHelper.initializeResult(PopulationRequest);
             
             LVGSolverLowExcitation = LevelPopulationSolverLVG(MoleculeData, BetaProvider, LVGSolverAlgorithmParameters.DefaultInitialRunParamsLowExcitation());
             LVGSolverHighExcitation = LevelPopulationSolverLVG(MoleculeData, BetaProvider, LVGSolverAlgorithmParameters.DefaultInitialRunParamsHighExcitation);
@@ -111,7 +111,7 @@ classdef PopulationSolverHelper < handle
                 
                 for tempIndex=1:numel(PopulationRequest.Temperature)
                     
-                    PopulationSolverHelper.fillInnerRequest(innerRequest,PopulationRequest.Temperature(tempIndex),PopulationRequest.VelocityDerivative(dvDrIndex),...
+                    PopulationSolverHelper.fillInnerRequest(innerRequest,PopulationRequest.Temperature(tempIndex),PopulationRequest.VelocityDerivative(dvDrIndex),PopulationRequest.VelocityDerivativeUnits,...
                         PopulationRequest.CollisionPartnerDensities,PopulationRequest.MoleculeDensity,PopulationRequest.CloudColumnDensity, PopulationRequest.FirstPopulationGuess)
                     BetaProvider.IgnoreNegativeTau = true;
                     
@@ -184,7 +184,7 @@ classdef PopulationSolverHelper < handle
                 
                 for tempIndex=1:numel(PopulationRequest.Temperature)                    
                     
-                    PopulationSolverHelper.fillInnerRequest(innerRequest,PopulationRequest.Temperature(tempIndex),PopulationRequest.VelocityDerivative(dvDrIndex),...
+                    PopulationSolverHelper.fillInnerRequest(innerRequest,PopulationRequest.Temperature(tempIndex),PopulationRequest.VelocityDerivative(dvDrIndex),PopulationRequest.VelocityDerivativeUnits,...
                         PopulationRequest.CollisionPartnerDensities,PopulationRequest.MoleculeDensity,PopulationRequest.CloudColumnDensity, PopulationRequest.FirstPopulationGuess)
                                         
                     Population = OThin.SolveLevelsPopulation(innerRequest);
@@ -230,7 +230,7 @@ classdef PopulationSolverHelper < handle
                 
                 for tempIndex=1:numel(PopulationRequest.Temperature)
                     
-                    PopulationSolverHelper.fillInnerRequest(innerRequest,PopulationRequest.Temperature(tempIndex),PopulationRequest.VelocityDerivative(dvDrIndex),...
+                    PopulationSolverHelper.fillInnerRequest(innerRequest,PopulationRequest.Temperature(tempIndex),PopulationRequest.VelocityDerivative(dvDrIndex),PopulationRequest.VelocityDerivativeUnits,...
                         PopulationRequest.CollisionPartnerDensities,PopulationRequest.MoleculeDensity,PopulationRequest.CloudColumnDensity, PopulationRequest.FirstPopulationGuess)
                                         
                     Population = LTESolver.SolveLevelsPopulation(innerRequest);
@@ -266,10 +266,8 @@ classdef PopulationSolverHelper < handle
                 for tempIndex=1:numel(PopulationRequest.Temperature)
                     for densIndex=1:numel(PopulationRequest.CollisionPartnerDensities)
                         
-                        innerRequest.Temperature = PopulationRequest.Temperature(tempIndex);
-                        innerRequest.VelocityDerivative = PopulationRequest.VelocityDerivative(dvDrIndex);
-                        innerRequest.CollisionPartnerDensities = PopulationRequest.CollisionPartnerDensities(densIndex);
-                        innerRequest.MoleculeDensity = PopulationRequest.MoleculeDensity(densIndex);
+                        PopulationSolverHelper.fillInnerRequest(innerRequest,PopulationRequest.Temperature(tempIndex),PopulationRequest.VelocityDerivative(dvDrIndex),PopulationRequest.VelocityDerivativeUnits,...
+                            PopulationRequest.CollisionPartnerDensities(densIndex),PopulationRequest.MoleculeDensity(densIndex),PopulationRequest.CloudColumnDensity(densIndex), PopulationRequest.FirstPopulationGuess)
                         
                         [ Result, Converged, RuntimeMessage ] = RadexSolver.CalculateLVGPopulation(innerRequest);
                         
@@ -357,10 +355,11 @@ classdef PopulationSolverHelper < handle
     
     methods (Access=private, Static=true)
         
-        function fillInnerRequest(InnerRequest, Temperature, VelocityDerivative, CollisionPartnerDensities, MoleculeDensity, CloudColumnDensity, FirstPopulationGuess)
+        function fillInnerRequest(InnerRequest, Temperature, VelocityDerivative, VelocityDerivativeUnit, CollisionPartnerDensities, MoleculeDensity, CloudColumnDensity, FirstPopulationGuess)
            
             InnerRequest.Temperature = Temperature;
-            InnerRequest.VelocityDerivative = VelocityDerivative;
+            InnerRequest.VelocityDerivativeUnits = VelocityDerivativeUnits.sec;
+            InnerRequest.VelocityDerivative = VelocityDerivative * VelocityDerivativeUnits.ConversionFactorToCGS(VelocityDerivativeUnit);
             InnerRequest.CollisionPartnerDensities = CollisionPartnerDensities;
             InnerRequest.MoleculeDensity = MoleculeDensity;
             InnerRequest.CloudColumnDensity = CloudColumnDensity;
