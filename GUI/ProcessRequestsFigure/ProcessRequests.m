@@ -121,6 +121,9 @@ function runRequestsButton_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
+internalRequests = WorkspaceHelper.GetLVGRequestsListFromWorkspace();
+validateRequests(internalRequests);
+
 dlg = ProgressDialog();
 dlg.ShowTimeLeft = true;
 
@@ -132,8 +135,6 @@ progressUpdateTimer.UserData = data;
 
 LVGResults = WorkspaceHelper.GetLVGResultsHashFromWorkspace();
 ME = [];
-
-internalRequests = WorkspaceHelper.GetLVGRequestsListFromWorkspace();
 
 start(progressUpdateTimer);
 
@@ -161,6 +162,22 @@ delete(dlg);
 if ~isempty(ME) && ~strcmp(ME.message, 'Operation terminated by user.')
     rethrow(ME);
 end
+
+function validateRequests (InternalRequests)
+
+molecules = WorkspaceHelper.GetMoleculesHashFromWorkspace();
+
+for i=1:numel(InternalRequests)
+    
+    if isempty(molecules.Get(InternalRequests(i).MoleculeFileName))
+        
+        errMsg = sprintf('Molecule ''%s'' not loaded!', InternalRequests(i).MoleculeFileName);
+        errordlg(errMsg, 'Error', 'modal');
+        error(errMsg);
+    end
+    
+end
+
 
 function progressUpdateTimer_Callback(timerObject,eventdata)
 
