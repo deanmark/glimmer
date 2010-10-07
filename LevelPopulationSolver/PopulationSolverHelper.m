@@ -9,12 +9,9 @@ classdef PopulationSolverHelper < handle
     
     methods (Access=public)
         
-        function FinalResult = CalculateLVGPopulation (this, UnfixedPopulationRequest)
+        function FinalResult = CalculateLVGPopulation (obj, PopulationRequest)
             
-            PopulationSolverHelper.validateInput(UnfixedPopulationRequest);
-            [MoleculeData, BetaProvider, PopulationRequest] = PopulationSolverHelper.changeRequestToInnerRequest (UnfixedPopulationRequest);
-            innerRequest = PopulationRequest.Copy();
-            FinalResult = PopulationSolverHelper.initializeResult(PopulationRequest);
+            [MoleculeData, BetaProvider, innerRequest, FinalResult] = obj.initialize (PopulationRequest);
             
             LVGSolverLowExcitation = LevelPopulationSolverLVG(MoleculeData, BetaProvider, LVGSolverAlgorithmParameters.DefaultInitialRunParamsLowExcitation());
             LVGSolverHighExcitation = LevelPopulationSolverLVG(MoleculeData, BetaProvider, LVGSolverAlgorithmParameters.DefaultInitialRunParamsHighExcitation);
@@ -79,8 +76,8 @@ classdef PopulationSolverHelper < handle
                         
                         i=i+1;
                                                 
-                        this.showProgress(i, totalComputations);
-                        this.checkForStopFlag();                        
+                        obj.showProgress(i, totalComputations);
+                        obj.checkForStopFlag();                        
                         
                     end
                 end
@@ -89,12 +86,9 @@ classdef PopulationSolverHelper < handle
             
         end
         
-        function FinalResult = CalculateLVGPopulationDensityParallel (this, UnfixedPopulationRequest)
+        function FinalResult = CalculateLVGPopulationDensityParallel (obj, PopulationRequest)
             
-            PopulationSolverHelper.validateInput(UnfixedPopulationRequest);
-            [MoleculeData, BetaProvider, PopulationRequest] = PopulationSolverHelper.changeRequestToInnerRequest (UnfixedPopulationRequest);
-            innerRequest = PopulationRequest.Copy();
-            FinalResult = PopulationSolverHelper.initializeResult(PopulationRequest);
+            [MoleculeData, BetaProvider, innerRequest, FinalResult] = obj.initialize (PopulationRequest);
             
             LVGSolverLowExcitation = LevelPopulationSolverLVG(MoleculeData, BetaProvider, LVGSolverAlgorithmParameters.DefaultInitialRunParamsLowExcitation());
             LVGSolverHighExcitation = LevelPopulationSolverLVG(MoleculeData, BetaProvider, LVGSolverAlgorithmParameters.DefaultInitialRunParamsHighExcitation);
@@ -151,8 +145,8 @@ classdef PopulationSolverHelper < handle
                     end
                                         
                     i=i+1;
-                    this.showProgress(i, totalComputations);                         
-                    this.checkForStopFlag();
+                    obj.showProgress(i, totalComputations);                         
+                    obj.checkForStopFlag();
                     
                 end
                 
@@ -160,14 +154,18 @@ classdef PopulationSolverHelper < handle
             
         end
          
-        function FinalResult = CalculateOpticallyThinPopulation (this, UnfixedPopulationRequest)
+        function FinalResult = CalculateNonLVGPopulation(obj, PopulationRequest)
             
-            PopulationSolverHelper.validateInput(UnfixedPopulationRequest);
-            [MoleculeData, BetaProvider, PopulationRequest] = PopulationSolverHelper.changeRequestToInnerRequest (UnfixedPopulationRequest);
-            innerRequest = PopulationRequest.Copy();
-            FinalResult = PopulationSolverHelper.initializeResult(PopulationRequest);
+            [MoleculeData, BetaProvider, innerRequest, FinalResult] = obj.initialize (PopulationRequest);
             
-            OThin = LevelPopulationSolverOpticallyThin(MoleculeData);
+            switch PopulationRequest.RunTypeCode
+                case RunTypeCodes.OpticallyThin
+                    solver = LevelPopulationSolverOpticallyThin(MoleculeData);                    
+                case RunTypeCodes.LTE
+                    solver = LevelPopulationSolverLTE(MoleculeData);
+                case RunTypeCodes.OpticallyThinWithBackground
+                    solver = LevelPopulationSolverOpticallyThinWithBackground(MoleculeData, PopulationRequest.BackgroundTemperature);
+            end
             
             if (PopulationRequest.CalculateIntensities)
                 IntensitiesClc = IntensitiesCalculator(MoleculeData); 
@@ -187,7 +185,7 @@ classdef PopulationSolverHelper < handle
                     PopulationSolverHelper.fillInnerRequest(innerRequest,PopulationRequest.Temperature(tempIndex),PopulationRequest.VelocityDerivative(dvDrIndex),PopulationRequest.VelocityDerivativeUnits,...
                         PopulationRequest.CollisionPartnerDensities,PopulationRequest.MoleculeDensity,PopulationRequest.CloudColumnDensity, PopulationRequest.FirstPopulationGuess)
                                         
-                    Population = OThin.SolveLevelsPopulation(innerRequest);
+                    Population = solver.SolveLevelsPopulation(innerRequest);
                     
                     FinalResult.Population(:,tempIndex,:,dvDrIndex) = Population;
                     
@@ -197,67 +195,17 @@ classdef PopulationSolverHelper < handle
                     end
                     
                     i=i+1;
-                    this.showProgress(i, totalComputations);                         
-                    this.checkForStopFlag();
+                    obj.showProgress(i, totalComputations);                         
+                    obj.checkForStopFlag();
                     
                 end
                 
             end
-            
         end
         
-        function FinalResult = CalculateLTEPopulation (this, UnfixedPopulationRequest)
+        function FinalResult = CalculateRadexLVGPopulation (obj, PopulationRequest)
             
-            PopulationSolverHelper.validateInput(UnfixedPopulationRequest);
-            [MoleculeData, BetaProvider, PopulationRequest] = PopulationSolverHelper.changeRequestToInnerRequest (UnfixedPopulationRequest);
-            innerRequest = PopulationRequest.Copy();
-            FinalResult = PopulationSolverHelper.initializeResult(PopulationRequest);
-            
-            LTESolver = LevelPopulationSolverLTE(MoleculeData);
-            
-            if (PopulationRequest.CalculateIntensities)
-                IntensitiesClc = IntensitiesCalculator(MoleculeData);
-            end
-            
-            FinalResult.Converged = ones(size(FinalResult.Converged));
-            FinalResult.FinalBetaCoefficients = ones(size(FinalResult.FinalBetaCoefficients));
-            FinalResult.FinalTauCoefficients = zeros(size(FinalResult.FinalTauCoefficients));
-            
-            totalComputations = numel(PopulationRequest.VelocityDerivative)*numel(PopulationRequest.Temperature);
-            i = 0;
-            
-            for dvDrIndex=1:numel(PopulationRequest.VelocityDerivative)
-                
-                for tempIndex=1:numel(PopulationRequest.Temperature)
-                    
-                    PopulationSolverHelper.fillInnerRequest(innerRequest,PopulationRequest.Temperature(tempIndex),PopulationRequest.VelocityDerivative(dvDrIndex),PopulationRequest.VelocityDerivativeUnits,...
-                        PopulationRequest.CollisionPartnerDensities,PopulationRequest.MoleculeDensity,PopulationRequest.CloudColumnDensity, PopulationRequest.FirstPopulationGuess)
-                                        
-                    Population = LTESolver.SolveLevelsPopulation(innerRequest);
-                    
-                    FinalResult.Population(:,tempIndex,:,dvDrIndex) = Population;
-                    
-                    if (PopulationRequest.CalculateIntensities)                        
-                        FinalResult.Intensities(:,tempIndex,:,dvDrIndex) = IntensitiesClc.CalculateIntensitiesLVG(Population, ...
-                            squeeze(FinalResult.FinalTauCoefficients(:,tempIndex,:,dvDrIndex)), innerRequest.CloudColumnDensity);
-                    end
-                    
-                    i=i+1;
-                    this.showProgress(i, totalComputations);                         
-                    this.checkForStopFlag();
-                    
-                end
-                
-            end
-            
-        end
-        
-        function FinalResult = CalculateRadexLVGPopulation (this, UnfixedPopulationRequest)
-            
-            PopulationSolverHelper.validateInput(UnfixedPopulationRequest);
-            [MoleculeData, BetaProvider, PopulationRequest] = PopulationSolverHelper.changeRequestToInnerRequest (UnfixedPopulationRequest);
-            innerRequest = PopulationRequest.Copy();
-            FinalResult = PopulationSolverHelper.initializeResult(PopulationRequest);
+            [MoleculeData, BetaProvider, innerRequest, FinalResult] = obj.initialize (PopulationRequest);
                         
             totalComputations = numel(PopulationRequest.VelocityDerivative)*numel(PopulationRequest.Temperature)*numel(PopulationRequest.CollisionPartnerDensities);
             i = 0;
@@ -283,31 +231,29 @@ classdef PopulationSolverHelper < handle
                         end
                         
                         i=i+1;
-                        this.showProgress(i, totalComputations);
-                        this.checkForStopFlag();
+                        obj.showProgress(i, totalComputations);
+                        obj.checkForStopFlag();
                         
                     end
                 end
             end
         end
         
-        function FinalResult = ProcessPopulationRequest (this, PopulationRequest)
+        function FinalResult = ProcessPopulationRequest (obj, PopulationRequest)
             
-            this.ProgressFraction = 0;
-            this.StopOperation = 0;
+            obj.ProgressFraction = 0;
+            obj.StopOperation = 0;
             
             switch PopulationRequest.RunTypeCode
+                
                 case RunTypeCodes.LVG
-                    FinalResult = this.CalculateLVGPopulationDensityParallel(PopulationRequest);
+                    FinalResult = obj.CalculateLVGPopulationDensityParallel(PopulationRequest);
                     
-                case RunTypeCodes.OpticallyThin
-                    FinalResult = this.CalculateOpticallyThinPopulation(PopulationRequest);
-                    
-                case RunTypeCodes.LTE
-                    FinalResult = this.CalculateLTEPopulation(PopulationRequest);
+                case {RunTypeCodes.OpticallyThin, RunTypeCodes.OpticallyThinWithBackground, RunTypeCodes.LTE}
+                    FinalResult = obj.CalculateNonLVGPopulation(PopulationRequest);
                     
                 case RunTypeCodes.Radex
-                    FinalResult = this.CalculateRadexLVGPopulation(PopulationRequest);
+                    FinalResult = obj.CalculateRadexLVGPopulation(PopulationRequest);
                     
                 otherwise
                     ME = MException('VerifyInput:UnknownRunTypeCode','Error in input. Run Type Code [%d] is unknown', PopulationRequest.RunTypeCode);
@@ -320,7 +266,7 @@ classdef PopulationSolverHelper < handle
     
     methods (Access=private)
         
-        function showProgress(this, Iteration, TotalComputations)
+        function showProgress(obj, Iteration, TotalComputations)
             
             progress = Iteration/TotalComputations;
             progressPercent = floor(100*progress);
@@ -338,13 +284,13 @@ classdef PopulationSolverHelper < handle
                 end
             end
             
-            this.ProgressFraction = progress;
+            obj.ProgressFraction = progress;
             
         end
         
-        function checkForStopFlag (this)
+        function checkForStopFlag (obj)
            
-            if this.StopOperation
+            if obj.StopOperation
                 error('PopulationSolverHelper:OperationTerminated', 'Operation terminated by user.'); 
             end
             
@@ -354,6 +300,14 @@ classdef PopulationSolverHelper < handle
     end
     
     methods (Access=private, Static=true)
+        
+        function [MoleculeData, BetaProvider, innerRequest, FinalResult] = initialize(OriginalPopulationRequest)
+           
+            PopulationSolverHelper.validateInput(OriginalPopulationRequest);
+            [MoleculeData, BetaProvider, innerRequest] = PopulationSolverHelper.changeRequestToInnerRequest (OriginalPopulationRequest);
+            FinalResult = PopulationSolverHelper.initializeResult(OriginalPopulationRequest);
+            
+        end
         
         function fillInnerRequest(InnerRequest, Temperature, VelocityDerivative, VelocityDerivativeUnit, CollisionPartnerDensities, MoleculeDensity, CloudColumnDensity, FirstPopulationGuess)
            
@@ -394,16 +348,16 @@ classdef PopulationSolverHelper < handle
             Molecule = WorkspaceHelper.GetMoleculeDataFromWorkspace(PopulationRequest.MoleculeFileName);            
             BetaProvider = PopulationSolverHelper.createBetaProvider(PopulationRequest.BetaTypeCode, Molecule, PopulationRequest.BackgroundTemperature);
             
-            InternalPopulationRequest = PopulationRequest.Copy();
-            
-            if isempty(InternalPopulationRequest.NumLevelsForSolution) || InternalPopulationRequest.NumLevelsForSolution == 0
-                InternalPopulationRequest.NumLevelsForSolution = Molecule.MolecularLevels;
+            if isempty(PopulationRequest.NumLevelsForSolution) || PopulationRequest.NumLevelsForSolution == 0
+                PopulationRequest.NumLevelsForSolution = Molecule.MolecularLevels;
             end
             
-            if isempty(InternalPopulationRequest.Temperature) || InternalPopulationRequest.Temperature == 0                
+            if isempty(PopulationRequest.Temperature) || (isscalar(PopulationRequest.Temperature) && PopulationRequest.Temperature == 0)
                 collPartners = Molecule.CollisionPartnerCodes();
-                InternalPopulationRequest.Temperature = Molecule.GetCollisionPartner(collPartners(1)).Temperatures;
+                PopulationRequest.Temperature = Molecule.GetCollisionPartner(collPartners(1)).Temperatures;
             end
+            
+            InternalPopulationRequest = PopulationRequest.Copy();
             
             PopulationSolverHelper.replaceCollisionPartnerCodesToRates(InternalPopulationRequest,Molecule);            
             

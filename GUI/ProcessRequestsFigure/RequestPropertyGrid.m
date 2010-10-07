@@ -12,32 +12,6 @@ classdef RequestPropertyGrid
     
     methods(Static)
         
-        function [Names, Values, Description] = GetClassConstants (CurrentClass, getDescription)
-            
-            Names = {};
-            Values = [];
-            Description = {};
-            
-            getMetaDataCommand = sprintf('?%s',CurrentClass);
-            metaData = eval(getMetaDataCommand);
-            
-            for prop=1:numel(metaData.Properties)
-                
-                property = metaData.Properties{prop};
-                
-                if property.Constant
-                    Names{end+1} = property.Name;
-                    getConstantValueCommand = sprintf('%s.%s',CurrentClass,property.Name);
-                    Values(end+1) = eval(getConstantValueCommand);
-                    
-                    if (getDescription)
-                        Description(end+1) = helptext(getConstantValueCommand);
-                    end
-                end
-            end
-            
-        end
-        
         function GUIRequest = ConvertRequestToGUIRequest (LVGRequest)
             
             GUIRequest = LVGSolverPopulationRequest.empty(0,1);
@@ -47,19 +21,19 @@ classdef RequestPropertyGrid
                 GUIRequest(i) = LVGRequest(i).Copy();
                 
                 %Run Type
-                [runTypeNames,runTypeValues] = RequestPropertyGrid.GetClassConstants('RunTypeCodes', false);
+                [runTypeNames,runTypeValues] = FileIOHelper.GetClassConstants('RunTypeCodes', false);
                 GUIRequest(i).RunTypeCode = runTypeNames{runTypeValues==GUIRequest(i).RunTypeCode};
                 
                 %Beta Type
-                [betaTypeNames,betaTypeValues] = RequestPropertyGrid.GetClassConstants('BetaTypeCodes', false);
+                [betaTypeNames,betaTypeValues] = FileIOHelper.GetClassConstants('BetaTypeCodes', false);
                 GUIRequest(i).BetaTypeCode = betaTypeNames{betaTypeValues==GUIRequest(i).BetaTypeCode};
                 
                 %Velocity Derivate Type
-                [dvdrTypeNames,dvdrTypeValues, dvdrDescription] = RequestPropertyGrid.GetClassConstants('VelocityDerivativeUnits',true);
+                [dvdrTypeNames,dvdrTypeValues, dvdrDescription] = FileIOHelper.GetClassConstants('VelocityDerivativeUnits',true);
                 GUIRequest(i).VelocityDerivativeUnits = dvdrDescription{dvdrTypeValues==GUIRequest(i).VelocityDerivativeUnits};
                 
                 %Collision partners & weights
-                [collisionPartnerNames,collisionPartnerValues] = RequestPropertyGrid.GetClassConstants('CollisionPartnersCodes', false);
+                [collisionPartnerNames,collisionPartnerValues] = FileIOHelper.GetClassConstants('CollisionPartnersCodes', false);
                 
                 collPartnersWithWeights = zeros(numel(GUIRequest(i).CollisionPartners),2);
                 collPartnersWithWeights(1:end,1) = GUIRequest(i).CollisionPartners;
@@ -81,19 +55,19 @@ classdef RequestPropertyGrid
                 LVGRequest(i) = GUIRequest(i).Copy();
                 
                 %Run Type
-                [runTypeNames,runTypeValues] = RequestPropertyGrid.GetClassConstants('RunTypeCodes',false);
+                [runTypeNames,runTypeValues] = FileIOHelper.GetClassConstants('RunTypeCodes',false);
                 LVGRequest(i).RunTypeCode = runTypeValues(strcmpi(runTypeNames,GUIRequest(i).RunTypeCode));
                 
                 %Beta Type
-                [betaTypeNames,betaTypeValues] = RequestPropertyGrid.GetClassConstants('BetaTypeCodes',false);
+                [betaTypeNames,betaTypeValues] = FileIOHelper.GetClassConstants('BetaTypeCodes',false);
                 LVGRequest(i).BetaTypeCode = betaTypeValues(strcmpi(betaTypeNames,GUIRequest(i).BetaTypeCode));
                 
                 %Velocity Derivate Type
-                [dvdrTypeNames,dvdrTypeValues, dvdrDescription] = RequestPropertyGrid.GetClassConstants('VelocityDerivativeUnits',true);
+                [dvdrTypeNames,dvdrTypeValues, dvdrDescription] = FileIOHelper.GetClassConstants('VelocityDerivativeUnits',true);
                 LVGRequest(i).VelocityDerivativeUnits = dvdrTypeValues(strcmpi(dvdrDescription,GUIRequest(i).VelocityDerivativeUnits));
                 
                 %Collision partners & weights
-                [collisionPartnerNames,collisionPartnerValues] = RequestPropertyGrid.GetClassConstants('CollisionPartnersCodes',false);
+                [collisionPartnerNames,collisionPartnerValues] = FileIOHelper.GetClassConstants('CollisionPartnersCodes',false);
                 LVGRequest(i).CollisionPartners = collisionPartnerValues(GUIRequest(i).CollisionPartners);
                
             end
@@ -116,19 +90,19 @@ classdef RequestPropertyGrid
                 prop.Value = '';
             end
             
-            [runTypeNames,runTypeValues] = RequestPropertyGrid.GetClassConstants('RunTypeCodes',false);            
+            [runTypeNames,runTypeValues] = FileIOHelper.GetClassConstants('RunTypeCodes',false);            
             prop =properties.FindByName('RunTypeCode');
             prop.Type = PropertyType('char', 'row', runTypeNames);
             
-            [betaTypeNames,betaTypeValues] = RequestPropertyGrid.GetClassConstants('BetaTypeCodes',false);
+            [betaTypeNames,betaTypeValues] = FileIOHelper.GetClassConstants('BetaTypeCodes',false);
             prop =properties.FindByName('BetaTypeCode');
             prop.Type = PropertyType('char', 'row', betaTypeNames);
             
-            [dvdrTypeNames,dvdrTypeValues, dvdrDescription] = RequestPropertyGrid.GetClassConstants('VelocityDerivativeUnits',true);
+            [dvdrTypeNames,dvdrTypeValues, dvdrDescription] = FileIOHelper.GetClassConstants('VelocityDerivativeUnits',true);
             prop = properties.FindByName('VelocityDerivativeUnits');
             prop.Type = PropertyType('char', 'row', dvdrDescription);            
             
-            [collisionPartnerNames,collisionPartnerValues] = RequestPropertyGrid.GetClassConstants('CollisionPartnersCodes',false);
+            [collisionPartnerNames,collisionPartnerValues] = FileIOHelper.GetClassConstants('CollisionPartnersCodes',false);
             prop =properties.FindByName('CollisionPartners');
             prop.Type = PropertyType('logical', 'row', collisionPartnerNames);
 
@@ -139,6 +113,9 @@ classdef RequestPropertyGrid
             prop =properties.FindByName('Weights');
             prop.Type = PropertyType('denserealdouble', 'matrix');
             
+            prop =properties.FindByName('Temperature');
+            prop.Type = PropertyType('denserealdouble', 'matrix');
+                        
             prop =properties.FindByName('NumLevelsForSolution');
             prop.Type = PropertyType('denserealdouble', 'scalar');
             prop.ReadOnly = false;            

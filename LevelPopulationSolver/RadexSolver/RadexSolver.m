@@ -122,8 +122,8 @@ classdef RadexSolver < handle
                 InputDensity = DensityToDvdrRatio;
                 InputDvDr = 1;
             elseif (DensityToDvdrRatio > 1e25) && (DensityToDvdrRatio * 1e-3 <= 1e25)
-                InputDensity = DensityToDvdrRatio * 1e-3;
-                InputDvDr = 1e-3;
+                InputDensity = DensityToDvdrRatio * 2e-3;
+                InputDvDr = 2e-3;
             elseif (DensityToDvdrRatio < 1e5) && (DensityToDvdrRatio * 1e3 >= 1e5)
                 InputDensity = DensityToDvdrRatio * 1e3;
                 InputDvDr = 1e3;

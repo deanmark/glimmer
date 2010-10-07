@@ -50,6 +50,33 @@ classdef FileIOHelper
                 end
             end
         end
+        
+        function [Names, Values, Description] = GetClassConstants (CurrentClass, getDescription)
+            
+            Names = {};
+            Values = [];
+            Description = {};
+            
+            getMetaDataCommand = sprintf('?%s',CurrentClass);
+            metaData = eval(getMetaDataCommand);
+            
+            for prop=1:numel(metaData.Properties)
+                
+                property = metaData.Properties{prop};
+                
+                if property.Constant
+                    Names{end+1} = property.Name;
+                    getConstantValueCommand = sprintf('%s.%s',CurrentClass,property.Name);
+                    Values(end+1) = eval(getConstantValueCommand);
+                    
+                    if (getDescription)
+                        Description(end+1) = helptext(getConstantValueCommand);
+                    end
+                end
+            end
+            
+        end
+        
     end
     
 end
