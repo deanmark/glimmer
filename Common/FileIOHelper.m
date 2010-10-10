@@ -2,11 +2,17 @@ classdef FileIOHelper
     
     methods(Static=true)
         
+        function Path = StandardMoleculeFilePath ()
+            p = mfilename('fullpath'); 
+            CommonDirectory = fileparts(p);
+            Path = fullfile(CommonDirectory, '..', 'Molecules.mat');
+        end
+        
         function Path = ResultsPath ()            
             %returns path of current script.
             p = mfilename('fullpath'); 
             CommonDirectory = fileparts(p);
-            Path = fullfile(CommonDirectory, '..', 'Results');            
+            Path = fullfile(CommonDirectory, '..', 'Results');
         end
         
         function Path = LamdaMolecularDataFilesPath ()            

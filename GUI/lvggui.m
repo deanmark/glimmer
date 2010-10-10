@@ -22,7 +22,7 @@ function varargout = LVGGUI(varargin)
 
 % Edit the above text to modify the response to help LVGGUI
 
-% Last Modified by GUIDE v2.5 06-Oct-2010 13:20:58
+% Last Modified by GUIDE v2.5 10-Oct-2010 11:07:38
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -173,3 +173,23 @@ function calculateButton_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 ProcessRequests;
+
+
+% --- Executes during object creation, after setting all properties.
+function figure1_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to figure1 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+%check if Molecules file exists
+fid = fopen(FileIOHelper.StandardMoleculeFilePath);
+if fid ~= -1
+    fclose(fid);
+    
+    load(FileIOHelper.StandardMoleculeFilePath);
+    
+    if ~isempty(who(WorkspaceHelper.MoleculesVariableName))
+        eval(sprintf('assignin(''base'', WorkspaceHelper.MoleculesVariableName, %s);', WorkspaceHelper.MoleculesVariableName));
+    end
+    
+end
