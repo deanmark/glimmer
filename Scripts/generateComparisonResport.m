@@ -1,9 +1,5 @@
 function generateComparisonResport(Temperatures, CollisionPartnerDensities, DiffGrid)
 
-p = mfilename('fullpath'); %returns path of current script.
-ScriptsDirectory = fileparts(p);
-radexComparePath = fullfile(ScriptsDirectory, '..', 'Results', 'RadexCompareOutput');
-
 data = cell(size(DiffGrid));
 
 for i=1:size(DiffGrid,1)
@@ -34,6 +30,6 @@ rowheads = transpose(rowheads);
 
 table_cell = [[cell(1);rowheads] [colheads; num2cell(data)]];
 
-html_table(table_cell, fullfile(radexComparePath,'index.html'),'FirstRowIsHeading',1, 'FirstColIsHeading',1);
+html_table(table_cell, fullfile(FileIOHelper.ComparisonOutputPath,'index.html'),'FirstRowIsHeading',1, 'FirstColIsHeading',1);
 
 end

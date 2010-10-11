@@ -1,6 +1,18 @@
 classdef FileIOHelper
     
     methods(Static=true)
+
+        function Path = ComparisonPicsOutputPath ()
+            p = mfilename('fullpath'); 
+            CommonDirectory = fileparts(p);
+            Path = fullfile(CommonDirectory, '..', 'Results', 'ComparisonOutput', 'pics');
+        end        
+        
+        function Path = ComparisonOutputPath ()
+            p = mfilename('fullpath');
+            CommonDirectory = fileparts(p);
+            Path = fullfile(CommonDirectory, '..', 'Results', 'ComparisonOutput');
+        end
         
         function Path = StandardMoleculeFilePath ()
             p = mfilename('fullpath'); 
@@ -8,14 +20,14 @@ classdef FileIOHelper
             Path = fullfile(CommonDirectory, '..', 'Molecules.mat');
         end
         
-        function Path = ResultsPath ()            
+        function Path = ResultsPath ()
             %returns path of current script.
             p = mfilename('fullpath'); 
             CommonDirectory = fileparts(p);
             Path = fullfile(CommonDirectory, '..', 'Results');
         end
         
-        function Path = LamdaMolecularDataFilesPath ()            
+        function Path = LamdaMolecularDataFilesPath ()
             %returns path of current script.
             p = mfilename('fullpath'); 
             CommonDirectory = fileparts(p);

@@ -132,112 +132,99 @@ classdef Scripts
             
         end
         
-        function Compare2Results (Pop1, Pop1Title, Pop2, Pop2Title, YLabel, FixYAxis, CollisionPartnerDensity, Temperature, VelocityDerivative, VelocityDerivativeUnit, MoleculeDensity, ColumnDensity, FileName)
+        function CompareResults (Data, PlotArguments, YLabel, XLabel, YRange, YAxisLog, Title, FileName)
             
-            maxSize = max([numel(Pop1) numel(Pop2)]);
-            
-            if (numel(Pop1) < maxSize)
-                Pop1 = cat(1, Pop1, zeros(maxSize - numel(Pop1),1));
+            maxSize=0;
+            %find max
+            for i=1:numel(Data)
+               maxSize = max(maxSize, numel(Data{i}));
             end
-            
-            if (numel(Pop2) < maxSize)
-                Pop2 = cat(1, Pop2, zeros(maxSize - numel(Pop2)));
+    
+            ResizedData = NaN(maxSize, numel(Data));
+            for i=1:numel(Data)
+                ResizedData(1:numel(Data{i}),i) = Data{i};
             end
             
             xValues = 0:(maxSize-1);
             
-            plot(xValues, Pop1, 'DisplayName', Pop1Title); hold all;
-            h = plot(xValues, Pop2, 'DisplayName', Pop2Title); %hold all;
-            
+            %draw
+            for i=1:numel(Data)                
+                args = PlotArguments{i};
+                h = plot(xValues, ResizedData(:,i), args{:});                
+                if i==1; hold all; end
+            end
+                        
             hold off;
             figure(gcf);
             
-            xlabel('J');
+            xlabel(XLabel);
             ylabel(YLabel);
             
-            titleName = Scripts.buildSEDTitleName(VelocityDerivative, VelocityDerivativeUnit, Temperature, CollisionPartnerDensity, MoleculeDensity, ColumnDensity);
-            title(titleName);
+            title(Title);
+           
+            if ~isempty(YRange); axis([0 maxSize-1 YRange]); end
+            if YAxisLog; set(gca, 'YScale', 'log'); end
             
-            if FixYAxis
-                axis([0 maxSize-1 0 1]);
-            end
-            
+            %if plot contains non unit x axis ticks, replace them with the 
+            %proper ticks.
             ticks = get(gca,'XTick');
             if any(~(floor(ticks)==ticks))
                 set(gca,'XTick',xValues)
             end
             
+            set(gca,'XMinorTick', 'on');
+            
             legend('toggle');
             
-            if nargin > 5 && ~isempty(FileName)
+            if ~isempty(FileName)
                 saveas (h,FileName);
             end
         end
         
-        function CompareWithPACS (Pacs, OurPopulation, CollisionPartnerDensity, Temperature, VelocityDerivative, VelocityDerivativeUnit, MoleculeDensity, ColumnDensity, FileName)
+        function DrawResults1Molecule (DrawType, PopulationResult, VelocityDerivativeIndices, TemperatureIndices, CollisionPartnerDensitiesIndices, FileName)
             
-            maxSize = max([numel(Pacs) numel(OurPopulation)]);
-            
-            if (numel(Pacs) < maxSize)
-                Pacs = cat(1, Pacs, zeros(maxSize - numel(Pacs),1));
-            end
-            
-            if (numel(OurPopulation) < maxSize)
-                OurPopulation = cat(1, OurPopulation, zeros(maxSize - numel(OurPopulation)));
-            end
-            
-            xValues = 0:(maxSize-1);
-            
-            plot(xValues, OurPopulation, '--', 'DisplayName', 'LVG Model - '); hold all;
-            h = plot(xValues, Pacs, 'xk', ...
-                'LineWidth',2,...
-                'MarkerSize',10,...
-                'DisplayName', 'PACS NGC1068'); %hold all;
-            
-            hold off;
-            figure(gcf);
-            
-            xlabel('J_U_p_p_e_r');
-            %ylabel('x - Fractional population');
-            ylabel('Intensity [W m^-^2]');
-            
-            titleName = Scripts.buildSEDTitleName(VelocityDerivative, VelocityDerivativeUnit, Temperature, CollisionPartnerDensity, MoleculeDensity, ColumnDensity);
-            title(titleName);
-            %axis([0 maxSize-1 0 1]);
-            %set(gca,'XTick',xValues)
-            
-            legend('toggle');
-            
-            if nargin > 5 && ~isempty(FileName)
-                saveas (h,FileName);
-            end
-        end
-        
-        function DrawResults1Molecule (DrawType, PopulationResult, VelocityDerivativeIndices, TemperatureIndices, CollisionPartnerDensitiesIndices)
+            p = inputParser;    % Create an instance of the class.
+            p.addRequired('DrawType', @(x)isnumeric(x) && isscalar(x));
+            p.addRequired('PopulationResult', @(x)isa(x,'LVGSolverPopulationResult'));
+            p.addRequired('VelocityDerivativeIndices', @(x)isnumeric(x));
+            p.addRequired('TemperatureIndices', @(x)isnumeric(x));
+            p.addRequired('CollisionPartnerDensitiesIndices', @(x)isnumeric(x));                        
+            p.addOptional('FileName', '', @ischar);
+            p.parse(DrawType, PopulationResult, VelocityDerivativeIndices, TemperatureIndices, CollisionPartnerDensitiesIndices, FileName);
             
             switch DrawType
                 case ComparisonTypeCodes.Intensities
                     Data = PopulationResult.Intensities;
-                    plotFunc = @(varargin) semilogy(varargin{:});
+                    xaxis = 'J_u_p_p_e_r';
                     yaxis = 'I_J [erg^-^1 sr^-^1 molecule^-^1]';
+                    YRange = [];
+                    YAxisLog = true;
                 case ComparisonTypeCodes.Beta
                     Data = PopulationResult.FinalBetaCoefficients;
-                    plotFunc = @(varargin) semilogy(varargin{:});
+                    xaxis = 'J_u_p_p_e_r';
                     yaxis = 'Beta';
+                    YRange = [];
+                    YAxisLog = true;
                 case ComparisonTypeCodes.Tau
                     Data = PopulationResult.FinalTauCoefficients;
-                    plotFunc = @(varargin) semilogy(varargin{:});
+                    xaxis = 'J_u_p_p_e_r';
                     yaxis = 'Tau';
+                    YRange = [];
+                    YAxisLog = true;
                 case ComparisonTypeCodes.Population
                     Data = PopulationResult.Population;
-                    plotFunc = @(varargin) plot(varargin{:});
+                    xaxis = 'J';
                     yaxis = 'x - Fractional population';
+                    YRange = [0 1];
+                    YAxisLog = false;
                 otherwise
                     error('DrawType must be of type ComparisonTypeCodes');
             end
             
             request = PopulationResult.OriginalRequest;
-            xValues = 0:(request.NumLevelsForSolution-1);
+            
+            RefinedData = cell(1,0);
+            PlotArguments = cell(1,0);
             
             for tempIndex=1:numel(TemperatureIndices)
                 for densityIndex=1:numel(CollisionPartnerDensitiesIndices)
@@ -247,44 +234,19 @@ classdef Scripts
                             request.Temperature(TemperatureIndices), tempIndex, request.CollisionPartnerDensities(CollisionPartnerDensitiesIndices), densityIndex, ...
                             request.MoleculeDensity(CollisionPartnerDensitiesIndices), densityIndex, request.CloudColumnDensity(CollisionPartnerDensitiesIndices), densityIndex);
                         
-                        plotFunc(xValues, Data(:,tempIndex,densityIndex,dvdrIndex), 'DisplayName', displayName); hold all;
+                        RefinedData{end+1} = Data(:,tempIndex,densityIndex,dvdrIndex);
+                        PlotArguments{end+1} = {'DisplayName', displayName};
                         
                     end
                 end
             end
-            
-            hold off;
-            figure(gcf);
-            
-            xlabel('J');
-            ylabel(yaxis);
-            
+           
             titleName = Scripts.buildSEDTitleName(request.VelocityDerivative(VelocityDerivativeIndices), request.VelocityDerivativeUnits,...
                 request.Temperature(TemperatureIndices), request.CollisionPartnerDensities(CollisionPartnerDensitiesIndices), ...
                 request.MoleculeDensity(CollisionPartnerDensitiesIndices), request.CloudColumnDensity(CollisionPartnerDensitiesIndices));
+
+            Scripts.CompareResults(RefinedData, PlotArguments, yaxis, xaxis, YRange, YAxisLog, titleName, p.Results.FileName);
             
-            title(titleName);
-            legend('toggle');
-            
-        end
-        
-        function Diff = PopulationDiff (pop1, pop2)
-            
-            minLength = min(numel(pop1), numel(pop2));
-            maxPopArr = max (pop1, pop2);
-            maxPop = max(maxPopArr);
-            
-            % Calculate difference between codes
-            pop1 = pop1(1:minLength);
-            pop2 = pop2(1:minLength);
-            
-            smallPop = maxPop*1e-3;
-            smallIndices = pop1 < smallPop & pop2 < smallPop;
-            
-            pop1(smallIndices) = 0;
-            pop2(smallIndices) = 0;
-            
-            Diff = (abs(pop1-pop2)./mean(maxPopArr(~smallIndices)));
         end
 
         function CalculatedTemp = DrawBoltzmannFit (PopulationResult, VelocityDerivativeIndex, TemperatureIndex, CollisionPartnerDensitiesIndex)
@@ -342,6 +304,65 @@ classdef Scripts
             
         end
 
+        
+        
+        function CompareWithMeasurement (Measurement, Population, CollisionPartnerDensity, Temperature, VelocityDerivative, VelocityDerivativeUnit, MoleculeDensity, ColumnDensity, FileName)
+                    
+            maxSize = max([numel(Measurement) numel(Population)]);
+            
+            if (numel(Measurement) < maxSize)
+                Measurement = cat(1, Measurement, zeros(maxSize - numel(Measurement),1));
+            end
+            
+            if (numel(Population) < maxSize)
+                Population = cat(1, Population, zeros(maxSize - numel(Population)));
+            end
+            
+            xValues = 0:(maxSize-1);
+            
+            plot(xValues, Population, '--', 'DisplayName', 'LVG Model - '); hold all;
+            h = plot(xValues, Measurement, 'xk', ...
+                'LineWidth',2,...
+                'MarkerSize',10,...
+                'DisplayName', 'Measurement'); %hold all;
+            
+            hold off;
+            figure(gcf);
+            
+            xlabel('J_u_p_p_e_r');
+            %ylabel('x - Fractional population');
+            ylabel('Intensity [W m^-^2]');
+            
+            titleName = Scripts.buildSEDTitleName(VelocityDerivative, VelocityDerivativeUnit, Temperature, CollisionPartnerDensity, MoleculeDensity, ColumnDensity);
+            title(titleName);
+            %axis([0 maxSize-1 0 1]);
+            %set(gca,'XTick',xValues)
+            
+            legend('toggle');
+            
+            if nargin > 5 && ~isempty(FileName)
+                saveas (h,FileName);
+            end
+        end
+                
+        function Diff = PopulationDiff (pop1, pop2)
+            
+            minLength = min(numel(pop1), numel(pop2));
+            maxPopArr = max (pop1, pop2);
+            maxPop = max(maxPopArr);
+            
+            % Calculate difference between codes
+            pop1 = pop1(1:minLength);
+            pop2 = pop2(1:minLength);
+            
+            smallPop = maxPop*1e-3;
+            smallIndices = pop1 < smallPop & pop2 < smallPop;
+            
+            pop1(smallIndices) = 0;
+            pop2(smallIndices) = 0;
+            
+            Diff = (abs(pop1-pop2)./mean(maxPopArr(~smallIndices)));
+        end
         
         function DrawMax1Molecule(PopulationResult, ContourLevels)
             originalRequest = PopulationResult.OriginalRequest;
@@ -491,7 +512,7 @@ classdef Scripts
         
     end
     
-    methods (Access=private, Static=true)
+    methods (Access=public, Static=true)
         
         function [x,y,xName,yName,titleName] = contourParameters (Temperatures, Densities, dvdrKmParsecs)
             if (numel(dvdrKmParsecs)==1)
