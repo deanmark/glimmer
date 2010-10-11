@@ -115,7 +115,19 @@ classdef RequestPropertyGrid
             
             prop =properties.FindByName('Temperature');
             prop.Type = PropertyType('denserealdouble', 'matrix');
-                        
+                       
+            prop =properties.FindByName('VelocityDerivative');
+            prop.Type = PropertyType('denserealdouble', 'matrix');
+
+            prop =properties.FindByName('CollisionPartnerDensities');
+            prop.Type = PropertyType('denserealdouble', 'matrix');
+            
+            prop =properties.FindByName('MoleculeDensity');
+            prop.Type = PropertyType('denserealdouble', 'matrix');
+
+            prop =properties.FindByName('CloudColumnDensity');
+            prop.Type = PropertyType('denserealdouble', 'matrix');
+            
             prop =properties.FindByName('NumLevelsForSolution');
             prop.Type = PropertyType('denserealdouble', 'scalar');
             prop.ReadOnly = false;            
