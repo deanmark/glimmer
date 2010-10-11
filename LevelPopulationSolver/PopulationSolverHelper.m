@@ -9,9 +9,10 @@ classdef PopulationSolverHelper < handle
     
     methods (Access=public)
         
-        function FinalResult = CalculateLVGPopulation (obj, PopulationRequest)
+        function FinalResult = CalculateLVGPopulation (obj, OuterPopulationRequest)
             
-            [MoleculeData, BetaProvider, innerRequest, FinalResult] = obj.initialize (PopulationRequest);
+            [MoleculeData, BetaProvider, innerRequest, FinalResult] = obj.initialize (OuterPopulationRequest);
+            PopulationRequest = FinalResult.OriginalRequest;
             
             LVGSolverLowExcitation = LevelPopulationSolverLVG(MoleculeData, BetaProvider, LVGSolverAlgorithmParameters.DefaultInitialRunParamsLowExcitation());
             LVGSolverHighExcitation = LevelPopulationSolverLVG(MoleculeData, BetaProvider, LVGSolverAlgorithmParameters.DefaultInitialRunParamsHighExcitation);
@@ -86,9 +87,10 @@ classdef PopulationSolverHelper < handle
             
         end
         
-        function FinalResult = CalculateLVGPopulationDensityParallel (obj, PopulationRequest)
+        function FinalResult = CalculateLVGPopulationDensityParallel (obj, OuterPopulationRequest)
             
-            [MoleculeData, BetaProvider, innerRequest, FinalResult] = obj.initialize (PopulationRequest);
+            [MoleculeData, BetaProvider, innerRequest, FinalResult] = obj.initialize (OuterPopulationRequest);
+            PopulationRequest = FinalResult.OriginalRequest;
             
             LVGSolverLowExcitation = LevelPopulationSolverLVG(MoleculeData, BetaProvider, LVGSolverAlgorithmParameters.DefaultInitialRunParamsLowExcitation());
             LVGSolverHighExcitation = LevelPopulationSolverLVG(MoleculeData, BetaProvider, LVGSolverAlgorithmParameters.DefaultInitialRunParamsHighExcitation);
@@ -154,9 +156,10 @@ classdef PopulationSolverHelper < handle
             
         end
          
-        function FinalResult = CalculateNonLVGPopulation(obj, PopulationRequest)
+        function FinalResult = CalculateNonLVGPopulation(obj, OuterPopulationRequest)
             
-            [MoleculeData, BetaProvider, innerRequest, FinalResult] = obj.initialize (PopulationRequest);
+            [MoleculeData, BetaProvider, innerRequest, FinalResult] = obj.initialize (OuterPopulationRequest);
+            PopulationRequest = FinalResult.OriginalRequest;
             
             switch PopulationRequest.RunTypeCode
                 case RunTypeCodes.OpticallyThin
@@ -203,9 +206,10 @@ classdef PopulationSolverHelper < handle
             end
         end
         
-        function FinalResult = CalculateRadexLVGPopulation (obj, PopulationRequest)
+        function FinalResult = CalculateRadexLVGPopulation(obj, OuterPopulationRequest)
             
-            [MoleculeData, BetaProvider, innerRequest, FinalResult] = obj.initialize (PopulationRequest);
+            [MoleculeData, BetaProvider, innerRequest, FinalResult] = obj.initialize (OuterPopulationRequest);
+            PopulationRequest = FinalResult.OriginalRequest;
                         
             totalComputations = numel(PopulationRequest.VelocityDerivative)*numel(PopulationRequest.Temperature)*numel(PopulationRequest.CollisionPartnerDensities);
             i = 0;
@@ -304,8 +308,8 @@ classdef PopulationSolverHelper < handle
         function [MoleculeData, BetaProvider, innerRequest, FinalResult] = initialize(OriginalPopulationRequest)
            
             PopulationSolverHelper.validateInput(OriginalPopulationRequest);
-            [MoleculeData, BetaProvider, innerRequest] = PopulationSolverHelper.changeRequestToInnerRequest (OriginalPopulationRequest);
-            FinalResult = PopulationSolverHelper.initializeResult(OriginalPopulationRequest);
+            [MoleculeData, BetaProvider, innerRequest, SaveableRequest] = PopulationSolverHelper.changeRequestToInnerRequest (OriginalPopulationRequest);
+            FinalResult = PopulationSolverHelper.initializeResult(SaveableRequest);
             
         end
         
@@ -343,21 +347,23 @@ classdef PopulationSolverHelper < handle
             
         end
         
-        function [Molecule, BetaProvider, InternalPopulationRequest] = changeRequestToInnerRequest (PopulationRequest)
+        function [Molecule, BetaProvider, InternalPopulationRequest, SaveableRequest] = changeRequestToInnerRequest (PopulationRequest)
             
-            Molecule = WorkspaceHelper.GetMoleculeDataFromWorkspace(PopulationRequest.MoleculeFileName);            
-            BetaProvider = PopulationSolverHelper.createBetaProvider(PopulationRequest.BetaTypeCode, Molecule, PopulationRequest.BackgroundTemperature);
+            SaveableRequest = PopulationRequest.Copy();
             
-            if isempty(PopulationRequest.NumLevelsForSolution) || PopulationRequest.NumLevelsForSolution == 0
-                PopulationRequest.NumLevelsForSolution = Molecule.MolecularLevels;
+            Molecule = WorkspaceHelper.GetMoleculeDataFromWorkspace(SaveableRequest.MoleculeFileName);            
+            BetaProvider = PopulationSolverHelper.createBetaProvider(SaveableRequest.BetaTypeCode, Molecule, SaveableRequest.BackgroundTemperature);
+            
+            if isempty(SaveableRequest.NumLevelsForSolution) || SaveableRequest.NumLevelsForSolution == 0
+                SaveableRequest.NumLevelsForSolution = Molecule.MolecularLevels;
             end
             
-            if isempty(PopulationRequest.Temperature) || (isscalar(PopulationRequest.Temperature) && PopulationRequest.Temperature == 0)
+            if isempty(SaveableRequest.Temperature) || (isscalar(SaveableRequest.Temperature) && SaveableRequest.Temperature == 0)
                 collPartners = Molecule.CollisionPartnerCodes();
-                PopulationRequest.Temperature = Molecule.GetCollisionPartner(collPartners(1)).Temperatures;
+                SaveableRequest.Temperature = Molecule.GetCollisionPartner(collPartners(1)).Temperatures;
             end
             
-            InternalPopulationRequest = PopulationRequest.Copy();
+            InternalPopulationRequest = SaveableRequest.Copy();
             
             PopulationSolverHelper.replaceCollisionPartnerCodesToRates(InternalPopulationRequest,Molecule);            
             
