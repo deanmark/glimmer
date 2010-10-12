@@ -151,12 +151,11 @@ classdef LevelPopulationSolverLVG < LevelPopulationSolverOpticallyThin
             
         end
         
-        function EinsteinMatrix = getEinsteinMatrix (obj, CollisionPartnerDensity)
+        function EinsteinMatrix = getEinsteinMatrix (obj, CollisionPartnerDensityIndex)
             
             levels = size(obj.m_betaCoefficients,1);           
             
-            densityIndex = obj.m_collisionPartnerDensities == CollisionPartnerDensity;
-            EinsteinMatrix = obj.m_einsteinMatrix(1:levels,1:levels)*diag(obj.m_betaCoefficients(:,logical(densityIndex)));
+            EinsteinMatrix = obj.m_einsteinMatrix(1:levels,1:levels)*diag(obj.m_betaCoefficients(:,CollisionPartnerDensityIndex));
             
         end
         

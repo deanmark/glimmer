@@ -50,7 +50,7 @@ classdef LevelPopulationSolverOpticallyThin < handle
             
             for i = 1:numel(CollisionPartnerDensities)
                 
-                EqMatrix(:,:,i) = obj.getEinsteinMatrix(CollisionPartnerDensities(i));
+                EqMatrix(:,:,i) = obj.getEinsteinMatrix(i);
                 
                 EqMatrix(:,:,i) = EqMatrix(:,:,i) + CollisionPartnerDensities(i)*collisionRateMatrix(1:NumLevelsForSolution,1:NumLevelsForSolution);
                 
@@ -83,7 +83,7 @@ classdef LevelPopulationSolverOpticallyThin < handle
             
         end
         
-        function EinsteinMatrix = getEinsteinMatrix (obj, CollisionPartnerDensity)
+        function EinsteinMatrix = getEinsteinMatrix (obj, CollisionPartnerDensityIndex)
             EinsteinMatrix = obj.m_einsteinMatrix;
         end
         

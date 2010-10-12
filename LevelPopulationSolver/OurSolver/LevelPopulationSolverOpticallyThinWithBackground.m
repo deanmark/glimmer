@@ -20,7 +20,7 @@ classdef LevelPopulationSolverOpticallyThinWithBackground < LevelPopulationSolve
     
     methods(Access=protected)
         
-        function EinsteinMatrix = getEinsteinMatrix (obj, CollisionPartnerDensity)
+        function EinsteinMatrix = getEinsteinMatrix (obj, CollisionPartnerDensityIndex)
             
             EinsteinMatrix = obj.m_einsteinMatrix + obj.m_einsteinBMatrix;
             
