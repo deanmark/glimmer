@@ -2,9 +2,9 @@ classdef (Sealed) VelocityDerivativeUnits
     % Enum of visual comparison type codes between two results
     
     properties  (Constant)
-        %km s^-1 parsec ^-1
+        %km s^-1 pc^-1
         kmSecParsec = 1;
-        %km s^-1 cm ^-1
+        %km s^-1 cm^-1
         kmSecCm = 2;
         %s^-1
         sec = 3;
