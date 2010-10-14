@@ -20,7 +20,7 @@ classdef Scripts
             end
             
             dummyIntensity = PopulationResultPairs(1).Intensities;
-            Ratios = zeros(size(dummyIntensity,2),size(dummyIntensity,3),size(dummyIntensity,4),size(LevelPairs,1));
+            Ratios = zeros(size(dummyIntensity,2),size(dummyIntensity,3),size(dummyIntensity,4),size(dummyIntensity,5),size(LevelPairs,1));
             RatiosTitles = cell(1,size(LevelPairs,1));
             
             for pairsIndex=1:size(LevelPairs,1)
@@ -34,17 +34,17 @@ classdef Scripts
                 UpperIntensityLevelIndex = LevelPairs(pairsIndex,1);
                 LowerIntensityLevelIndex = LevelPairs(pairsIndex,2);
                 
-                Ratios(:,:,:,pairsIndex) = squeeze(UpperIntensity(UpperIntensityLevelIndex,:,:,:)./LowerIntensity(LowerIntensityLevelIndex,:,:,:));
-                RatiosTitles{pairsIndex} = sprintf('Ratio: %s J(%d-%d)/ %s J(%d-%d)', UpperMolecule.MoleculeName, UpperIntensityLevelIndex-1, UpperIntensityLevelIndex-2,...
+                Ratios(:,:,:,:,pairsIndex) = squeeze(UpperIntensity(UpperIntensityLevelIndex,:,:,:,:)./LowerIntensity(LowerIntensityLevelIndex,:,:,:,:));
+                RatiosTitles{pairsIndex} = sprintf('Ratio: %s(%d-%d)/%s(%d-%d)', UpperMolecule.MoleculeName, UpperIntensityLevelIndex-1, UpperIntensityLevelIndex-2,...
                     LowerMolecule.MoleculeName, LowerIntensityLevelIndex-1,LowerIntensityLevelIndex-2);
                 
             end
             
         end
         
-        function DrawContours(Data, DataTitles, ContourLevels, VelocityDerivative, CollisionPartnerDensities, Temperature, varargin)
+        function DrawContours(Data, DataTitles, ContourLevels, PopulationRequest, XAxisProperty, YAxisProperty, varargin)
             
-            [x,y,xName,yName,titleName] = Scripts.contourParameters (Temperature, CollisionPartnerDensities, VelocityDerivative/Constants.dVdRConversionFactor);
+            [x,y,xName,yName,titleName] = Scripts.contourParameters (PopulationRequest, XAxisProperty, YAxisProperty);
             
             p = inputParser;   % Create instance of inputParser class.
             p.addParamValue('x', x, @isnumeric);
@@ -55,32 +55,22 @@ classdef Scripts
             p.addParamValue('XScale', 'log', @(x)any(strcmpi(x,{'log','linear'})));
             p.addParamValue('YScale', 'log', @(x)any(strcmpi(x,{'log','linear'})));
             p.parse(varargin{:});
-            
-            %only one of the three:dvdrKmParsecs, Densities, Temperatures,
-            %should contain one element
-            if (~Scripts.onlyOneIsSingle(VelocityDerivative, CollisionPartnerDensities, Temperature))
-                ME = MException('DrawContours:InputArgumentError','Error in input. One of the following should be constant: dvdrKmParsecs, Densities, Temperatures');
-                throw(ME);
-            end
-            
+                     
             figure;
             
-            for i=1:size(Data,4)
-                z = squeeze(Data(:,:,:,i));
-                Levels = contourcs(z, ContourLevels{i});
-                
-                for j=1:numel(Levels)
+            for i=1:size(Data,5)
+                z = squeeze(Data(:,:,:,:,i));
+               
+                for j=1:numel(ContourLevels)
                     
-                    h = plot(Levels(j).X, Levels(j).Y, Scripts.lineStyleChooser(i));hold all;
-                    %[C,h] = contour3 (p.Results.x, p.Results.y, z, ContourLevels{i}, Scripts.lineStyleChooser(i)); hold all;
+                    [C,h] = contour3 (p.Results.x, p.Results.y, z, ContourLevels{j}, Scripts.lineStyleChooser(i)); hold all;
                     hGroup = hggroup;
                     set(h,'Parent',hGroup);
                     set(get(get(hGroup,'Annotation'),'LegendInformation'),'IconDisplayStyle','on');
                     set(hGroup,'DisplayName', DataTitles{i});
                     %if (numel(ContourLevels{i})>1); clabel(C,h,'Rotation',0); end;
                     
-                end
-                
+                end                
                 
             end
             
@@ -514,29 +504,36 @@ classdef Scripts
     
     methods (Access=public, Static=true)
         
-        function [x,y,xName,yName,titleName] = contourParameters (Temperatures, Densities, dvdrKmParsecs)
-            if (numel(dvdrKmParsecs)==1)
-                x = Densities;
-                y = Temperatures;
-                xName = 'Densities [cm^-^3]';
-                yName = 'Temperatures [K]';
-                titleName = sprintf('dv/dr=%g[km s^-^1 pc^-^1]', dvdrKmParsecs(1));
-            elseif (numel(Densities)==1)
-                x = dvdrKmParsecs;
-                y = Temperatures;
-                xName = 'dv/dr [km s^-^1 pc^-^1]';
-                yName = 'Temperatures [K]';
-                titleName = sprintf('Density=%g[cm^-^3]', Densities(1));
-            elseif (numel(Temperatures)==1)
-                x = dvdrKmParsecs;
-                y = Densities;
-                xName = 'dv/dr [km s^-^1 pc^-^1]';
-                yName = 'Densities [cm^-^3]';
-                titleName = sprintf('T=%dK',Temperatures(1));
-            else
-                ME = MException('DrawContours:InputArgumentError','Error in input. One of the following should be constant: dvdrKmParsecs, Densities, Temperatures');
-                throw(ME);
+        function [x,y,xName,yName,titleName] = contourParameters (PopulationRequest, XAxisProperty, YAxisProperty)
+            
+            [x, xName] = Scripts.buildAxisData(PopulationRequest,XAxisProperty);
+            [y, yName] = Scripts.buildAxisData(PopulationRequest,YAxisProperty);
+            
+            titleName = Scripts.buildSEDTitleName(PopulationRequest.VelocityDerivative, PopulationRequest.VelocityDerivativeUnits,...
+                PopulationRequest.Temperature, PopulationRequest.CollisionPartnerDensities, PopulationRequest.MoleculeAbundanceRatios, []);
+
+        end
+        
+        function [AxisData, AxisName] = buildAxisData (PopulationRequest, AxisProperty)
+            
+            switch AxisProperty               
+                case LVGParameterCodes.Temperature
+                    AxisData = PopulationRequest.Temperature;
+                    AxisName = 'Temperatures [K]';
+                case LVGParameterCodes.CollisionPartnerDensity
+                    AxisData = PopulationRequest.CollisionPartnerDensities;
+                    AxisName = 'N_p_a_r_t_n_e_r_s [cm^-^3]';                    
+                case LVGParameterCodes.VelocityDerivative
+                    AxisData = PopulationRequest.VelocityDerivative;
+                    AxisName = sprintf('dv/dr [%s]', VelocityDerivativeUnits.GetHelpDescription(PopulationRequest.VelocityDerivativeUnits));        
+                case LVGParameterCodes.MoleculeAbundanceRatio
+                    AxisData = PopulationRequest.MoleculeAbundanceRatios;
+                    AxisName = 'X_m_o_l_e_c_u_l_e';
+                otherwise
+                    ME = MException('VerifyInput:unknownLVGParameterCode','Error in input. LVG Parameter Code [%d] is unknown', AxisProperty);
+                    throw(ME);
             end
+                    
         end
         
         function LineStyle = lineStyleChooser(index)
@@ -562,7 +559,7 @@ classdef Scripts
             Result = singles == 1;
         end
         
-        function TitleName = buildSEDTitleName (VelocityDerivatives, VelocityDerivativeUnit, Temperatures, CollisionPartnerDensities, MoleculeDensities, ColumnDensities)
+        function TitleName = buildSEDTitleName (VelocityDerivatives, VelocityDerivativeUnit, Temperatures, CollisionPartnerDensities, MoleculeAbundanceRatios, ColumnDensities)
             
             dvdrDisplay = '';
             tempDisplay = '';
@@ -571,7 +568,7 @@ classdef Scripts
             colDensityDisplay = '';
             
             if (numel(CollisionPartnerDensities)==1)
-                colPartnerDensityDisplay = sprintf('N_P_a_r_t_n_e_r_s=%g[cm^-^3]', CollisionPartnerDensities);
+                colPartnerDensityDisplay = sprintf('n_p_a_r_t_n_e_r_s=%g[cm^-^3]', CollisionPartnerDensities);
             end
             if (numel(Temperatures)==1)
                 tempDisplay = sprintf('T=%d[K]', Temperatures);
@@ -579,11 +576,11 @@ classdef Scripts
             if (numel(VelocityDerivatives)==1)
                 dvdrDisplay = sprintf('dv/dr=%g[%s]', VelocityDerivatives, VelocityDerivativeUnits.GetHelpDescription(VelocityDerivativeUnit));
             end
-            if (numel(MoleculeDensities)==1)
-                molDensityDisplay = sprintf('N_M_o_l=%g[cm^-^2]', MoleculeDensities);
+            if (numel(MoleculeAbundanceRatios)==1)
+                molDensityDisplay = sprintf('X_m_o_l_e_c_u_l_e=%g', MoleculeAbundanceRatios);
             end
             if (numel(ColumnDensities)==1)
-                colDensityDisplay = sprintf('N_C_o_l_u_m_n=%g[cm^-^2]', ColumnDensities);
+                colDensityDisplay = sprintf('N_c_o_l_u_m_n=%g[cm^-^2]', ColumnDensities);
             end
             
             TitleName = FileIOHelper.ConcatWithSeperator({colPartnerDensityDisplay tempDisplay dvdrDisplay molDensityDisplay colDensityDisplay}, ',');
@@ -592,7 +589,7 @@ classdef Scripts
         
         function DisplayName = buildSEDDisplayName (VelocityDerivatives, VelocityDerivativeIndex, VelocityDerivativeUnit,...
                 Temperatures, TemperatureIndex, CollisionPartnerDensities, CollisionPartnerDensityIndex,...
-                MoleculeDensities, MoleculeDensityIndex, ColumnDensities, ColumnDensityIndex)
+                MoleculeAbundanceRatios, MoleculeAbundanceRatiosIndex, ColumnDensities, ColumnDensityIndex)
             
             dvdrDisplay = '';
             tempDisplay = '';
@@ -601,7 +598,7 @@ classdef Scripts
             colDensityDisplay = '';
             
             if (numel(CollisionPartnerDensities)>1)
-                colPartnerDensityDisplay = sprintf('N_P_a_r_t_n_e_r_s=%g[cm^-^3]', CollisionPartnerDensities(CollisionPartnerDensityIndex));
+                colPartnerDensityDisplay = sprintf('n_p_a_r_t_n_e_r_s=%g[cm^-^3]', CollisionPartnerDensities(CollisionPartnerDensityIndex));
             end
             if (numel(Temperatures)>1)
                 tempDisplay = sprintf('T=%d[K]', Temperatures(TemperatureIndex));
@@ -609,11 +606,11 @@ classdef Scripts
             if (numel(VelocityDerivatives)>1)
                 dvdrDisplay = sprintf('dv/dr=%g[%s]', VelocityDerivatives(VelocityDerivativeIndex), VelocityDerivativeUnits.GetHelpDescription(VelocityDerivativeUnit));
             end
-            if (numel(MoleculeDensities)>1)
-                molDensityDisplay = sprintf('N_M_o_l=%g[cm^-^2]', MoleculeDensities(MoleculeDensityIndex));
+            if (numel(MoleculeAbundanceRatios)>1)
+                molDensityDisplay = sprintf('X_m_o_l_e_c_u_l_e=%g', MoleculeAbundanceRatios(MoleculeAbundanceRatiosIndex));
             end
             if (numel(ColumnDensities)>1)
-                colDensityDisplay = sprintf('N_C_o_l_u_m_n=%g[cm^-^2]', ColumnDensities(ColumnDensityIndex));
+                colDensityDisplay = sprintf('N_c_o_l_u_m_n=%g[cm^-^2]', ColumnDensities(ColumnDensityIndex));
             end
             
             DisplayName = FileIOHelper.ConcatWithSeperator({colPartnerDensityDisplay tempDisplay dvdrDisplay molDensityDisplay colDensityDisplay}, ',');

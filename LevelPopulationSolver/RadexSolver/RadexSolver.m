@@ -37,12 +37,6 @@ classdef RadexSolver < handle
             
         end
         
-        function [ Result , RuntimeMessage ] = SolveLevelsPopulationOpticallyThin(CollisionPartnerDensity, Temperature, Molecule, CollisionPartners, CollisionPartnerWeights, BackgroundTemperature)
-           
-           [ Result , RuntimeMessage ] = RadexSolver.SolveLevelsPopulationLVG(RadexSolver.LVG, 1e3, CollisionPartnerDensity, Temperature, 1e5/CollisionPartnerDensity, Molecule, CollisionPartners, CollisionPartnerWeights, BackgroundTemperature);
-            
-        end
-        
     end
     
     methods(Access=private, Static=true)
@@ -102,7 +96,7 @@ classdef RadexSolver < handle
             
             switch BetaType
                 case BetaTypeCodes.ExpandingSphere
-                    FileName = RadexSolver.RadexLVGFileName;
+                    FileName = RadexSolver.RadexExpandingSphereFileName;
                 case BetaTypeCodes.UniformSphere
                     FileName = RadexSolver.RadexUniformSphereFileName;
                 case BetaTypeCodes.HomogeneousSlab
@@ -116,7 +110,8 @@ classdef RadexSolver < handle
         
         function [InputDensity,InputDvDr] = computeDensityAndDvDrParams (PopulationRequest)
             
-            DensityToDvdrRatio = PopulationRequest.MoleculeDensity / ( PopulationRequest.VelocityDerivative * 1e-5); %Radex accepts dvdr in Km/sec, the 1e5 converts our cm's to km's
+            DensityToDvdrRatio = PopulationRequest.CollisionPartnerDensities * PopulationRequest.MoleculeAbundanceRatios / ...
+                ( PopulationRequest.VelocityDerivative * 1e-5 ); %Radex accepts dvdr in Km/sec, the 1e5 converts our cm's to km's
             
             if (1e5 <= DensityToDvdrRatio) && (DensityToDvdrRatio <= 1e25)
                 InputDensity = DensityToDvdrRatio;

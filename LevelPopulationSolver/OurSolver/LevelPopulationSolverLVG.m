@@ -71,7 +71,8 @@ classdef LevelPopulationSolverLVG < LevelPopulationSolverOpticallyThin
                 i = i + 1;
                 
                 % Calculate beta coefficients from new population
-                [obj.m_betaCoefficients(:,notFinished), tau(:,notFinished)] = obj.m_betaProvider.CalculateBetaCoefficients(populationGuess(:,notFinished), PopulationRequest.MoleculeDensity(notFinished), PopulationRequest.VelocityDerivative);
+                [obj.m_betaCoefficients(:,notFinished), tau(:,notFinished)] = obj.m_betaProvider.CalculateBetaCoefficients(populationGuess(:,notFinished), ...
+                    PopulationRequest.CollisionPartnerDensities(notFinished)*PopulationRequest.MoleculeAbundanceRatios, PopulationRequest.VelocityDerivative);
                 % Interpolate our next beta guess based upon the beta
                 % coefficients just found and old beta coefficients.
                 obj.m_betaCoefficients(:,notFinished) = obj.interpolateNextBeta(obj.m_betaCoefficients(:,notFinished), lastBeta(:,notFinished), i);
@@ -107,7 +108,8 @@ classdef LevelPopulationSolverLVG < LevelPopulationSolverOpticallyThin
                 Result.PopulationHistory = Result.PopulationHistory(:,:,1:i);
             end
             
-            [Result.FinalBetaCoefficients, Result.FinalTauCoefficients] = obj.m_betaProvider.CalculateBetaCoefficients(populationGuess, PopulationRequest.MoleculeDensity, PopulationRequest.VelocityDerivative);
+            [Result.FinalBetaCoefficients, Result.FinalTauCoefficients] = obj.m_betaProvider.CalculateBetaCoefficients(populationGuess, ...
+                PopulationRequest.CollisionPartnerDensities*PopulationRequest.MoleculeAbundanceRatios, PopulationRequest.VelocityDerivative);
             Result.Population = populationGuess;
             Result.Converged = converged & ~ haywired;
             Result.Iterations = i;

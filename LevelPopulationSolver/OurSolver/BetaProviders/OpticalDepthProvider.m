@@ -17,7 +17,8 @@ classdef OpticalDepthProvider < handle
         function TauCoefficients = CalculateTauCoefficients(obj, Population, MoleculeDensity, VelocityDerivative)
             
             levels = size(Population,1);            
-            TauCoefficients = ((obj.m_tauMatrix(1:levels,1:levels)/VelocityDerivative)*(Population))*diag(MoleculeDensity);
+            MoleculeDensityArray = repmat(MoleculeDensity,levels,1);             
+            TauCoefficients = ((obj.m_tauMatrix(1:levels,1:levels)/VelocityDerivative)*(Population)).*MoleculeDensityArray;
             
         end
         

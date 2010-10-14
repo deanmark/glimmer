@@ -1,25 +1,37 @@
 function drawContours2Molecules
+% % 
 
-HCOPlus = WorkspaceHelper.GetLVGResultFromWorkspace('HCO+ - T60K');
-HCN = WorkspaceHelper.GetLVGResultFromWorkspace('HCN - T60K x 2');
+CO = WorkspaceHelper.GetLVGResultFromWorkspace('CO-LVG-Varying Nh2/dvdr - Modified');    
+HCN = WorkspaceHelper.GetLVGResultFromWorkspace('HCN-LVG-Varying Nh2/dvdr - Modified');
+
+%  CO = WorkspaceHelper.GetLVGResultFromWorkspace('CO-LVG-Varying Nh2/dvdr - Modified');
+%  HCN = WorkspaceHelper.GetLVGResultFromWorkspace('HCN-LVG-Varying Nh2/dvdr - Modified');
+
+% CO = WorkspaceHelper.GetLVGResultFromWorkspace('CO-Radex-100K-/10');    
+% HCN = WorkspaceHelper.GetLVGResultFromWorkspace('HCN-Radex-100K-/10');
 
 ResultsPairs = ...
-    [HCN HCOPlus;
-    HCOPlus HCOPlus];    
+    [HCN CO];    
 
 %levels != J . levels are count 1, J is count 0.
 LevelPairs = ...
-    [4 4;
-    4 2];
+    [2 3];
 
-ContourLevels = {[0.4 0.5 0.5 0.7], [5 10 20 ]};
+ContourLevels = {[50]};
+%ContourLevels = {[0.4 0.5 0.5 0.7], [5 10 20 ]};
 
 %%%%% DON'T CHANGE CODE BELOW HERE
 
 [Ratios, RatioTitles] = Scripts.CalculateIntensityRatios(ResultsPairs, LevelPairs);
 
-Scripts.DrawContours(Ratios, RatioTitles, ContourLevels, HCOPlus.OriginalRequest.VelocityDerivative, HCOPlus.OriginalRequest.CollisionPartnerDensities, HCOPlus.OriginalRequest.Temperature, ...
-    'y', HCOPlus.OriginalRequest.CollisionPartnerDensities, 'x', 10^5 * HCOPlus.OriginalRequest.MoleculeDensity(1) ./ HCOPlus.OriginalRequest.VelocityDerivative, ...
-    'xName', 'N_H_C_O_+ / dVdr', 'yName', 'n_H_2');
+%DrawContours(Data, DataTitles, ContourLevels, PopulationRequest, XAxisProperty, YAxisProperty, varargin)
+
+Ratios(Ratios>10)=NaN;
+Ratios(Ratios<=0)=NaN;
+Ratios(Ratios==Inf)=NaN;
+
+Scripts.DrawContours(Ratios, RatioTitles, ContourLevels, CO.OriginalRequest, LVGParameterCodes.VelocityDerivative, LVGParameterCodes.CollisionPartnerDensity, ...
+    'x', 1e6 ./ CO.OriginalRequest.VelocityDerivative, ...
+    'xName', 'N_H_2/dvdr', 'yName', 'n_H_2', 'titleName', 'T=100[K], X_H_C_N/X_C_O=1e-4');
 
 end

@@ -5,7 +5,7 @@ classdef RequestPropertyGrid
     properties(Constant)
         
         PropertyOrderList = {'RequestName','MoleculeFileName','RunTypeCode','BetaTypeCode','Temperature','VelocityDerivativeUnits','VelocityDerivative',...
-            'CollisionPartners','Weights','CollisionPartnerDensities','MoleculeDensity','CloudColumnDensity','BackgroundTemperature',...
+            'CollisionPartners','Weights','CollisionPartnerDensities','MoleculeAbundanceRatios','ConstantNmolBydVdR','BackgroundTemperature',...
             'CalculateIntensities','NumLevelsForSolution','FirstPopulationGuess','DebugIndicators'};
         
     end
@@ -112,21 +112,27 @@ classdef RequestPropertyGrid
 
             prop =properties.FindByName('Weights');
             prop.Type = PropertyType('denserealdouble', 'matrix');
+            prop.ReadOnly = false; 
             
             prop =properties.FindByName('Temperature');
             prop.Type = PropertyType('denserealdouble', 'matrix');
+            prop.ReadOnly = false; 
                        
             prop =properties.FindByName('VelocityDerivative');
             prop.Type = PropertyType('denserealdouble', 'matrix');
+            prop.ReadOnly = false; 
 
             prop =properties.FindByName('CollisionPartnerDensities');
             prop.Type = PropertyType('denserealdouble', 'matrix');
+            prop.ReadOnly = false; 
             
-            prop =properties.FindByName('MoleculeDensity');
+            prop =properties.FindByName('MoleculeAbundanceRatios');
             prop.Type = PropertyType('denserealdouble', 'matrix');
-
-            prop =properties.FindByName('CloudColumnDensity');
-            prop.Type = PropertyType('denserealdouble', 'matrix');
+            prop.ReadOnly = false; 
+            
+            prop =properties.FindByName('ConstantNmolBydVdR');
+            prop.Type = PropertyType('denserealdouble', 'scalar');
+            prop.ReadOnly = false;             
             
             prop =properties.FindByName('NumLevelsForSolution');
             prop.Type = PropertyType('denserealdouble', 'scalar');

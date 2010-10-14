@@ -36,40 +36,18 @@ classdef LVGSolverPopulationRequest < handle
         
         %Sets the Collision Partner Density. Units: cm^-3
         CollisionPartnerDensities;         
-        %Sets the Molecule Density. Units: cm^-3
-        MoleculeDensity; 
-        %Sets the Cloud Column Density. This only affects the calculation of the intensity. Units: cm^-3
-        CloudColumnDensity;
-                
+        %Sets the Molecule Abundance Ratios. Units: cm^-3
+        MoleculeAbundanceRatios;
+         
+        %By setting this you MUST place 0 as the MoleculeAbundanceRatios! This sets Nmolecule/dvdr = const. Units: cm^-3 s
+        ConstantNmolBydVdR;
+        
     end
     
     methods(Access=public)
         
-        function Req = LVGSolverPopulationRequest(RunTypeCode, MoleculeFileName, BetaTypeCode, BackgroundTemperature, CollisionPartners, Weights, Temperature, CollisionPartnerDensities, ...
-                VelocityDerivative, MoleculeDensity, NumLevelsForSolution, FirstPopulationGuess, CalculateIntensities, CloudColumnDensity)
+        function Req = LVGSolverPopulationRequest()
             
-            if nargin ~= 0
-                
-                Req.RunTypeCode = RunTypeCode;
-                Req.MoleculeFileName = MoleculeFileName;
-                
-                Req.BetaTypeCode = BetaTypeCode;               
-                Req.BackgroundTemperature = BackgroundTemperature;               
-                
-                Req.CollisionPartners = CollisionPartners;
-                Req.Weights = Weights;
-                Req.Temperature = Temperature;
-                Req.CollisionPartnerDensities = CollisionPartnerDensities;
-                Req.VelocityDerivative = VelocityDerivative;
-                Req.MoleculeDensity = MoleculeDensity;
-                Req.NumLevelsForSolution = NumLevelsForSolution;
-                Req.FirstPopulationGuess = FirstPopulationGuess;
-                Req.CalculateIntensities = CalculateIntensities;
-                Req.CloudColumnDensity = CloudColumnDensity;
-                
-                Req.DebugIndicators = 0;
-                
-            end
         end
         
         function ReqCopy = Copy (rhs)
@@ -100,32 +78,31 @@ classdef LVGSolverPopulationRequest < handle
             p.addRequired('rhs', @(x)isa(x,'LVGSolverPopulationRequest'));
             p.parse(lhs, rhs);
             
-            EqualParameters = LVGSolverPopulationRequest.areArraysIdentical(lhs.Temperature,lhs.Temperature) && ...
-                LVGSolverPopulationRequest.areArraysIdentical(lhs.CollisionPartnerDensities,lhs.CollisionPartnerDensities) && ...
-                LVGSolverPopulationRequest.areArraysIdentical(lhs.VelocityDerivative,lhs.VelocityDerivative) && ...
-                LVGSolverPopulationRequest.areArraysIdentical(lhs.MoleculeDensity,lhs.MoleculeDensity);
+            EqualParameters = LVGSolverPopulationRequest.areArraysIdentical(lhs.Temperature,rhs.Temperature) && ...
+                LVGSolverPopulationRequest.areArraysIdentical(lhs.CollisionPartnerDensities,rhs.CollisionPartnerDensities) && ...
+                LVGSolverPopulationRequest.areArraysIdentical(lhs.VelocityDerivative,rhs.VelocityDerivative) && ...
+                lhs.VelocityDerivativeUnits == rhs.VelocityDerivativeUnits;
         end
         
         function Req = DefaultRequest()
             
-            MoleculeFileName = 'hcn.dat';
+            MoleculeFileName = 'co.dat';
             %MoleculeFileName = 'hco+@xpol.dat';
             %MoleculeToCollisionPartnerDensityRatio = 10^-8;
-            CollisionPartners = [CollisionPartnersCodes.H2];
-            CollisionPartnerWeights = [1];
+            CollisionPartners = [CollisionPartnersCodes.H2para, CollisionPartnersCodes.H2ortho];
+            CollisionPartnerWeights = [1 3];
             
-            Molecule = WorkspaceHelper.GetMoleculeDataFromWorkspace(MoleculeFileName);
+            %Molecule = WorkspaceHelper.GetMoleculeDataFromWorkspace(MoleculeFileName);
             %Temperatures = Molecule.GetCollisionPartner(CollisionPartners(1)).Temperatures;
-            Temperatures = 60;
+            Temperatures = [100 200];
             
             %CollisionPartnerDensities = 15e3:1000:20e3;
-            a=(1:2:10)'*(10.^(3:1:7));
-            CollisionPartnerDensities = [a(:)'];
-            %CollisionPartnerDensities = 1e4:1000:4e4;
+            %a=(1:2:10)'*(10.^(3:1:7));
+            %CollisionPartnerDensities = [a(:)'];
+            CollisionPartnerDensities = 10.^[3:7];
             
             %MoleculeDensity = CollisionPartnerDensities*MoleculeToCollisionPartnerDensityRatio;
-            MoleculeDensity = ones(size(CollisionPartnerDensities)).*10^6*2;
-            ColumnDensities = MoleculeDensity;
+            MoleculeAbundanceRatios = 8e-5;
             
             %dvdrKmParsecArray = 1:0.05:1.05 .* Constants.dVdRConversionFactor;
             dvdrArray = 10.^[ -5:1:1 ];
@@ -145,12 +122,12 @@ classdef LVGSolverPopulationRequest < handle
                 'CollisionPartnerDensities',CollisionPartnerDensities,...
                 'VelocityDerivativeUnits',dvdrArrayUnits,...
                 'VelocityDerivative',dvdrArray,...
-                'MoleculeDensity',MoleculeDensity,...
+                'MoleculeAbundanceRatios',MoleculeAbundanceRatios,...
                 'NumLevelsForSolution',0,...
                 'FirstPopulationGuess',[],...
                 'CalculateIntensities',true,...
-                'CloudColumnDensity',ColumnDensities,...
-                'DebugIndicators',false);
+                'DebugIndicators',false,...
+                'ConstantNmolBydVdR', 0);
             
         end
         
