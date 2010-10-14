@@ -7,6 +7,7 @@ classdef LVGSolverPopulationResult < handle
         Population; 
         FinalBetaCoefficients; 
         FinalTauCoefficients;
+        %Intensity per column density
         Intensities;
         Converged; 
         Iterations; 
@@ -20,6 +21,21 @@ classdef LVGSolverPopulationResult < handle
     methods(Access=public)
         
         function Req = LVGSolverPopulationResult()
+            
+        end
+        
+        function ReqCopy = Copy (rhs)
+            
+            p = inputParser();
+            p.addRequired('rhs', @(x)isa(x,'LVGSolverPopulationResult'));
+            p.parse(rhs);
+            
+            ReqCopy = LVGSolverPopulationResult();
+            
+            fns = properties(rhs);
+            for i=1:length(fns)
+                ReqCopy.(fns{i}) = rhs.(fns{i});
+            end
             
         end
         
