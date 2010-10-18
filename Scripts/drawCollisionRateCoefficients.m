@@ -1,6 +1,8 @@
 Temperature = 500;
 
-CollisionRates = CollisionRates_12CO_H2ortho;
+Molecule = Molecules.Get('co.dat');
+
+CollisionRates = Molecule.GetCollisionPartner(CollisionPartnersCodes.H2para);
 
 NumContourLevels = 100;
 
