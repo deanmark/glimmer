@@ -8,7 +8,7 @@ classdef Scripts
                 ME = MException('CalculateIntensityRatios:InputArgumentError','Error in input. Input matrices should contain two columns');
                 throw(ME);
             elseif size(PopulationResultPairs,1)~=size(LevelPairs,1)
-                ME = MException('CalculateIntensityRatios:InputArgumentError','Error in input. PopulationResultPairs and LevelPairs should conatin the same number of rows');
+                ME = MException('CalculateIntensityRatios:InputArgumentError','Error in input. PopulationResultPairs and LevelPairs should contain the same number of rows');
                 throw(ME);
             end
             
@@ -42,7 +42,7 @@ classdef Scripts
             
         end
         
-        function DrawContours(Data, DataTitles, ContourLevels, PopulationRequest, XAxisProperty, YAxisProperty, varargin)
+        function [XData, YData, ZData] = DrawContours(Data, DataTitles, ContourLevels, PopulationRequest, XAxisProperty, YAxisProperty, varargin)
             
             [x,y,xName,yName,titleName] = Scripts.contourParameters (PopulationRequest, XAxisProperty, YAxisProperty);
             
@@ -54,27 +54,35 @@ classdef Scripts
             p.addParamValue('titleName', titleName, @ischar);
             p.addParamValue('XScale', 'log', @(x)any(strcmpi(x,{'log','linear'})));
             p.addParamValue('YScale', 'log', @(x)any(strcmpi(x,{'log','linear'})));
+            p.addParamValue('snapPlot', true, @(x)isscalar(x)&&islogical(x));
             p.parse(varargin{:});
                      
+            XData = p.Results.x;
+            YData = p.Results.y;            
+            ZData = zeros(numel(p.Results.y), numel(p.Results.x), size(Data,5));
             figure;
             
             for i=1:size(Data,5)
                 z = squeeze(Data(:,:,:,:,i));
-               
-                for j=1:numel(ContourLevels)
-                    
-                    [C,h] = contour3 (p.Results.x, p.Results.y, z, ContourLevels{j}, Scripts.lineStyleChooser(i)); hold all;
-                    hGroup = hggroup;
-                    set(h,'Parent',hGroup);
-                    set(get(get(hGroup,'Annotation'),'LegendInformation'),'IconDisplayStyle','on');
-                    set(hGroup,'DisplayName', DataTitles{i});
-                    %if (numel(ContourLevels{i})>1); clabel(C,h,'Rotation',0); end;
-                    
-                end                
+                ZData (:,:,i) = z;
+                
+                [C,h] = contour3 (p.Results.x, p.Results.y, z, ContourLevels{i}, Scripts.lineStyleChooser(i)); hold all;
+                hGroup = hggroup;
+                set(h,'Parent',hGroup);
+                set(get(get(hGroup,'Annotation'),'LegendInformation'),'IconDisplayStyle','on');
+                set(hGroup,'DisplayName', DataTitles{i});
+                %if (numel(ContourLevels{i})>1); clabel(C,h,'Rotation',0); end;
                 
             end
             
             hold off;figure(gcf);
+            
+            %snap plot onto x-y axis
+            if (p.Results.snapPlot)
+                cameraTarget = get(gca, 'CameraTarget');
+                cameraPosition = get(gca, 'CameraPosition');
+                set(gca, 'CameraPosition', [cameraTarget(1), cameraTarget(2), cameraPosition(3)]);
+            end
             
             set(gca,'XScale',p.Results.XScale);
             set(gca, 'YScale', p.Results.YScale);
@@ -122,7 +130,11 @@ classdef Scripts
             
         end
         
-        function CompareResults (Data, PlotArguments, YLabel, XLabel, YRange, YAxisLog, Title, FileName)
+        function CompareResults (Data, PlotArguments, XLabel, YLabel, YRange, YAxisLog, Title, FigureBehavior, FileName)
+            
+            p = inputParser;   % Create instance of inputParser class.
+            p.addRequired('FigureBehavior', @(x)any(strcmpi(x,{'OpenNew','UseOld','Add'})));
+            p.parse(FigureBehavior);
             
             maxSize=0;
             %find max
@@ -136,6 +148,15 @@ classdef Scripts
             end
             
             xValues = 0:(maxSize-1);
+
+            switch p.Results.FigureBehavior
+                case 'OpenNew'
+                    figure;
+                case 'UseOld'               
+                    %do nothing;
+                case 'Add'
+                    hold all;
+            end
             
             %draw
             for i=1:numel(Data)                
@@ -145,6 +166,7 @@ classdef Scripts
             end
                         
             hold off;
+            
             figure(gcf);
             
             xlabel(XLabel);
@@ -164,52 +186,25 @@ classdef Scripts
             
             set(gca,'XMinorTick', 'on');
             
-            legend('toggle');
+            legend('show');
             
             if ~isempty(FileName)
                 saveas (h,FileName);
             end
         end
         
-        function DrawResults1Molecule (DrawType, PopulationResult, VelocityDerivativeIndices, TemperatureIndices, CollisionPartnerDensitiesIndices, FileName)
+        function DrawResults1Molecule (DrawType, PopulationResult, VelocityDerivativeIndices, TemperatureIndices, CollisionPartnerDensitiesIndices, MoleculeAbundanceIndices, FigureBehavior, FileName)
             
             p = inputParser;    % Create an instance of the class.
             p.addRequired('DrawType', @(x)isnumeric(x) && isscalar(x));
             p.addRequired('PopulationResult', @(x)isa(x,'LVGSolverPopulationResult'));
             p.addRequired('VelocityDerivativeIndices', @(x)isnumeric(x));
             p.addRequired('TemperatureIndices', @(x)isnumeric(x));
-            p.addRequired('CollisionPartnerDensitiesIndices', @(x)isnumeric(x));                        
-            p.addOptional('FileName', '', @ischar);
+            p.addRequired('CollisionPartnerDensitiesIndices', @(x)isnumeric(x));     
+            p.addRequired('FileName', @ischar);
             p.parse(DrawType, PopulationResult, VelocityDerivativeIndices, TemperatureIndices, CollisionPartnerDensitiesIndices, FileName);
             
-            switch DrawType
-                case ComparisonTypeCodes.Intensities
-                    Data = PopulationResult.Intensities;
-                    xaxis = 'J_u_p_p_e_r';
-                    yaxis = 'I_J [erg^-^1 sr^-^1 molecule^-^1]';
-                    YRange = [];
-                    YAxisLog = true;
-                case ComparisonTypeCodes.Beta
-                    Data = PopulationResult.FinalBetaCoefficients;
-                    xaxis = 'J_u_p_p_e_r';
-                    yaxis = 'Beta';
-                    YRange = [];
-                    YAxisLog = true;
-                case ComparisonTypeCodes.Tau
-                    Data = PopulationResult.FinalTauCoefficients;
-                    xaxis = 'J_u_p_p_e_r';
-                    yaxis = 'Tau';
-                    YRange = [];
-                    YAxisLog = true;
-                case ComparisonTypeCodes.Population
-                    Data = PopulationResult.Population;
-                    xaxis = 'J';
-                    yaxis = 'x - Fractional population';
-                    YRange = [0 1];
-                    YAxisLog = false;
-                otherwise
-                    error('DrawType must be of type ComparisonTypeCodes');
-            end
+            [Data,xaxis,yaxis,YRange,YAxisLog] = Scripts.buildResultDisplayData(DrawType, PopulationResult);
             
             request = PopulationResult.OriginalRequest;
             
@@ -219,23 +214,24 @@ classdef Scripts
             for tempIndex=1:numel(TemperatureIndices)
                 for densityIndex=1:numel(CollisionPartnerDensitiesIndices)
                     for dvdrIndex=1:numel(VelocityDerivativeIndices)
-                        
-                        displayName = Scripts.buildSEDDisplayName(request.VelocityDerivative(VelocityDerivativeIndices), dvdrIndex, request.VelocityDerivativeUnits,...
-                            request.Temperature(TemperatureIndices), tempIndex, request.CollisionPartnerDensities(CollisionPartnerDensitiesIndices), densityIndex, ...
-                            request.MoleculeDensity(CollisionPartnerDensitiesIndices), densityIndex, request.CloudColumnDensity(CollisionPartnerDensitiesIndices), densityIndex);
-                        
-                        RefinedData{end+1} = Data(:,tempIndex,densityIndex,dvdrIndex);
-                        PlotArguments{end+1} = {'DisplayName', displayName};
-                        
+                        for molAbundanceIndex=1:numel(MoleculeAbundanceIndices)
+                            
+                            displayName = Scripts.buildSEDDisplayName(request.VelocityDerivative(VelocityDerivativeIndices), dvdrIndex, request.VelocityDerivativeUnits,...
+                                request.Temperature(TemperatureIndices), tempIndex, request.CollisionPartnerDensities(CollisionPartnerDensitiesIndices), densityIndex, ...
+                                request.MoleculeAbundanceRatios(MoleculeAbundanceIndices), molAbundanceIndex, [], 0);
+                            
+                            RefinedData{end+1} = Data(:,tempIndex,densityIndex,dvdrIndex);
+                            PlotArguments{end+1} = {'DisplayName', displayName};
+                        end
                     end
                 end
             end
            
             titleName = Scripts.buildSEDTitleName(request.VelocityDerivative(VelocityDerivativeIndices), request.VelocityDerivativeUnits,...
                 request.Temperature(TemperatureIndices), request.CollisionPartnerDensities(CollisionPartnerDensitiesIndices), ...
-                request.MoleculeDensity(CollisionPartnerDensitiesIndices), request.CloudColumnDensity(CollisionPartnerDensitiesIndices));
+                request.MoleculeAbundanceRatios(MoleculeAbundanceIndices), []);
 
-            Scripts.CompareResults(RefinedData, PlotArguments, yaxis, xaxis, YRange, YAxisLog, titleName, p.Results.FileName);
+            Scripts.CompareResults(RefinedData, PlotArguments, xaxis, yaxis, YRange, YAxisLog, titleName, FigureBehavior, FileName);
             
         end
 
@@ -534,6 +530,37 @@ classdef Scripts
                     throw(ME);
             end
                     
+        end
+        
+        function [Data, XAxis, YAxis, YRange, YAxisLog] = buildResultDisplayData(DrawType, PopulationResult)
+            switch DrawType
+                case ComparisonTypeCodes.Intensities
+                    Data = PopulationResult.Intensities;
+                    XAxis = 'J_u_p_p_e_r';
+                    YAxis = 'I_J [erg^-^1 sr^-^1 molecule^-^1]';
+                    YRange = [];
+                    YAxisLog = true;
+                case ComparisonTypeCodes.Beta
+                    Data = PopulationResult.FinalBetaCoefficients;
+                    XAxis = 'J_u_p_p_e_r';
+                    YAxis = 'Beta';
+                    YRange = [];
+                    YAxisLog = true;
+                case ComparisonTypeCodes.Tau
+                    Data = PopulationResult.FinalTauCoefficients;
+                    XAxis = 'J_u_p_p_e_r';
+                    YAxis = 'Tau';
+                    YRange = [];
+                    YAxisLog = true;
+                case ComparisonTypeCodes.Population
+                    Data = PopulationResult.Population;
+                    XAxis = 'J';
+                    YAxis = 'x - Fractional population';
+                    YRange = [0 1];
+                    YAxisLog = false;
+                otherwise
+                    error('DrawType must be of type ComparisonTypeCodes');
+            end
         end
         
         function LineStyle = lineStyleChooser(index)
