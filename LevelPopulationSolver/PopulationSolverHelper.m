@@ -31,7 +31,7 @@ classdef PopulationSolverHelper < handle
                         for collPartnerDensityIndex=1:numel(PopulationRequest.CollisionPartnerDensities)
                             
                             PopulationSolverHelper.fillInnerRequest(innerRequest,PopulationRequest.Temperature(tempIndex),PopulationRequest.VelocityDerivative(dvDrIndex),PopulationRequest.VelocityDerivativeUnits,...
-                                PopulationRequest.CollisionPartnerDensities(collPartnerDensityIndex),PopulationRequest.MoleculeAbundanceRatios(molAbundanceIndex), PopulationRequest.ConstantNmolBydVdR, PopulationRequest.FirstPopulationGuess)
+                                PopulationRequest.CollisionPartnerDensities(collPartnerDensityIndex),PopulationRequest.MoleculeAbundanceRatios(molAbundanceIndex), PopulationRequest.ConstantNpartnerBydVdR, PopulationRequest.FirstPopulationGuess)
                             BetaProvider.IgnoreNegativeTau = true;
                             
                             if innerRequest.CollisionPartnerDensities >= 10
@@ -108,7 +108,7 @@ classdef PopulationSolverHelper < handle
                     for molAbundanceIndex=1:numel(PopulationRequest.MoleculeAbundanceRatios)
                         
                         PopulationSolverHelper.fillInnerRequest(innerRequest,PopulationRequest.Temperature(tempIndex),PopulationRequest.VelocityDerivative(dvDrIndex),PopulationRequest.VelocityDerivativeUnits,...
-                            PopulationRequest.CollisionPartnerDensities,PopulationRequest.MoleculeAbundanceRatios(molAbundanceIndex), PopulationRequest.ConstantNmolBydVdR, PopulationRequest.FirstPopulationGuess)
+                            PopulationRequest.CollisionPartnerDensities,PopulationRequest.MoleculeAbundanceRatios(molAbundanceIndex), PopulationRequest.ConstantNpartnerBydVdR, PopulationRequest.FirstPopulationGuess)
                         BetaProvider.IgnoreNegativeTau = true;
                         
                         if innerRequest.CollisionPartnerDensities >= 10
@@ -185,7 +185,7 @@ classdef PopulationSolverHelper < handle
                     for molAbundanceIndex=1:numel(PopulationRequest.MoleculeAbundanceRatios)
                         
                         PopulationSolverHelper.fillInnerRequest(innerRequest,PopulationRequest.Temperature(tempIndex),PopulationRequest.VelocityDerivative(dvDrIndex),PopulationRequest.VelocityDerivativeUnits,...
-                            PopulationRequest.CollisionPartnerDensities,PopulationRequest.MoleculeAbundanceRatios(molAbundanceIndex), PopulationRequest.ConstantNmolBydVdR, PopulationRequest.FirstPopulationGuess)
+                            PopulationRequest.CollisionPartnerDensities,PopulationRequest.MoleculeAbundanceRatios(molAbundanceIndex), PopulationRequest.ConstantNpartnerBydVdR, PopulationRequest.FirstPopulationGuess)
                                                 
                         Population = solver.SolveLevelsPopulation(innerRequest);
                         
@@ -219,7 +219,7 @@ classdef PopulationSolverHelper < handle
                         for collPartnerDensityIndex=1:numel(PopulationRequest.CollisionPartnerDensities)
                             
                             PopulationSolverHelper.fillInnerRequest(innerRequest,PopulationRequest.Temperature(tempIndex),PopulationRequest.VelocityDerivative(dvDrIndex),PopulationRequest.VelocityDerivativeUnits,...
-                                PopulationRequest.CollisionPartnerDensities(collPartnerDensityIndex),PopulationRequest.MoleculeAbundanceRatios(molAbundanceIndex),PopulationRequest.ConstantNmolBydVdR, PopulationRequest.FirstPopulationGuess)
+                                PopulationRequest.CollisionPartnerDensities(collPartnerDensityIndex),PopulationRequest.MoleculeAbundanceRatios(molAbundanceIndex),PopulationRequest.ConstantNpartnerBydVdR, PopulationRequest.FirstPopulationGuess)
                             
                             [ Result, Converged, RuntimeMessage ] = RadexSolver.CalculateLVGPopulation(innerRequest);
                             
@@ -315,7 +315,7 @@ classdef PopulationSolverHelper < handle
             
         end
         
-        function fillInnerRequest(InnerRequest, Temperature, VelocityDerivative, VelocityDerivativeUnit, CollisionPartnerDensities, MoleculeAbundanceRatios, ConstantNmolBydVdR, FirstPopulationGuess)
+        function fillInnerRequest(InnerRequest, Temperature, VelocityDerivative, VelocityDerivativeUnit, CollisionPartnerDensities, MoleculeAbundanceRatios, ConstantNpartnerBydVdR, FirstPopulationGuess)
            
             InnerRequest.Temperature = Temperature;
             InnerRequest.VelocityDerivativeUnits = VelocityDerivativeUnits.sec;
@@ -324,11 +324,11 @@ classdef PopulationSolverHelper < handle
             InnerRequest.FirstPopulationGuess = FirstPopulationGuess;
             InnerRequest.MoleculeAbundanceRatios = MoleculeAbundanceRatios;
                         
-            if ~isempty(ConstantNmolBydVdR) && ConstantNmolBydVdR ~= 0
+            if ~isempty(ConstantNpartnerBydVdR) && ConstantNpartnerBydVdR ~= 0
                 if CollisionPartnerDensities == 0
-                    InnerRequest.CollisionPartnerDensities = ConstantNmolBydVdR*InnerRequest.VelocityDerivative;
+                    InnerRequest.CollisionPartnerDensities = ConstantNpartnerBydVdR*InnerRequest.VelocityDerivative;
                 elseif VelocityDerivative == 0
-                    InnerRequest.VelocityDerivative = CollisionPartnerDensities/ConstantNmolBydVdR;
+                    InnerRequest.VelocityDerivative = CollisionPartnerDensities/ConstantNpartnerBydVdR;
                 end                    
             end
         end

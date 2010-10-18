@@ -39,8 +39,8 @@ classdef LVGSolverPopulationRequest < handle
         %Sets the Molecule Abundance Ratios. Units: cm^-3
         MoleculeAbundanceRatios;
          
-        %By setting this you MUST place 0 as the MoleculeAbundanceRatios! This sets Nmolecule/dvdr = const. Units: cm^-3 s
-        ConstantNmolBydVdR;
+        %By setting this you MUST set 0 for CollisionPartnerDensities or VelocityDerivative. This sets Npartner/dvdr = const. Units: cm^-3 s
+        ConstantNpartnerBydVdR;
         
     end
     
@@ -127,7 +127,7 @@ classdef LVGSolverPopulationRequest < handle
                 'FirstPopulationGuess',[],...
                 'CalculateIntensities',true,...
                 'DebugIndicators',false,...
-                'ConstantNmolBydVdR', 0);
+                'ConstantNpartnerBydVdR', 0);
             
         end
         
