@@ -220,7 +220,7 @@ classdef Scripts
                                 request.Temperature(TemperatureIndices), tempIndex, request.CollisionPartnerDensities(CollisionPartnerDensitiesIndices), densityIndex, ...
                                 request.MoleculeAbundanceRatios(MoleculeAbundanceIndices), molAbundanceIndex, [], 0);
                             
-                            RefinedData{end+1} = Data(:,tempIndex,densityIndex,dvdrIndex);
+                            RefinedData{end+1} = Data(:,tempIndex,densityIndex,dvdrIndex,molAbundanceIndex);
                             PlotArguments{end+1} = {'DisplayName', displayName};
                         end
                     end

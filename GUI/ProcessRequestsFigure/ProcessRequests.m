@@ -163,7 +163,7 @@ stop(progressUpdateTimer);
 delete(progressUpdateTimer);
 delete(dlg);
 
-refreshRequestsButton_Callback(handles.refreshRequestsButton, eventdata, handles)
+refreshRequestsButton_Callback(handles.refreshRequestsButton, eventdata, handles);
 
 if ~isempty(ME) && ~strcmp(ME.message, 'Operation terminated by user.')
     rethrow(ME);
