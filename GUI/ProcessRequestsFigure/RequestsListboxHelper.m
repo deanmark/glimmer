@@ -7,7 +7,7 @@ classdef RequestsListboxHelper
             requestStrings = get(ListBoxHandle,'String');
             requests = WorkspaceHelper.GetLVGRequestsListFromWorkspace();
             
-            requestStrings{end+1} = LVGPopRequest.RequestName;
+            requestStrings{end+1} = RequestsListboxHelper.annotateRequestString(LVGPopRequest.RequestName,LVGPopRequest.Finished);
             requests(end+1) = LVGPopRequest;
             
             set(ListBoxHandle,'String',requestStrings);
@@ -25,7 +25,7 @@ classdef RequestsListboxHelper
             requestStrings = get(ListBoxHandle,'String');
             requests = WorkspaceHelper.GetLVGRequestsListFromWorkspace();
             
-            requestStrings{OldRequestIndex} = newReq.RequestName;
+            requestStrings{OldRequestIndex} = RequestsListboxHelper.annotateRequestString(newReq.RequestName,newReq.Finished);
             requests(OldRequestIndex) = newReq;
             
             set(ListBoxHandle,'String',requestStrings);
@@ -72,7 +72,7 @@ classdef RequestsListboxHelper
             requestStrings = cell(size(Requests));
             
             for i=1:numel(Requests)
-                requestStrings{i} = Requests(i).RequestName;
+                requestStrings{i} = RequestsListboxHelper.annotateRequestString(Requests(i).RequestName, Requests(i).Finished);
             end
             
             set(ListBoxHandle,'Value',1);
@@ -80,6 +80,19 @@ classdef RequestsListboxHelper
             
         end
         
+    end
+    
+    methods(Static, Access = private)
+        
+        function ModifiedString = annotateRequestString(RequestName, RequestFinished)
+        
+            if ~RequestFinished
+                ModifiedString = sprintf('<html><b>%s</b></html>', RequestName);
+            else
+                ModifiedString = RequestName;
+            end                
+            
+        end
     end
 end
 

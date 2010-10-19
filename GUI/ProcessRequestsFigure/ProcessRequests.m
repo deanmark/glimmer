@@ -108,7 +108,7 @@ function refreshRequestsButton_Callback(hObject, eventdata, handles)
 
 internalRequests = WorkspaceHelper.GetLVGRequestsListFromWorkspace();
 
-RequestPropertyGrid.ResetGripProperties(handles.requestPropertiesEditor);
+RequestPropertyGrid.ResetGridProperties(handles.requestPropertiesEditor);
 
 RequestsListboxHelper.SetRequestsToListBox(handles.requestsListbox, internalRequests);
 
@@ -140,17 +140,21 @@ start(progressUpdateTimer);
 
 for i=1:numel(internalRequests)
     
-    try        
-        dlg.FractionComplete = 0;
-        dlg.StatusMessage = sprintf('Processing Request %g/%g: "%s"',i,numel(internalRequests), internalRequests(i).RequestName);
-
-        result = data.Solver.ProcessPopulationRequest(internalRequests(i));
+    if ~internalRequests(i).Finished
         
-        dlg.FractionComplete = 1;
-        LVGResults.Put(internalRequests(i).RequestName,result);
-    
-    catch ME
-        break;        
+        try
+            dlg.FractionComplete = 0;
+            dlg.StatusMessage = sprintf('Processing Request %g/%g: "%s"',i,numel(internalRequests), internalRequests(i).RequestName);
+            
+            result = data.Solver.ProcessPopulationRequest(internalRequests(i));
+            
+            dlg.FractionComplete = 1;
+            LVGResults.Put(internalRequests(i).RequestName,result);
+            
+        catch ME
+            break;
+        end
+        
     end
     
 end
@@ -158,6 +162,8 @@ end
 stop(progressUpdateTimer);
 delete(progressUpdateTimer);
 delete(dlg);
+
+refreshRequestsButton_Callback(handles.refreshRequestsButton, eventdata, handles)
 
 if ~isempty(ME) && ~strcmp(ME.message, 'Operation terminated by user.')
     rethrow(ME);
@@ -244,7 +250,7 @@ function removeRequestsButton_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 if (~isempty(handles.ViewedRequestIndex))
-    RequestPropertyGrid.ResetGripProperties(handles.requestPropertiesEditor);
+    RequestPropertyGrid.ResetGridProperties(handles.requestPropertiesEditor);
 
     RequestsListboxHelper.RemoveRequestFromListBox(handles.requestsListbox, handles.ViewedRequestIndex);
     

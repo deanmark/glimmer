@@ -266,6 +266,8 @@ classdef PopulationSolverHelper < handle
                     throw(ME);
             end
             
+            PopulationRequest.Finished = true;
+            
         end
         
     end

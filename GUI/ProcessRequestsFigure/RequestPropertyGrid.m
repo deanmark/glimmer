@@ -6,7 +6,7 @@ classdef RequestPropertyGrid
         
         PropertyOrderList = {'RequestName','MoleculeFileName','RunTypeCode','BetaTypeCode','Temperature','VelocityDerivativeUnits','VelocityDerivative',...
             'CollisionPartners','Weights','CollisionPartnerDensities','MoleculeAbundanceRatios','ConstantNpartnerBydVdR','BackgroundTemperature',...
-            'CalculateIntensities','NumLevelsForSolution','FirstPopulationGuess','DebugIndicators'};
+            'CalculateIntensities','NumLevelsForSolution','Finished','FirstPopulationGuess','DebugIndicators'};
         
     end
     
@@ -159,7 +159,7 @@ classdef RequestPropertyGrid
 
         end
         
-        function ResetGripProperties(PropertyGridHandle)
+        function ResetGridProperties(PropertyGridHandle)
             
             PropertyGridHandle.Item = [];
             

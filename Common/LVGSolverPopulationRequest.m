@@ -42,12 +42,16 @@ classdef LVGSolverPopulationRequest < handle
         %By setting this you MUST set 0 for CollisionPartnerDensities or VelocityDerivative. This sets Npartner/dvdr = const. Units: cm^-3 s
         ConstantNpartnerBydVdR;
         
+        %Specifies if the request has run or not. To rerun requests, set this to false.
+        Finished;
+        
     end
     
     methods(Access=public)
         
-        function Req = LVGSolverPopulationRequest()
-            
+        function Req = LVGSolverPopulationRequest(varargin)
+            Req.Finished = false;
+            constructor(Req, varargin{:});
         end
         
         function ReqCopy = Copy (rhs)
@@ -110,9 +114,7 @@ classdef LVGSolverPopulationRequest < handle
             
             BackgroundTemperature = 2.73;
             
-            Req = LVGSolverPopulationRequest();
-            constructor(Req, ... 
-                'RunTypeCode', RunTypeCodes.LVG, ...
+            Req = LVGSolverPopulationRequest('RunTypeCode', RunTypeCodes.LVG, ...
                 'MoleculeFileName', MoleculeFileName,...
                 'BetaTypeCode', BetaTypeCodes.UniformSphere,...
                 'BackgroundTemperature', BackgroundTemperature,...
