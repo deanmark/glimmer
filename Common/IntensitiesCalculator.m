@@ -4,6 +4,7 @@ classdef IntensitiesCalculator < handle
         
         m_einsteinCoefficients;
         m_transitionEnergies;
+        m_frequencies;
         
     end
     
@@ -13,13 +14,17 @@ classdef IntensitiesCalculator < handle
             
             Inten.m_einsteinCoefficients = zeros(MoleculeData.MolecularLevels,1);
             Inten.m_transitionEnergies = zeros(MoleculeData.MolecularLevels,1);
+            Inten.m_frequencies = zeros(MoleculeData.MolecularLevels,1);
    
-            for i=2:MoleculeData.MolecularLevels
-                
-                Inten.m_einsteinCoefficients(i) = MoleculeData.EinsteinACoefficient(i, i-1);
-                Inten.m_transitionEnergies(i) = MoleculeData.TransitionEnergy(i, i-1);
-                
-            end
+            HighLevels =  zeros(MoleculeData.MolecularLevels-1,1);
+            HighLevels(:) = 2:MoleculeData.MolecularLevels;
+            LowLevels = HighLevels - 1;
+            
+            Inten.m_einsteinCoefficients(2:end) = MoleculeData.EinsteinACoefficient(HighLevels, LowLevels);
+            Inten.m_transitionEnergies(2:end) = MoleculeData.TransitionEnergy(HighLevels, LowLevels);
+            Inten.m_frequencies(2:end) = MoleculeData.TransitionFrequency(HighLevels, LowLevels);
+            
+            
             
         end
         
@@ -46,6 +51,15 @@ classdef IntensitiesCalculator < handle
         function Intensities = CalculateIntensitiesOpticallyThin(obj, LevelPopulation)
             
             Intensities = (LevelPopulation.*obj.m_einsteinCoefficients.*obj.m_transitionEnergies)/(4*Constants.pi);
+            
+        end
+        
+        function Flux = CalculateFluxLTE(obj, Temperature)
+           
+            %(2 h nu^3 / c^2) (1/[exp(h nu / kT) - 1])
+            
+            Flux = (2 * Constants.h * obj.m_frequencies.^4 / Constants.c^2) .* (1./(exp(Constants.h * obj.m_frequencies / (Constants.k * Temperature))-1));
+            Flux(1)=0;
             
         end
         
