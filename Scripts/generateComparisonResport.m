@@ -4,11 +4,13 @@ data = cell(size(DiffGrid));
 
 for i=1:size(DiffGrid,1)
     for j=1:size(DiffGrid,2)
+        
         if min(DiffGrid) < 1/100
             data{i,j} = sprintf('<a href="./pics/Temperature%g_%g.jpg">%2.2e</a>', Temperatures(i), j, DiffGrid(i,j));
         else
             data{i,j} = sprintf('<a href="./pics/Temperature%g_%g.jpg">%2.2f</a>', Temperatures(i), j, DiffGrid(i,j));
         end
+
     end
 end
 

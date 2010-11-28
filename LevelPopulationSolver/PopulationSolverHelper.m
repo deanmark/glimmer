@@ -192,8 +192,14 @@ classdef PopulationSolverHelper < handle
                         FinalResult.Population(:,tempIndex,:,dvDrIndex,molAbundanceIndex) = Population;
                         
                         if (PopulationRequest.CalculateIntensities)
-                            FinalResult.Intensities(:,tempIndex,:,dvDrIndex,molAbundanceIndex) = IntensitiesClc.CalculateIntensitiesLVG(Population, ...
-                                squeeze(FinalResult.FinalTauCoefficients(:,tempIndex,:,dvDrIndex,molAbundanceIndex)));
+                            
+                            if PopulationRequest.RunTypeCode == RunTypeCodes.LTE
+                               FinalResult.Intensities(:,tempIndex,:,dvDrIndex,molAbundanceIndex) = repmat(IntensitiesClc.CalculateFluxLTE(PopulationRequest.Temperature(tempIndex)),...
+                                   1,numel(PopulationRequest.CollisionPartnerDensities));
+                            else
+                                FinalResult.Intensities(:,tempIndex,:,dvDrIndex,molAbundanceIndex) = IntensitiesClc.CalculateIntensitiesLVG(Population, ...
+                                    squeeze(FinalResult.FinalTauCoefficients(:,tempIndex,:,dvDrIndex,molAbundanceIndex)));
+                            end
                         end
                         
                         i=i+1;

@@ -200,7 +200,7 @@ classdef Scripts
             p.addRequired('PopulationResult', @(x)isa(x,'LVGSolverPopulationResult'));
             p.addRequired('VelocityDerivativeIndices', @(x)isnumeric(x));
             p.addRequired('TemperatureIndices', @(x)isnumeric(x));
-            p.addRequired('CollisionPartnerDensitiesIndices', @(x)isnumeric(x));     
+            p.addRequired('CollisionPartnerDensitiesIndices', @(x)isnumeric(x));
             p.addRequired('FileName', @ischar);
             p.parse(DrawType, PopulationResult, VelocityDerivativeIndices, TemperatureIndices, CollisionPartnerDensitiesIndices, FileName);
             
@@ -211,10 +211,10 @@ classdef Scripts
             RefinedData = cell(1,0);
             PlotArguments = cell(1,0);
             
-            for tempIndex=1:numel(TemperatureIndices)
-                for densityIndex=1:numel(CollisionPartnerDensitiesIndices)
-                    for dvdrIndex=1:numel(VelocityDerivativeIndices)
-                        for molAbundanceIndex=1:numel(MoleculeAbundanceIndices)
+            for tempIndex=TemperatureIndices
+                for densityIndex=CollisionPartnerDensitiesIndices
+                    for dvdrIndex=VelocityDerivativeIndices
+                        for molAbundanceIndex=MoleculeAbundanceIndices
                             
                             displayName = Scripts.buildSEDDisplayName(request.VelocityDerivative(VelocityDerivativeIndices), dvdrIndex, request.VelocityDerivativeUnits,...
                                 request.Temperature(TemperatureIndices), tempIndex, request.CollisionPartnerDensities(CollisionPartnerDensitiesIndices), densityIndex, ...
@@ -226,11 +226,11 @@ classdef Scripts
                     end
                 end
             end
-           
+            
             titleName = Scripts.buildSEDTitleName(request.VelocityDerivative(VelocityDerivativeIndices), request.VelocityDerivativeUnits,...
                 request.Temperature(TemperatureIndices), request.CollisionPartnerDensities(CollisionPartnerDensitiesIndices), ...
                 request.MoleculeAbundanceRatios(MoleculeAbundanceIndices), []);
-
+            
             Scripts.CompareResults(RefinedData, PlotArguments, xaxis, yaxis, YRange, YAxisLog, titleName, FigureBehavior, FileName);
             
         end
