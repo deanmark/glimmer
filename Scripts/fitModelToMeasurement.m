@@ -4,9 +4,10 @@ Result = WorkspaceHelper.GetLVGResultFromWorkspace('PACS LVG');
 Measurement = evalin('base', 'PacsLow');
 PercentError = evalin('base', 'ErrorLow');
 
-dvdrKmParsecIndices = 1:numel(Result.OriginalRequest.VelocityDerivative);
+%dvdrKmParsecIndices = 1:numel(Result.OriginalRequest.VelocityDerivative);
+dvdrKmParsecIndices = find(Result.OriginalRequest.VelocityDerivative==1);
 %temperatureIndices = 1:numel(Result.OriginalRequest.Temperature);
-temperatureIndices = 1:find(Result.OriginalRequest.Temperature==100);
+temperatureIndices = 1:find(Result.OriginalRequest.Temperature==5);
 densityIndices = 1:numel(Result.OriginalRequest.CollisionPartnerDensities);
 %densityIndices = find(Result.OriginalRequest.CollisionPartnerDensities==3e5);
 moleculeAbundanceIndices = 1:numel(Result.OriginalRequest.MoleculeAbundanceRatios);
@@ -89,7 +90,7 @@ for dvdrKmParsecIndex = dvdrKmParsecIndices
                 Scripts.CompareResults(data, plotArguments, XLabel, YLabel, YRange, true, titleName, 'UseOld', FileName);
                 
                 minSize = min(numel(ourCmp), numel(Measurement));
-                chi = (ourCmp(1:minSize)-Measurement(1:minSize)).^2./(Measurement(1:minSize).*PercentError(1:minSize)/100);
+                chi = ((ourCmp(1:minSize)-Measurement(1:minSize))./(Measurement(1:minSize).*PercentError(1:minSize)/100)).^2;
                 chi(isnan(chi)) = 0;
                 chiSquareGrid(tempIndex,densityIndex) = sum(chi);
                 if isnan(chiSquareGrid(tempIndex,densityIndex))

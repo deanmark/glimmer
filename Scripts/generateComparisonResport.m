@@ -2,15 +2,13 @@ function generateComparisonResport(Temperatures, CollisionPartnerDensities, Diff
 
 data = cell(size(DiffGrid));
 
-if min(DiffGrid) < 1/100
-    formatString = 'e';
-else
-    formatString = 'f';
-end
-
 for i=1:size(DiffGrid,1)
     for j=1:size(DiffGrid,2)
-        data{i,j} = sprintf('<a href="./pics/Temperature%g_%g.jpg">%2.2%s</a>', Temperatures(i), j, DiffGrid(i,j), formatString);
+        if min(DiffGrid) < 1/100
+            data{i,j} = sprintf('<a href="./pics/Temperature%g_%g.jpg">%2.2e</a>', Temperatures(i), j, DiffGrid(i,j));
+        else
+            data{i,j} = sprintf('<a href="./pics/Temperature%g_%g.jpg">%2.2f</a>', Temperatures(i), j, DiffGrid(i,j));
+        end
     end
 end
 

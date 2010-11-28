@@ -1,18 +1,18 @@
 function compare2Results ()
 %COMPARE2RESULTS visually compare the results of two runs
 
-Result1 = WorkspaceHelper.GetLVGResultFromWorkspace('Radex - HCO+ - T60K');
-Result2 = WorkspaceHelper.GetLVGResultFromWorkspace('HCO+ - T60K');
+Result1 = WorkspaceHelper.GetLVGResultFromWorkspace('PACS high - reference');
+Result2 = WorkspaceHelper.GetLVGResultFromWorkspace('PACS high - LTE');
 
 dvdrKmParsecIndices = 1:numel(Result.OriginalRequest.VelocityDerivative);
-%temperatureIndices = 1:numel(Result.OriginalRequest.Temperature);
-temperatureIndices = find(Result.OriginalRequest.Temperature==600);
-%densityIndices = 1:numel(Result.OriginalRequest.CollisionPartnerDensities);
-collisionPartnerDensityIndices = find(Result.OriginalRequest.CollisionPartnerDensities==3e5);
+temperatureIndices = 1:numel(Result.OriginalRequest.Temperature);
+%temperatureIndices = find(Result.OriginalRequest.Temperature==600);
+%collisionPartnerDensityIndices = find(Result.OriginalRequest.CollisionPartnerDensities==3e5);
+collisionPartnerDensityIndices = 1:numel(Result.OriginalRequest.CollisionPartnerDensities);
 moleculeAbundanceIndices = 1:numel(Result.OriginalRequest.MoleculeAbundanceRatios);
 
 
-CompareType = ComparisonTypeCodes.Tau;
+CompareType = ComparisonTypeCodes.Population;
 
 SaveImages = 1;
 GenerateReport = 1;
@@ -49,7 +49,7 @@ for dvdrKmParsec = dvdrKmParsecIndices
 
                 %(Data, PlotArguments, YLabel, XLabel,YRange, YAxisLog, Title, FileName)
                 
-                Scripts.CompareResults(Data, plotArguments, YLabel, );
+                Scripts.CompareResults(Data, plotArguments, YLabel, 'J', );
                 
                 Scripts.CompareResults(cmp1, cmp1Title, cmp2, cmp2Title, YLabel, FixYAxis, Result1.OriginalRequest.CollisionPartnerDensities(dens), Result1.OriginalRequest.Temperature(temp), ...
                     Result1.OriginalRequest.VelocityDerivative(dvdrKmParsec), FileName);
@@ -70,7 +70,7 @@ generateComparisonResport(Result1.OriginalRequest.Temperature, Result1.OriginalR
 end
 
 
-function [cmp1, cmp1Title, cmp2, cmp2Title, YLabel, FixYAxis] = runParameters (Result1, Result2, ComparisonType, tempIndex, densIndex, dvdrKmParsecIndex,molAbundanceIndex)
+function [cmp1, cmp1Title, cmp2, cmp2Title, YLabel,XLabel, YRange] = runParameters (Result1, Result2, ComparisonType, tempIndex, densIndex, dvdrKmParsecIndex,molAbundanceIndex)
 
 cmp1Title = RunTypeCodes.ToStringGUIFormat(Result1.OriginalRequest.RunTypeCode);
 cmp2Title = RunTypeCodes.ToStringGUIFormat(Result2.OriginalRequest.RunTypeCode);
