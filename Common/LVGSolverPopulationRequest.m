@@ -18,8 +18,6 @@ classdef LVGSolverPopulationRequest < handle
         NumLevelsForSolution; 
         %This is an internal property. Leave this empty in normal use. It sets the first fractional population guess for the LVG iterative solution. Should be of size NumLevelsForSolution.
         FirstPopulationGuess;
-        %Sets whether the intensities should be calculated.
-        CalculateIntensities;
         %This is an internal property. Leave this empty in normal use. This sets whether debug indicators should be returned after an LVG run. WARNING: This slows the code down by a factor of ~4.
         DebugIndicators;
         
@@ -127,7 +125,6 @@ classdef LVGSolverPopulationRequest < handle
                 'MoleculeAbundanceRatios',MoleculeAbundanceRatios,...
                 'NumLevelsForSolution',0,...
                 'FirstPopulationGuess',[],...
-                'CalculateIntensities',true,...
                 'DebugIndicators',false,...
                 'ConstantNpartnerBydVdR', 0);
             

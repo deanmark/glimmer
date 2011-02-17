@@ -20,7 +20,7 @@ classdef Scripts
             end
             
             dummyIntensity = PopulationResultPairs(1).Intensities;
-            Ratios = zeros(size(dummyIntensity,2),size(dummyIntensity,3),size(dummyIntensity,4),size(dummyIntensity,5),size(LevelPairs,1));
+            Ratios = zeros(size(dummyIntensity,2),size(dummyIntensity,3),size(dummyIntensity,4),size(dummyIntensity,5),size(dummyIntensity,6),size(LevelPairs,1));
             RatiosTitles = cell(1,size(LevelPairs,1));
             
             for pairsIndex=1:size(LevelPairs,1)
@@ -34,7 +34,7 @@ classdef Scripts
                 UpperIntensityLevelIndex = LevelPairs(pairsIndex,1);
                 LowerIntensityLevelIndex = LevelPairs(pairsIndex,2);
                 
-                Ratios(:,:,:,:,pairsIndex) = squeeze(UpperIntensity(UpperIntensityLevelIndex,:,:,:,:)./LowerIntensity(LowerIntensityLevelIndex,:,:,:,:));
+                Ratios(:,:,:,:,:,pairsIndex) = squeeze(UpperIntensity(UpperIntensityLevelIndex,:,:,:,:,:)./LowerIntensity(LowerIntensityLevelIndex,:,:,:,:,:));
                 RatiosTitles{pairsIndex} = sprintf('Ratio: %s(%d-%d)/%s(%d-%d)', UpperMolecule.MoleculeName, UpperIntensityLevelIndex-1, UpperIntensityLevelIndex-2,...
                     LowerMolecule.MoleculeName, LowerIntensityLevelIndex-1,LowerIntensityLevelIndex-2);
                 
@@ -59,11 +59,11 @@ classdef Scripts
                      
             XData = p.Results.x;
             YData = p.Results.y;            
-            ZData = zeros(numel(p.Results.y), numel(p.Results.x), size(Data,5));
+            ZData = zeros(numel(p.Results.y), numel(p.Results.x), size(Data,6));
             figure;
             
-            for i=1:size(Data,5)
-                z = squeeze(Data(:,:,:,:,i));
+            for i=1:size(Data,6)
+                z = squeeze(Data(:,:,:,:,:,i));
                 ZData (:,:,i) = z;
                 
                 [C,h] = contour3 (p.Results.x, p.Results.y, z, ContourLevels{i}, Scripts.lineStyleChooser(i)); hold all;
@@ -512,24 +512,27 @@ classdef Scripts
         
         function [AxisData, AxisName] = buildAxisData (PopulationRequest, AxisProperty)
             
-            switch AxisProperty               
+            switch AxisProperty
                 case LVGParameterCodes.Temperature
                     AxisData = PopulationRequest.Temperature;
                     AxisName = 'Temperatures [K]';
                 case LVGParameterCodes.CollisionPartnerDensity
                     AxisData = PopulationRequest.CollisionPartnerDensities;
-                    AxisName = 'N_p_a_r_t_n_e_r_s [cm^-^3]';                    
+                    AxisName = 'n_p_a_r_t_n_e_r_s [cm^-^3]';
                 case LVGParameterCodes.VelocityDerivative
                     AxisData = PopulationRequest.VelocityDerivative;
-                    AxisName = sprintf('dv/dr [%s]', VelocityDerivativeUnits.GetHelpDescription(PopulationRequest.VelocityDerivativeUnits));        
+                    AxisName = sprintf('dv/dr [%s]', VelocityDerivativeUnits.GetHelpDescription(PopulationRequest.VelocityDerivativeUnits));
                 case LVGParameterCodes.MoleculeAbundanceRatio
                     AxisData = PopulationRequest.MoleculeAbundanceRatios;
                     AxisName = 'X_m_o_l_e_c_u_l_e';
+                case LVGParameterCodes.ConstantNpartnerBydVdR
+                    AxisData = PopulationRequest.ConstantNpartnerBydVdR;
+                    AxisName = 'N_p_a_r_t_n_e_r/dv';
                 otherwise
                     ME = MException('VerifyInput:unknownLVGParameterCode','Error in input. LVG Parameter Code [%d] is unknown', AxisProperty);
                     throw(ME);
             end
-                    
+            
         end
         
         function [Data, XAxis, YAxis, YRange, YAxisLog] = buildResultDisplayData(DrawType, PopulationResult)

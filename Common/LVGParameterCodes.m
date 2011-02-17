@@ -5,6 +5,7 @@ classdef (Sealed) LVGParameterCodes
         CollisionPartnerDensity = 2;
         VelocityDerivative = 3;
         MoleculeAbundanceRatio = 4;
+        ConstantNpartnerBydVdR = 5;
     end
 
     methods (Access = private)

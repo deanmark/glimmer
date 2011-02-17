@@ -1,6 +1,6 @@
 function fitModelToMeasurement()
 
-Result = WorkspaceHelper.GetLVGResultFromWorkspace('PACS LVG - High - Best fit');
+Result = WorkspaceHelper.GetLVGResultFromWorkspace('PACS LVG');
 Measurement = evalin('base', 'PacsHigh');
 PercentError = evalin('base', 'ErrorHigh');
 
@@ -13,12 +13,13 @@ PercentError = evalin('base', 'ErrorHigh');
 % PercentError = evalin('base', 'ErrorLow');
 
 %dvdrKmParsecIndices = 1:numel(Result.OriginalRequest.VelocityDerivative);
-dvdrKmParsecIndices = find(Result.OriginalRequest.VelocityDerivative==1);
+dvdrKmParsecIndices = find(Result.OriginalRequest.VelocityDerivative==100);
 % startIndex = find(Result.OriginalRequest.Temperature==100);
-temperatureIndices = 1:find(Result.OriginalRequest.Temperature==5);
- %temperatureIndices = endIndex:numel(Result.OriginalRequest.Temperature);
-densityIndices = 1:numel(Result.OriginalRequest.CollisionPartnerDensities);
-%densityIndices = find(Result.OriginalRequest.CollisionPartnerDensities==3e5);
+temperatureIndices = find(Result.OriginalRequest.Temperature==500);
+%temperatureIndices = 1:numel(Result.OriginalRequest.Temperature);
+%densityIndices = 1:numel(Result.OriginalRequest.CollisionPartnerDensities);
+%densityIndices = 19;
+densityIndices = find(Result.OriginalRequest.CollisionPartnerDensities==1e6);
 moleculeAbundanceIndices = 1:numel(Result.OriginalRequest.MoleculeAbundanceRatios);
 
 SaveImages = 1;
@@ -28,7 +29,7 @@ ShowUpperAndLowerBounds = 0;
 YLabel = 'Intensity [W m^-^2]';
 XLabel = '';
 
-YRange = [5e-18 3e-16];
+YRange = [.5e-18 3e-16];
 
 %%%%%
 
@@ -41,6 +42,7 @@ if SaveImages
 end
 
 chiSquareGrid = zeros(numel(temperatureIndices),numel(densityIndices));
+figure;
 
 for dvdrKmParsecIndex = dvdrKmParsecIndices
     for tempIndex = temperatureIndices
@@ -56,7 +58,7 @@ for dvdrKmParsecIndex = dvdrKmParsecIndices
                     FileName = '';
                 end
                 
-                %normalize results.
+%                 %normalize results.
 %                 ourCmp = Result.Intensities(:,tempIndex,densityIndex,dvdrKmParsecIndex);
 %                 rawColumnDensityFactor = 1.1e-16/max(ourCmp);
 %                 ourCmp = ourCmp*rawColumnDensityFactor;
@@ -94,11 +96,13 @@ for dvdrKmParsecIndex = dvdrKmParsecIndices
                     request.CollisionPartnerDensities(densityIndex), request.MoleculeAbundanceRatios(molAbundanceIndex), solarMass);
                 
                 %Data, PlotArguments, YLabel, XLabel, YRange, YAxisLog, Title, FileName
-                Scripts.CompareResults(data, plotArguments, XLabel, YLabel, YRange, true, titleName, 'Add', FileName);
+                Scripts.CompareResults(data, plotArguments, XLabel, YLabel, YRange, true, titleName, 'UseOld', FileName);
                 
                 minSize = min(numel(ourCmp), numel(Measurement));
                 chi = ((ourCmp(1:minSize)-Measurement(1:minSize))./(Measurement(1:minSize).*PercentError(1:minSize)/100)).^2;
                 chi(isnan(chi)) = 0;
+                %ignore first measurement
+                chi(2)=0;
                 chiSquareGrid(find(temperatureIndices==tempIndex),find(densityIndices==densityIndex)) = sum(chi);
                 
             end

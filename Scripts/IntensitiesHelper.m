@@ -15,19 +15,19 @@ classdef IntensitiesHelper
             switch LVGParameterCode
                 case LVGParameterCodes.Temperature
                     for i=1:numel(request.Temperature)
-                        ModifiedResult.Intensities(:,i,:,:,:) = ModifiedResult.Intensities(:,i,:,:,:)*ColumnDensityArray(i);
+                        ModifiedResult.Intensities(:,i,:,:,:,:) = ModifiedResult.Intensities(:,i,:,:,:,:)*ColumnDensityArray(i);
                     end
                 case LVGParameterCodes.CollisionPartnerDensity
                     for i=1:numel(request.CollisionPartnerDensities)
-                        ModifiedResult.Intensities(:,:,i,:,:) = ModifiedResult.Intensities(:,:,i,:,:)*ColumnDensityArray(i);
+                        ModifiedResult.Intensities(:,:,i,:,:,:) = ModifiedResult.Intensities(:,:,i,:,:,:)*ColumnDensityArray(i);
                     end
                 case LVGParameterCodes.VelocityDerivative
                     for i=1:numel(request.VelocityDerivative)
-                        ModifiedResult.Intensities(:,:,:,i,:) = ModifiedResult.Intensities(:,:,:,i,:)*ColumnDensityArray(i);
+                        ModifiedResult.Intensities(:,:,:,i,:,:) = ModifiedResult.Intensities(:,:,:,i,:,:)*ColumnDensityArray(i);
                     end
                 case LVGParameterCodes.MoleculeAbundanceRatio
                     for i=1:numel(request.MoleculeAbundanceRatios)
-                        ModifiedResult.Intensities(:,:,:,:,i) = ModifiedResult.Intensities(:,:,:,:,i)*ColumnDensityArray(i);
+                        ModifiedResult.Intensities(:,:,:,:,i,:) = ModifiedResult.Intensities(:,:,:,:,i,:)*ColumnDensityArray(i);
                     end
                 otherwise
                     ME = MException('VerifyInput:unknownLVGParameterCode','Error in input. LVG Parameter Code [%d] is unknown', LVGParameterCode);

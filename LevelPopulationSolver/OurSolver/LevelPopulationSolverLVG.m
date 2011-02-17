@@ -42,12 +42,12 @@ classdef LevelPopulationSolverLVG < LevelPopulationSolverOpticallyThin
             
             if (isempty(PopulationRequest.FirstPopulationGuess))
                 populationGuess = obj.m_initialSolver.SolveLevelsPopulation(PopulationRequest);
-            else               
+            else
                 populationGuess = PopulationRequest.FirstPopulationGuess;
             end
             
             i = 0;
-
+            
             Result = LVGSolverPopulationResult();
             
             if PopulationRequest.DebugIndicators
@@ -64,7 +64,6 @@ classdef LevelPopulationSolverLVG < LevelPopulationSolverOpticallyThin
             notFinished = ~(converged | haywired);
             tau = zeros(PopulationRequest.NumLevelsForSolution,numDensities);
             lastBeta = zeros(PopulationRequest.NumLevelsForSolution,numDensities);
-            lastPopulation = zeros(PopulationRequest.NumLevelsForSolution,numDensities);            
             
             while ( (i <= obj.m_algorithmParameters.MinIterations || i < obj.m_algorithmParameters.MaxIterations) && any(notFinished) )
                 

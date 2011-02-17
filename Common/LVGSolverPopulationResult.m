@@ -9,12 +9,13 @@ classdef LVGSolverPopulationResult < handle
         FinalTauCoefficients;
         %Intensity per column density
         Intensities;
+        ExcitationTemperature;
         Converged; 
         Iterations; 
         MaxDiffPercentHistory; 
         PopulationHistory; 
         TauHistory; 
-        BetaHistory;    
+        BetaHistory;
         
     end
     

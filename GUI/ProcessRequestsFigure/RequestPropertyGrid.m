@@ -6,7 +6,7 @@ classdef RequestPropertyGrid
         
         PropertyOrderList = {'RequestName','MoleculeFileName','RunTypeCode','BetaTypeCode','Temperature','VelocityDerivativeUnits','VelocityDerivative',...
             'CollisionPartners','Weights','CollisionPartnerDensities','MoleculeAbundanceRatios','ConstantNpartnerBydVdR','BackgroundTemperature',...
-            'CalculateIntensities','NumLevelsForSolution','Finished','FirstPopulationGuess','DebugIndicators'};
+            'NumLevelsForSolution','Finished','FirstPopulationGuess','DebugIndicators'};
         
     end
     

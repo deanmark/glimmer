@@ -5,6 +5,7 @@ classdef IntensitiesCalculator < handle
         m_einsteinCoefficients;
         m_transitionEnergies;
         m_frequencies;
+        m_statisticalWeightsRatio;
         
     end
     
@@ -15,6 +16,7 @@ classdef IntensitiesCalculator < handle
             Inten.m_einsteinCoefficients = zeros(MoleculeData.MolecularLevels,1);
             Inten.m_transitionEnergies = zeros(MoleculeData.MolecularLevels,1);
             Inten.m_frequencies = zeros(MoleculeData.MolecularLevels,1);
+            Inten.m_statisticalWeightsRatio = zeros(MoleculeData.MolecularLevels,1);
    
             HighLevels =  zeros(MoleculeData.MolecularLevels-1,1);
             HighLevels(:) = 2:MoleculeData.MolecularLevels;
@@ -23,9 +25,8 @@ classdef IntensitiesCalculator < handle
             Inten.m_einsteinCoefficients(2:end) = MoleculeData.EinsteinACoefficient(HighLevels, LowLevels);
             Inten.m_transitionEnergies(2:end) = MoleculeData.TransitionEnergy(HighLevels, LowLevels);
             Inten.m_frequencies(2:end) = MoleculeData.TransitionFrequency(HighLevels, LowLevels);
-            
-            
-            
+            Inten.m_statisticalWeightsRatio(2:end) = MoleculeData.StatisticalWeight(LowLevels)./MoleculeData.StatisticalWeight(HighLevels);
+                        
         end
         
         function Intensities = CalculateIntensitiesLVG(obj, LevelPopulation, TauCoefficients)
@@ -60,6 +61,14 @@ classdef IntensitiesCalculator < handle
             
             Flux = (2 * Constants.h * obj.m_frequencies.^4 / Constants.c^2) .* (1./(exp(Constants.h * obj.m_frequencies / (Constants.k * Temperature))-1));
             Flux(1)=0;
+            
+        end
+
+        function ExcitationTemp = CalculateExcitationTemperature(obj, LevelPopulation)
+            
+            levelPopulationRatio = zeros(size(LevelPopulation));
+            levelPopulationRatio(2:end) = LevelPopulation(1:end-1)./LevelPopulation(2:end);
+            ExcitationTemp = obj.m_transitionEnergies./(Constants.k * log(levelPopulationRatio./obj.m_statisticalWeightsRatio));
             
         end
         
