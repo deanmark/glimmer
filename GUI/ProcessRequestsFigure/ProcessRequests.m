@@ -22,7 +22,7 @@ function varargout = ProcessRequests(varargin)
 
 % Edit the above text to modify the response to help ProcessRequests
 
-% Last Modified by GUIDE v2.5 06-Oct-2010 13:01:46
+% Last Modified by GUIDE v2.5 27-Feb-2011 20:28:40
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -81,7 +81,16 @@ function addRequestsButton_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 requestStrings = get(handles.requestsListbox,'String');
-newRequestString = genvarname('Request', requestStrings);
+[tmp extractedRequestStrings] = ...
+    regexp(requestStrings,'(?<=<html><b>).*?(?=</b></html>)', 'tokens', 'match');
+
+if isempty(extractedRequestStrings)
+    extractedRequestStrings = '';
+else
+    extractedRequestStrings = [extractedRequestStrings{:}];
+end
+
+newRequestString = genvarname('Request', extractedRequestStrings);
 
 innerRequest = LVGSolverPopulationRequest.DefaultRequest();
 innerRequest.RequestName = newRequestString;
@@ -216,9 +225,9 @@ if ~isempty(selectedRequestIndex)
     guiRequest = RequestPropertyGrid.ConvertRequestToGUIRequest(internalRequest);
     
     RequestPropertyGrid.SetGridProperties(handles.requestPropertiesEditor, guiRequest, false);    
-    handles.ViewedRequestIndex = selectedRequestIndex;
 end
 
+handles.ViewedRequestIndex = selectedRequestIndex;
 % Update handles structure
 guidata(hObject, handles);
 
@@ -250,12 +259,9 @@ function removeRequestsButton_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 if (~isempty(handles.ViewedRequestIndex))
-    RequestPropertyGrid.ResetGridProperties(handles.requestPropertiesEditor);
-
-    RequestsListboxHelper.RemoveRequestFromListBox(handles.requestsListbox, handles.ViewedRequestIndex);
-    
-    handles.ViewedRequestIndex = [];
-    guidata(hObject, handles);
+    RequestPropertyGrid.ResetGridProperties(handles.requestPropertiesEditor);    
+    RequestsListboxHelper.RemoveRequestFromListBox(handles.requestsListbox, handles.ViewedRequestIndex);    
+    requestsListbox_Callback(handles.requestsListbox, eventdata, handles)
 end
 
 % --- Executes on button press in saveRequestsChangesButton.
@@ -284,3 +290,36 @@ h = PropertyGrid(hObject, ...
 
 handles.requestPropertiesEditor = h;
 guidata(hObject,handles);
+
+% --- Executes on button press in raiseRequestButton.
+function raiseRequestButton_Callback(hObject, eventdata, handles)
+% hObject    handle to raiseRequestButton (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+if ~isempty(handles.ViewedRequestIndex)
+    if handles.ViewedRequestIndex > 1
+        RequestsListboxHelper.SwitchRequestsInListBox(handles.requestsListbox,handles.ViewedRequestIndex,handles.ViewedRequestIndex-1);
+
+        handles.ViewedRequestIndex = handles.ViewedRequestIndex - 1;
+        guidata(hObject, handles);
+    end
+end
+
+
+% --- Executes on button press in lowerRequestButton.
+function lowerRequestButton_Callback(hObject, eventdata, handles)
+% hObject    handle to lowerRequestButton (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+if ~isempty(handles.ViewedRequestIndex)
+    requestStrings = get(handles.requestsListbox,'String');   
+    
+    if handles.ViewedRequestIndex < numel(requestStrings)
+        RequestsListboxHelper.SwitchRequestsInListBox(handles.requestsListbox,handles.ViewedRequestIndex,handles.ViewedRequestIndex+1);
+
+        handles.ViewedRequestIndex = handles.ViewedRequestIndex + 1;
+        guidata(hObject, handles);
+    end
+end

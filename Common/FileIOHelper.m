@@ -21,17 +21,21 @@ classdef FileIOHelper
         end
         
         function Path = ResultsPath ()
-            %returns path of current script.
             p = mfilename('fullpath'); 
             CommonDirectory = fileparts(p);
             Path = fullfile(CommonDirectory, '..', 'Results');
         end
         
         function Path = LamdaMolecularDataFilesPath ()
-            %returns path of current script.
             p = mfilename('fullpath'); 
             CommonDirectory = fileparts(p);
             Path = fullfile(CommonDirectory, '..', 'DataFiles', 'Lamda');            
+        end
+        
+        function Path = ParforProgMonPath ()
+            p = mfilename('fullpath');
+            CommonDirectory = fileparts(p);
+            Path = fullfile(CommonDirectory, '..', 'GUI', 'ParforProgMon');            
         end
         
         function CurrentLine = JumpLinesInFile(fid,JumpSize)
