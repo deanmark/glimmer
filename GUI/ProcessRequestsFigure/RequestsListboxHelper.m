@@ -43,13 +43,35 @@ classdef RequestsListboxHelper
             set(ListBoxHandle,'String',requestStrings);
             WorkspaceHelper.SetLVGRequestsListInWorkspace(requests);
             
-            if CurrentlyViewedIndex > numel(requests)
+            if numel(requests) == 0
+                newViewIndex = [];
+            elseif CurrentlyViewedIndex > numel(requests)
                 newViewIndex = CurrentlyViewedIndex-1;
             else
                 newViewIndex = CurrentlyViewedIndex;
             end
             
             set(ListBoxHandle,'Value',newViewIndex);
+        end
+
+        function SwitchRequestsInListBox (ListBoxHandle, CurrentIndex, NewIndex)
+    
+            requestStrings = get(ListBoxHandle,'String');
+            requests = WorkspaceHelper.GetLVGRequestsListFromWorkspace();
+            
+            currentReqString = requestStrings(CurrentIndex);
+            currentReq = requests(CurrentIndex);
+            
+            requestStrings(CurrentIndex) = requestStrings(NewIndex);
+            requests(CurrentIndex) = requests(NewIndex);
+            
+            requestStrings(NewIndex) = currentReqString;
+            requests(NewIndex) = currentReq;
+            
+            set(ListBoxHandle,'String',requestStrings);
+            WorkspaceHelper.SetLVGRequestsListInWorkspace(requests);
+            set(ListBoxHandle,'Value',NewIndex);
+            
         end
         
         function DuplicateRequestInListBox (ListBoxHandle, CurrentlyViewedIndex)
