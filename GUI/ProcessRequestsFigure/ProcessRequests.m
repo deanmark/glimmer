@@ -138,13 +138,25 @@ ME = [];
 
 start(progressUpdateTimer);
 
+activeRequests = 0;
+
+for i=1:numel(internalRequests)
+    if ~internalRequests(i).Finished
+        activeRequests = activeRequests + 1;
+    end
+end
+
+requestId = 0;
+
 for i=1:numel(internalRequests)
     
     if ~internalRequests(i).Finished
+    
+        requestId = requestId + 1;
         
         try
             dlg.FractionComplete = 0;
-            dlg.StatusMessage = sprintf('Processing Request %g/%g: "%s"',i,numel(internalRequests), internalRequests(i).RequestName);
+            dlg.StatusMessage = sprintf('Processing Request %g/%g: "%s"', requestId, activeRequests, internalRequests(i).RequestName);
             
             result = data.Solver.ProcessPopulationRequest(internalRequests(i));
             
