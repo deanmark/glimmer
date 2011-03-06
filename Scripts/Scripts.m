@@ -41,6 +41,47 @@ classdef Scripts
             end
             
         end
+                
+        function [Ratio, RatiosTitle, NominatorData, DenominatorData] = CalculateResultsRatio(PopulationResultPair, LevelPair, XAxisProperty, YAxisProperty, ComparisonTypeCode)
+            
+            if size(PopulationResultPair,2)~=2 || size(LevelPair,2)~=2
+                ME = MException('CalculateIntensityRatios:InputArgumentError','Error in input. Input matrices should contain two columns');
+                throw(ME);
+            elseif size(PopulationResultPair,1)~= 1 && size(LevelPair,1) ~= 1
+                ME = MException('CalculateIntensityRatios:InputArgumentError','Error in input. PopulationResultPairs and LevelPairs should contain exactly one row');
+                throw(ME);
+            end
+            
+            for i=1:size(PopulationResultPair,1)
+                if ~LVGSolverPopulationRequest.EqualParameterSpace(PopulationResultPair(i,1).OriginalRequest,PopulationResultPair(i,2).OriginalRequest)
+                    ME = MException('CalculateIntensityRatios:InputArgumentError','Error in input. All results in PopulationResultArray should be on the same parameter space.');
+                    throw(ME);
+                end
+            end
+            
+            UpperValues = ComparisonTypeCodes.GetLVGResultsValue(PopulationResultPair(1,1),ComparisonTypeCode);
+            LowerValues = ComparisonTypeCodes.GetLVGResultsValue(PopulationResultPair(1,2),ComparisonTypeCode);
+            
+            UpperMolecule = WorkspaceHelper.GetMoleculeDataFromWorkspace(PopulationResultPair(1,1).OriginalRequest.MoleculeFileName);
+            LowerMolecule = WorkspaceHelper.GetMoleculeDataFromWorkspace(PopulationResultPair(1,2).OriginalRequest.MoleculeFileName);
+            
+            UpperValuesLevelIndex = LevelPair(1,1);
+            LowerValuesLevelIndex = LevelPair(1,2);
+            
+            Ratio = squeeze(UpperValues(UpperValuesLevelIndex,:,:,:,:,:)./LowerValues(LowerValuesLevelIndex,:,:,:,:,:));
+            NominatorData = squeeze(UpperValues(UpperValuesLevelIndex,:,:,:,:,:));
+            DenominatorData = squeeze(LowerValues(LowerValuesLevelIndex,:,:,:,:,:));
+            
+            if YAxisProperty > XAxisProperty
+                Ratio = Ratio';
+                NominatorData = NominatorData';
+                DenominatorData = DenominatorData';
+            end            
+            
+            RatiosTitle = {sprintf('Ratio: %s(%d-%d)/%s(%d-%d)', UpperMolecule.MoleculeName, UpperValuesLevelIndex-1, UpperValuesLevelIndex-2,...
+                LowerMolecule.MoleculeName, LowerValuesLevelIndex-1,LowerValuesLevelIndex-2)};
+            
+        end
         
         function [XData, YData, ZData] = DrawContours(Data, DataTitles, ContourLevels, PopulationRequest, XAxisProperty, YAxisProperty, varargin)
             
@@ -55,42 +96,47 @@ classdef Scripts
             p.addParamValue('XScale', 'log', @(x)any(strcmpi(x,{'log','linear'})));
             p.addParamValue('YScale', 'log', @(x)any(strcmpi(x,{'log','linear'})));
             p.addParamValue('snapPlot', true, @(x)isscalar(x)&&islogical(x));
+            p.addParamValue('axesHandle', 0, @(x)ishandle(x));
+            p.addParamValue('toggleLegend', true, @(x)isscalar(x)&&islogical(x));
             p.parse(varargin{:});
                      
             XData = p.Results.x;
             YData = p.Results.y;            
             ZData = zeros(numel(p.Results.y), numel(p.Results.x), size(Data,6));
-            figure;
+            
+            drawInsideForm = p.Results.axesHandle ~= 0;
+            
+            if ~drawInsideForm
+                figure;
+            end
             
             for i=1:size(Data,6)
                 z = squeeze(Data(:,:,:,:,:,i));
                 ZData (:,:,i) = z;
                 
-                [C,h] = contour3 (p.Results.x, p.Results.y, z, ContourLevels{i}, Scripts.lineStyleChooser(i)); hold all;
+                if ~drawInsideForm
+                    [C,h] = contour (p.Results.x, p.Results.y, z, ContourLevels{i}, Scripts.lineStyleChooser(i)); hold all;
+                else
+                    [C,h] = contour (p.Results.axesHandle, p.Results.x, p.Results.y, z, ContourLevels{i}, Scripts.lineStyleChooser(i)); hold all;
+                end
+                
                 hGroup = hggroup;
                 set(h,'Parent',hGroup);
                 set(get(get(hGroup,'Annotation'),'LegendInformation'),'IconDisplayStyle','on');
                 set(hGroup,'DisplayName', DataTitles{i});
-                %if (numel(ContourLevels{i})>1); clabel(C,h,'Rotation',0); end;
-                
+                %if (numel(ContourLevels{i})>1); clabel(C,h,'Rotation',0);
+                %end;
             end
             
-            hold off;figure(gcf);
-            
-            %snap plot onto x-y axis
-            if (p.Results.snapPlot)
-                cameraTarget = get(gca, 'CameraTarget');
-                cameraPosition = get(gca, 'CameraPosition');
-                set(gca, 'CameraPosition', [cameraTarget(1), cameraTarget(2), cameraPosition(3)]);
-            end
-            
+            hold off;
+           
             set(gca,'XScale',p.Results.XScale);
             set(gca, 'YScale', p.Results.YScale);
             xlabel(p.Results.xName);
             ylabel(p.Results.yName);
             title(p.Results.titleName);
-            legend('toggle');
             
+            if (p.Results.toggleLegend); legend('toggle'); end
         end
         
         function NCritical = DrawCriticalDensities(Temperature, MoleculeData, CollisionRates)

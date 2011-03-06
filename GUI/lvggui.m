@@ -22,7 +22,7 @@ function varargout = LVGGUI(varargin)
 
 % Edit the above text to modify the response to help LVGGUI
 
-% Last Modified by GUIDE v2.5 10-Oct-2010 11:07:38
+% Last Modified by GUIDE v2.5 06-Mar-2011 20:04:00
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -193,3 +193,12 @@ if fid ~= -1
     end
     
 end
+
+
+% --- Executes on button press in ratiosButton.
+function ratiosButton_Callback(hObject, eventdata, handles)
+% hObject    handle to ratiosButton (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+DisplayRatios;
