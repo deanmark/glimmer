@@ -133,7 +133,9 @@ numlines=1;
 defaultanswer={'http://www.strw.leidenuniv.nl/~moldata/'};
 options.Resize='on';
 answer=inputdlg(prompt,name,numlines,defaultanswer,options);
-DownloadAllLamdaDataFiles (answer);
+if ~isempty(answer)
+    DownloadAllLamdaDataFiles (answer);
+end
 
 
 % --------------------------------------------------------------------

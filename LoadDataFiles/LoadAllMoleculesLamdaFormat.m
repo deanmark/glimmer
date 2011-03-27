@@ -34,4 +34,7 @@ end
 
 delete(dlg);
 
+eval([WorkspaceHelper.MoleculesVariableName '= WorkspaceHelper.GetMoleculesHashFromWorkspace();']);
+save  (FileIOHelper.StandardMoleculeFilePath,  WorkspaceHelper.MoleculesVariableName);
+
 end

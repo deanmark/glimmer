@@ -52,7 +52,6 @@ for i=1:numel(MoldataLinks)
     
     try
         urlwrite(MoldataLinks{i}, fullFilePath);
-        DataFilesHelper.ConvertLamdaFileToLocalFile(fullFilePath);
         fprintf(1,'Finished\n');
     catch ME
         fprintf(1, 'Error!\n%s\n', ME.getReport);
