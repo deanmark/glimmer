@@ -22,10 +22,10 @@ function varargout = DisplayRatios(varargin)
 
 % Edit the above text to modify the response to help DisplayRatios
 
-% Last Modified by GUIDE v2.5 06-Mar-2011 19:59:49
+% Last Modified by GUIDE v2.5 27-Mar-2011 18:33:05
 
 % Begin initialization code - DO NOT EDIT
-gui_Singleton = 1;
+gui_Singleton = 0;
 gui_State = struct('gui_Name',       mfilename, ...
                    'gui_Singleton',  gui_Singleton, ...
                    'gui_OpeningFcn', @DisplayRatios_OpeningFcn, ...
@@ -42,7 +42,7 @@ else
     gui_mainfcn(gui_State, varargin{:});
 end
 % End initialization code - DO NOT EDIT
-
+end
 
 % --- Executes just before DisplayRatios is made visible.
 function DisplayRatios_OpeningFcn(hObject, eventdata, handles, varargin)
@@ -57,11 +57,20 @@ handles.output = hObject;
 
 set(handles.displayRatiosButtongroup,'SelectionChangeFcn',@displayRatiosButtongroup_SelectionChangeFcn);
 % Update handles structure
+
+copyIconFilePath = fullfile (FileIOHelper.IconFilesPath, 'copy-icon.png');
+
+copyIcon=imread(copyIconFilePath, 'BackgroundColor',[0.831 0.816 0.784]);
+set(handles.copyRatiosDataButton,'CData',copyIcon);
+set(handles.copyNominatorDataButton,'CData',copyIcon);
+set(handles.copyDenominatorDataButton,'CData',copyIcon);
+
 guidata(hObject, handles);
 
 % UIWAIT makes DisplayRatios wait for user response (see UIRESUME)
-% uiwait(handles.figure1);
+% uiwait(handles.DisplayRatiosFigure);
 
+end
 
 % --- Outputs from this function are returned to the command line.
 function varargout = DisplayRatios_OutputFcn(hObject, eventdata, handles) 
@@ -72,7 +81,7 @@ function varargout = DisplayRatios_OutputFcn(hObject, eventdata, handles)
 
 % Get default command line output from handles structure
 varargout{1} = handles.output;
-
+end
 
 % --- Executes on selection change in upperResultsPopup.
 function upperResultsPopup_Callback(hObject, eventdata, handles)
@@ -82,7 +91,7 @@ function upperResultsPopup_Callback(hObject, eventdata, handles)
 
 % Hints: contents = get(hObject,'String') returns upperResultsPopup contents as cell array
 %        contents{get(hObject,'Value')} returns selected item from upperResultsPopup
-
+end
 
 % --- Executes during object creation, after setting all properties.
 function upperResultsPopup_CreateFcn(hObject, eventdata, handles)
@@ -104,6 +113,7 @@ if ~isempty(keys)
 else
     set(hObject,'String',{''});
 end
+end
 
 % --- Executes on selection change in lowerResultsPopup.
 function lowerResultsPopup_Callback(hObject, eventdata, handles)
@@ -113,7 +123,7 @@ function lowerResultsPopup_Callback(hObject, eventdata, handles)
 
 % Hints: contents = get(hObject,'String') returns lowerResultsPopup contents as cell array
 %        contents{get(hObject,'Value')} returns selected item from lowerResultsPopup
-
+end
 
 % --- Executes during object creation, after setting all properties.
 function lowerResultsPopup_CreateFcn(hObject, eventdata, handles)
@@ -135,7 +145,7 @@ if ~isempty(keys)
 else
     set(hObject,'String',{''});
 end
-
+end
 
 function upperLevelEdit_Callback(hObject, eventdata, handles)
 % hObject    handle to upperLevelEdit (see GCBO)
@@ -144,7 +154,7 @@ function upperLevelEdit_Callback(hObject, eventdata, handles)
 
 % Hints: get(hObject,'String') returns contents of upperLevelEdit as text
 %        str2double(get(hObject,'String')) returns contents of upperLevelEdit as a double
-
+end
 
 % --- Executes during object creation, after setting all properties.
 function upperLevelEdit_CreateFcn(hObject, eventdata, handles)
@@ -157,7 +167,7 @@ function upperLevelEdit_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
-
+end
 
 
 function lowerLevelEdit_Callback(hObject, eventdata, handles)
@@ -167,7 +177,7 @@ function lowerLevelEdit_Callback(hObject, eventdata, handles)
 
 % Hints: get(hObject,'String') returns contents of lowerLevelEdit as text
 %        str2double(get(hObject,'String')) returns contents of lowerLevelEdit as a double
-
+end
 
 % --- Executes during object creation, after setting all properties.
 function lowerLevelEdit_CreateFcn(hObject, eventdata, handles)
@@ -180,7 +190,7 @@ function lowerLevelEdit_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
-
+end
 
 
 function specificValuesEdit_Callback(hObject, eventdata, handles)
@@ -190,7 +200,7 @@ function specificValuesEdit_Callback(hObject, eventdata, handles)
 
 % Hints: get(hObject,'String') returns contents of specificValuesEdit as text
 %        str2double(get(hObject,'String')) returns contents of specificValuesEdit as a double
-
+end
 
 % --- Executes during object creation, after setting all properties.
 function specificValuesEdit_CreateFcn(hObject, eventdata, handles)
@@ -203,7 +213,7 @@ function specificValuesEdit_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
-
+end
 
 
 function numberContoursEdit_Callback(hObject, eventdata, handles)
@@ -213,7 +223,7 @@ function numberContoursEdit_Callback(hObject, eventdata, handles)
 
 % Hints: get(hObject,'String') returns contents of numberContoursEdit as text
 %        str2double(get(hObject,'String')) returns contents of numberContoursEdit as a double
-
+end
 
 % --- Executes during object creation, after setting all properties.
 function numberContoursEdit_CreateFcn(hObject, eventdata, handles)
@@ -225,6 +235,7 @@ function numberContoursEdit_CreateFcn(hObject, eventdata, handles)
 %       See ISPC and COMPUTER.
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
+end
 end
 
 function displayRatiosButtongroup_SelectionChangeFcn(hObject, eventdata)
@@ -246,7 +257,7 @@ switch get(eventdata.NewValue,'Tag')   % Get Tag of selected object
 end
 %updates the handles structure
 guidata(hObject, handles);
-
+end
 
 % --- Executes on selection change in xAxisPopupmenu.
 function xAxisPopupmenu_Callback(hObject, eventdata, handles)
@@ -256,7 +267,7 @@ function xAxisPopupmenu_Callback(hObject, eventdata, handles)
 
 % Hints: contents = get(hObject,'String') returns xAxisPopupmenu contents as cell array
 %        contents{get(hObject,'Value')} returns selected item from xAxisPopupmenu
-
+end
 
 % --- Executes during object creation, after setting all properties.
 function xAxisPopupmenu_CreateFcn(hObject, eventdata, handles)
@@ -280,7 +291,7 @@ end
 
 set(hObject,'String',lvgParamGuiNames);
 set(hObject,'Value',LVGParameterCodes.ConstantNpartnerBydVdR);
-
+end
 % --- Executes on selection change in yAxisPopupmenu.
 function yAxisPopupmenu_Callback(hObject, eventdata, handles)
 % hObject    handle to yAxisPopupmenu (see GCBO)
@@ -289,7 +300,7 @@ function yAxisPopupmenu_Callback(hObject, eventdata, handles)
 
 % Hints: contents = get(hObject,'String') returns yAxisPopupmenu contents as cell array
 %        contents{get(hObject,'Value')} returns selected item from yAxisPopupmenu
-
+end
 
 % --- Executes during object creation, after setting all properties.
 function yAxisPopupmenu_CreateFcn(hObject, eventdata, handles)
@@ -313,20 +324,21 @@ end
 
 set(hObject,'String',lvgParamGuiNames);
 set(hObject,'Value',LVGParameterCodes.CollisionPartnerDensity);
+end
 
-% --- Executes on selection change in comparisonTypeTextPopupmenu.
-function comparisonTypeTextPopupmenu_Callback(hObject, eventdata, handles)
-% hObject    handle to comparisonTypeTextPopupmenu (see GCBO)
+% --- Executes on selection change in comparisonTypePopupmenu.
+function comparisonTypePopupmenu_Callback(hObject, eventdata, handles)
+% hObject    handle to comparisonTypePopupmenu (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-% Hints: contents = get(hObject,'String') returns comparisonTypeTextPopupmenu contents as cell array
-%        contents{get(hObject,'Value')} returns selected item from comparisonTypeTextPopupmenu
-
+% Hints: contents = get(hObject,'String') returns comparisonTypePopupmenu contents as cell array
+%        contents{get(hObject,'Value')} returns selected item from comparisonTypePopupmenu
+end
 
 % --- Executes during object creation, after setting all properties.
-function comparisonTypeTextPopupmenu_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to comparisonTypeTextPopupmenu (see GCBO)
+function comparisonTypePopupmenu_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to comparisonTypePopupmenu (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
 
@@ -346,7 +358,7 @@ end
 
 set(hObject,'String',comparisonTypeGuiNames);
 set(hObject,'Value',ComparisonTypeCodes.Intensities);
-
+end
 
 % --- Executes on button press in displayPushbutton.
 function displayPushbutton_Callback(hObject, eventdata, handles)
@@ -367,7 +379,7 @@ LevelPair = [UpperLevel LowerLevel];
 XAxisProperty = LVGParameterCodes.ToCodeFromGUIFormat(getPopupmenuStringValue(handles.xAxisPopupmenu));
 YAxisProperty = LVGParameterCodes.ToCodeFromGUIFormat(getPopupmenuStringValue(handles.yAxisPopupmenu));
 
-ComparisonTypeCode = ComparisonTypeCodes.ToCodeFromGUIFormat(getPopupmenuStringValue(handles.comparisonTypeTextPopupmenu));
+ComparisonTypeCode = ComparisonTypeCodes.ToCodeFromGUIFormat(getPopupmenuStringValue(handles.comparisonTypePopupmenu));
 
 if ComparisonTypeCode == ComparisonTypeCodes.Intensities
     if nominatorResult.OriginalRequest.RunTypeCode ~= RunTypeCodes.Radex
@@ -381,23 +393,59 @@ end
 
 ResultsPairs = [nominatorResult, denominatorResult];
 
-[Ratio, RatioTitle, NominatorData, DenominatorData] = Scripts.CalculateResultsRatio(ResultsPairs, LevelPair, XAxisProperty, YAxisProperty, ComparisonTypeCode);
-Ratio(Ratio<=0)=NaN;
-Ratio(Ratio==Inf)=NaN;
+[Ratios, RatioTitle, NominatorData, DenominatorData] = Scripts.CalculateResultsRatio(ResultsPairs, LevelPair, XAxisProperty, YAxisProperty, ComparisonTypeCode);
+Ratios(Ratios<=0)=NaN;
+Ratios(Ratios==Inf)=NaN;
 
+plotTypeCode = getPlotTypeCode(handles);
 ContourLevels = buildContourLevelsArray(handles);
 
-set(handles.ratiosTable, 'Data', Ratio);
+set(handles.ratiosTable, 'Data', Ratios);
 set(handles.nominatorTable, 'Data', NominatorData);
 set(handles.denominatorTable, 'Data', DenominatorData);
-Scripts.DrawContours(Ratio, RatioTitle, ContourLevels, nominatorResult.OriginalRequest, XAxisProperty, YAxisProperty, 'axesHandle', handles.ratiosAxes, 'toggleLegend', false);
 
+DisplayDataCode = DisplayDataCodes.ToCodeFromGUIFormat(getPopupmenuStringValue(handles.displayDataPopupmenu));
+Data = selectDisplayData(DisplayDataCode, Ratios, NominatorData, DenominatorData);
+displayColorbar = logical(get(handles.colorbarCheckbox, 'Value'));
+
+Scripts.DrawContours(Data, RatioTitle, ContourLevels, nominatorResult.OriginalRequest, XAxisProperty, YAxisProperty, plotTypeCode, ...
+    'axesHandle', handles.ratiosAxes, 'toggleLegend', false, 'displayTitle', false, 'displayColorbar', displayColorbar);
+end
 
 function result = getPopupmenuStringValue (handle)
 
 value = get(handle, 'Value');
 strings = get(handle, 'String');
 result = strings{value};
+end 
+
+function Data = selectDisplayData (DisplayDataCode, Ratios, NominatorData, DenominatorData)
+
+switch DisplayDataCode
+    case DisplayDataCodes.Ratios
+        Data = Ratios;
+    case DisplayDataCodes.Nominator
+        Data = NominatorData;
+    case DisplayDataCodes.Denominator
+        Data = DenominatorData;
+end
+    
+end
+
+
+function result = getPlotTypeCode (handles)
+
+selectedHandle = get(handles.graphTypeButtongroup, 'SelectedObject');
+selectedName = get (selectedHandle, 'Tag');
+
+switch selectedName
+    case 'twoDimensionRadiobutton'
+        result = PlotTypeCodes.TwoDimensionContour;
+    case 'threeDimensionRadiobutton'
+        result = PlotTypeCodes.ThreeDimensionContour;        
+end
+    
+end
 
 function result = buildContourLevelsArray (handles)
 
@@ -418,7 +466,7 @@ switch selectedName
         result = {numContours};
         
 end
-    
+end
 
 
 % --- Executes on button press in copyRatiosDataButton.
@@ -429,7 +477,7 @@ function copyRatiosDataButton_Callback(hObject, eventdata, handles)
 
 data = get(handles.ratiosTable,'Data');
 num2clip(data);
-
+end
 
 % --- Executes on button press in copyNominatorDataButton.
 function copyNominatorDataButton_Callback(hObject, eventdata, handles)
@@ -439,6 +487,7 @@ function copyNominatorDataButton_Callback(hObject, eventdata, handles)
 
 data = get(handles.nominatorTable,'Data');
 num2clip(data);
+end
 
 % --- Executes on button press in copyDenominatorDataButton.
 function copyDenominatorDataButton_Callback(hObject, eventdata, handles)
@@ -448,3 +497,51 @@ function copyDenominatorDataButton_Callback(hObject, eventdata, handles)
 
 data = get(handles.denominatorTable,'Data');
 num2clip(data);
+end
+
+
+% --- Executes on selection change in displayDataPopupmenu.
+function displayDataPopupmenu_Callback(hObject, eventdata, handles)
+% hObject    handle to displayDataPopupmenu (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: contents = get(hObject,'String') returns displayDataPopupmenu contents as cell array
+%        contents{get(hObject,'Value')} returns selected item from displayDataPopupmenu
+end
+
+% --- Executes during object creation, after setting all properties.
+function displayDataPopupmenu_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to displayDataPopupmenu (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: popupmenu controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+[displayDataNames,displayDataValues] = FileIOHelper.GetClassConstants('DisplayDataCodes', false);
+
+displayDataGuiNames = {};
+
+for displayData = displayDataValues
+    displayDataGuiNames{end+1} = DisplayDataCodes.ToStringGUIFormat(displayData);
+end
+
+set(hObject,'String',displayDataGuiNames);
+set(hObject,'Value',DisplayDataCodes.Ratios);
+end
+
+
+% --------------------------------------------------------------------
+function refreshPushTool_ClickedCallback(hObject, eventdata, handles)
+% hObject    handle to refreshPushTool (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+upperResultsPopup_CreateFcn(handles.upperResultsPopup, eventdata, handles)
+lowerResultsPopup_CreateFcn(handles.lowerResultsPopup, eventdata, handles)
+    
+end

@@ -31,6 +31,12 @@ classdef FileIOHelper
             CommonDirectory = fileparts(p);
             Path = fullfile(CommonDirectory, '..', 'DataFiles', 'Lamda');            
         end
+
+        function Path = IconFilesPath ()
+            p = mfilename('fullpath');
+            CommonDirectory = fileparts(p);
+            Path = fullfile(CommonDirectory, '..', 'Gui', 'Icons');
+        end
         
         function Path = ParforProgMonPath ()
             p = mfilename('fullpath');

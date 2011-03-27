@@ -22,7 +22,7 @@ function varargout = LVGGUI(varargin)
 
 % Edit the above text to modify the response to help LVGGUI
 
-% Last Modified by GUIDE v2.5 06-Mar-2011 20:04:00
+% Last Modified by GUIDE v2.5 27-Mar-2011 15:23:55
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -176,25 +176,28 @@ ProcessRequests;
 
 
 % --- Executes during object creation, after setting all properties.
-function figure1_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to figure1 (see GCBO)
+function lvggui_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to lvggui (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
 
-%check if Molecules file exists
-fid = fopen(FileIOHelper.StandardMoleculeFilePath);
-if fid ~= -1
-    fclose(fid);
+mol = WorkspaceHelper.GetMoleculesHashFromWorkspace();
+if (mol.IsEmpty)
     
-    load(FileIOHelper.StandardMoleculeFilePath);
-    
-    if ~isempty(who(WorkspaceHelper.MoleculesVariableName))
-        eval(sprintf('assignin(''base'', WorkspaceHelper.MoleculesVariableName, %s);', WorkspaceHelper.MoleculesVariableName));
+    %check if Molecules file exists
+    fid = fopen(FileIOHelper.StandardMoleculeFilePath);
+    if fid ~= -1
+        fclose(fid);
+        
+        load(FileIOHelper.StandardMoleculeFilePath);
+        
+        if ~isempty(who(WorkspaceHelper.MoleculesVariableName))
+            eval(sprintf('assignin(''base'', WorkspaceHelper.MoleculesVariableName, %s);', WorkspaceHelper.MoleculesVariableName));
+        end
+        
     end
     
 end
-
-
 % --- Executes on button press in ratiosButton.
 function ratiosButton_Callback(hObject, eventdata, handles)
 % hObject    handle to ratiosButton (see GCBO)

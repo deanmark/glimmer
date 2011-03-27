@@ -83,7 +83,7 @@ classdef Scripts
             
         end
         
-        function [XData, YData, ZData] = DrawContours(Data, DataTitles, ContourLevels, PopulationRequest, XAxisProperty, YAxisProperty, varargin)
+        function [XData, YData, ZData] = DrawContours(Data, DataTitles, ContourLevels, PopulationRequest, XAxisProperty, YAxisProperty, PlotTypeCode, varargin)
             
             [x,y,xName,yName,titleName] = Scripts.contourParameters (PopulationRequest, XAxisProperty, YAxisProperty);
             
@@ -98,6 +98,8 @@ classdef Scripts
             p.addParamValue('snapPlot', true, @(x)isscalar(x)&&islogical(x));
             p.addParamValue('axesHandle', 0, @(x)ishandle(x));
             p.addParamValue('toggleLegend', true, @(x)isscalar(x)&&islogical(x));
+            p.addParamValue('displayTitle', true, @(x)isscalar(x)&&islogical(x));
+            p.addParamValue('displayColorbar', false, @(x)isscalar(x)&&islogical(x));
             p.parse(varargin{:});
                      
             XData = p.Results.x;
@@ -110,14 +112,16 @@ classdef Scripts
                 figure;
             end
             
+            plotPtr = PlotTypeCodes.GetFunctionPointer(PlotTypeCode);
+            
             for i=1:size(Data,6)
                 z = squeeze(Data(:,:,:,:,:,i));
                 ZData (:,:,i) = z;
                 
                 if ~drawInsideForm
-                    [C,h] = contour (p.Results.x, p.Results.y, z, ContourLevels{i}, Scripts.lineStyleChooser(i)); hold all;
+                    [C,h] = plotPtr (p.Results.x, p.Results.y, z, ContourLevels{i}, Scripts.lineStyleChooser(i)); hold all;
                 else
-                    [C,h] = contour (p.Results.axesHandle, p.Results.x, p.Results.y, z, ContourLevels{i}, Scripts.lineStyleChooser(i)); hold all;
+                    [C,h] = plotPtr (p.Results.axesHandle, p.Results.x, p.Results.y, z, ContourLevels{i}, Scripts.lineStyleChooser(i)); hold all;
                 end
                 
                 hGroup = hggroup;
@@ -134,8 +138,9 @@ classdef Scripts
             set(gca, 'YScale', p.Results.YScale);
             xlabel(p.Results.xName);
             ylabel(p.Results.yName);
-            title(p.Results.titleName);
             
+            if (p.Results.displayColorbar); colorbar; else colorbar('delete'); end
+            if (p.Results.displayTitle); title(p.Results.titleName); end
             if (p.Results.toggleLegend); legend('toggle'); end
         end
         
