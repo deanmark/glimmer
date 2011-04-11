@@ -42,7 +42,7 @@ classdef Scripts
             
         end
                 
-        function [Ratio, RatiosTitle, NominatorData, DenominatorData] = CalculateResultsRatio(PopulationResultPair, LevelPair, XAxisProperty, YAxisProperty, ComparisonTypeCode)
+        function [Ratio, RatiosTitle, NominatorData, DenominatorData] = CalculateResultsRatio(PopulationResultPair, LevelPair, PropertiesAndIndicesPairsNominator, PropertiesAndIndicesPairsDenominator, ComparisonTypeCode)
             
             if size(PopulationResultPair,2)~=2 || size(LevelPair,2)~=2
                 ME = MException('CalculateIntensityRatios:InputArgumentError','Error in input. Input matrices should contain two columns');
@@ -59,27 +59,62 @@ classdef Scripts
                 end
             end
             
+            % Extract data
             UpperValues = ComparisonTypeCodes.GetLVGResultsValue(PopulationResultPair(1,1),ComparisonTypeCode);
-            LowerValues = ComparisonTypeCodes.GetLVGResultsValue(PopulationResultPair(1,2),ComparisonTypeCode);
+            [UpperValues, XAxisProperty, YAxisProperty] = Scripts.ExtractDataFromResultsDataset(UpperValues, PropertiesAndIndicesPairsNominator);
             
-            UpperMolecule = WorkspaceHelper.GetMoleculeDataFromWorkspace(PopulationResultPair(1,1).OriginalRequest.MoleculeFileName);
-            LowerMolecule = WorkspaceHelper.GetMoleculeDataFromWorkspace(PopulationResultPair(1,2).OriginalRequest.MoleculeFileName);
+            LowerValues = ComparisonTypeCodes.GetLVGResultsValue(PopulationResultPair(1,2),ComparisonTypeCode);
+            LowerValues = Scripts.ExtractDataFromResultsDataset(LowerValues, PropertiesAndIndicesPairsDenominator);
             
             UpperValuesLevelIndex = LevelPair(1,1);
             LowerValuesLevelIndex = LevelPair(1,2);
             
-            Ratio = squeeze(UpperValues(UpperValuesLevelIndex,:,:,:,:,:)./LowerValues(LowerValuesLevelIndex,:,:,:,:,:));
-            NominatorData = squeeze(UpperValues(UpperValuesLevelIndex,:,:,:,:,:));
-            DenominatorData = squeeze(LowerValues(LowerValuesLevelIndex,:,:,:,:,:));
-            
+            NominatorData = squeeze(UpperValues(UpperValuesLevelIndex,:,:));
+            DenominatorData = squeeze(LowerValues(LowerValuesLevelIndex,:,:));
+            Ratio = NominatorData./DenominatorData;
+
             if YAxisProperty > XAxisProperty
                 Ratio = Ratio';
                 NominatorData = NominatorData';
                 DenominatorData = DenominatorData';
-            end            
+            end
+            
+            %Build title
+            UpperMolecule = WorkspaceHelper.GetMoleculeDataFromWorkspace(PopulationResultPair(1,1).OriginalRequest.MoleculeFileName);
+            LowerMolecule = WorkspaceHelper.GetMoleculeDataFromWorkspace(PopulationResultPair(1,2).OriginalRequest.MoleculeFileName);
             
             RatiosTitle = {sprintf('Ratio: %s(%d-%d)/%s(%d-%d)', UpperMolecule.MoleculeName, UpperValuesLevelIndex-1, UpperValuesLevelIndex-2,...
                 LowerMolecule.MoleculeName, LowerValuesLevelIndex-1,LowerValuesLevelIndex-2)};
+            
+        end
+        
+        function [Result XAxisProperty YAxisProperty] = ExtractDataFromResultsDataset (Data, PropertiesAndIndicesPairs)
+            
+            XAxisProperty = 0;
+            YAxisProperty = 0;
+            Properties = PropertiesAndIndicesPairs(:,1);
+            Indices = PropertiesAndIndicesPairs(:,2);
+            FetchString = ':,';
+           
+            for i = 1:max(Properties)
+                index = Indices(Properties==i);             
+                
+                if index > 0
+                    FetchString = [FetchString, num2str(index), ','];                    
+                else
+                    FetchString = [FetchString, ':', ','];
+                    
+                    if index == -1
+                        XAxisProperty = i;
+                    elseif index == -2
+                        YAxisProperty = i;
+                    end
+                end                
+            end
+            
+            FetchString = ['(', FetchString(1:end-1), ')'];            
+            Result = eval(['Data', FetchString]);
+            Result = squeeze(Result);
             
         end
         

@@ -22,7 +22,7 @@ function varargout = DisplayRatios(varargin)
 
 % Edit the above text to modify the response to help DisplayRatios
 
-% Last Modified by GUIDE v2.5 27-Mar-2011 18:33:05
+% Last Modified by GUIDE v2.5 11-Apr-2011 21:05:11
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 0;
@@ -65,6 +65,10 @@ set(handles.copyRatiosDataButton,'CData',copyIcon);
 set(handles.copyNominatorDataButton,'CData',copyIcon);
 set(handles.copyDenominatorDataButton,'CData',copyIcon);
 
+setLowerResultsPopupKeys (handles);
+setParameterSpaceNominatorPopupKeys(handles);
+setParameterSpaceDenominatorPopupKeys(handles);
+
 guidata(hObject, handles);
 
 % UIWAIT makes DisplayRatios wait for user response (see UIRESUME)
@@ -91,6 +95,104 @@ function upperResultsPopup_Callback(hObject, eventdata, handles)
 
 % Hints: contents = get(hObject,'String') returns upperResultsPopup contents as cell array
 %        contents{get(hObject,'Value')} returns selected item from upperResultsPopup
+
+setLowerResultsPopupKeys(handles);
+setParameterSpaceNominatorPopupKeys(handles);
+setParameterSpaceDenominatorPopupKeys(handles);
+
+end
+
+function setLowerResultsPopupKeys (handles)
+
+selectedIndex = get(handles.upperResultsPopup,'Value');
+keys = get(handles.upperResultsPopup,'String');
+selectedResultKey = keys(selectedIndex);
+
+resultsHash = WorkspaceHelper.GetLVGResultsHashFromWorkspace();
+selectedResult = resultsHash.Get(selectedResultKey);
+
+results = resultsHash.Values;
+
+keys = {};
+
+for i=1:numel(results)
+    res = results{i};    
+    if LVGSolverPopulationRequest.EqualParameterSpace(selectedResult.OriginalRequest, res.OriginalRequest)
+        keys{end+1} = res.OriginalRequest.RequestName;
+    end
+end
+
+set(handles.lowerResultsPopup,'Value',1);
+
+if ~isempty(keys)
+    set(handles.lowerResultsPopup,'String',keys);
+else
+    set(handles.lowerResultsPopup,'String',{''});
+end
+
+
+end
+
+function setPopupValues (handle, values, format, allowXY)
+
+keys = {};
+
+if (numel(values) > 1) && allowXY
+    keys {1} = 'X Axis';
+    keys {2} = 'Y Axis';    
+end
+
+for i=1:numel(values)   
+    keys{end+1} = num2str(values(i),format);    
+end
+    
+set(handle,'Value',1);
+
+if ~isempty(keys)
+    set(handle,'String',keys);
+else
+    set(handle,'String',{''});
+end
+
+end
+
+function setParameterSpaceNominatorPopupKeys (handles)
+
+selectedIndex = get(handles.upperResultsPopup,'Value');
+keys = get(handles.upperResultsPopup,'String');
+selectedResultKey = keys(selectedIndex);
+
+resultsHash = WorkspaceHelper.GetLVGResultsHashFromWorkspace();
+selectedResult = resultsHash.Get(selectedResultKey);
+originalRequest = selectedResult.OriginalRequest;
+
+if ~isempty(originalRequest)    
+    setPopupValues(handles.temperaturePopup,originalRequest.Temperature, '%d', true);
+    setPopupValues(handles.collisionPartnerPopup,originalRequest.CollisionPartnerDensities, '%g', true);
+    setPopupValues(handles.NpartnerBydVdRPopup,originalRequest.ConstantNpartnerBydVdR, '%g', true);
+    setPopupValues(handles.velocityDerivativePopup,originalRequest.VelocityDerivative, '%g', true);
+    setPopupValues(handles.molAbundanceNomPopup,originalRequest.MoleculeAbundanceRatios, '%g', false);
+    
+    setPopupValues(handles.upperLevelPopup,1:originalRequest.NumLevelsForSolution, '%g', false);    
+end
+
+end
+
+function setParameterSpaceDenominatorPopupKeys (handles)
+
+selectedIndex = get(handles.lowerResultsPopup,'Value');
+keys = get(handles.lowerResultsPopup,'String');
+selectedResultKey = keys(selectedIndex);
+
+resultsHash = WorkspaceHelper.GetLVGResultsHashFromWorkspace();
+selectedResult = resultsHash.Get(selectedResultKey);
+originalRequest = selectedResult.OriginalRequest;
+
+if ~isempty(originalRequest)
+    setPopupValues(handles.molAbundanceDenomPopup,originalRequest.MoleculeAbundanceRatios, '%g', false);    
+    setPopupValues(handles.lowerLevelPopup,1:originalRequest.NumLevelsForSolution, '%g', false);
+end
+
 end
 
 % --- Executes during object creation, after setting all properties.
@@ -108,11 +210,14 @@ end
 results = WorkspaceHelper.GetLVGResultsHashFromWorkspace();
 keys = results.Keys;
 
+set(hObject,'Value',1);
+
 if ~isempty(keys)
     set(hObject,'String',keys);
 else
     set(hObject,'String',{''});
 end
+
 end
 
 % --- Executes on selection change in lowerResultsPopup.
@@ -123,6 +228,9 @@ function lowerResultsPopup_Callback(hObject, eventdata, handles)
 
 % Hints: contents = get(hObject,'String') returns lowerResultsPopup contents as cell array
 %        contents{get(hObject,'Value')} returns selected item from lowerResultsPopup
+
+setParameterSpaceDenominatorPopupKeys(handles);
+
 end
 
 % --- Executes during object creation, after setting all properties.
@@ -137,14 +245,7 @@ if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgr
     set(hObject,'BackgroundColor','white');
 end
 
-results = WorkspaceHelper.GetLVGResultsHashFromWorkspace();
-keys = results.Keys;
 
-if ~isempty(keys)
-    set(hObject,'String',keys);
-else
-    set(hObject,'String',{''});
-end
 end
 
 function upperLevelEdit_Callback(hObject, eventdata, handles)
@@ -372,12 +473,9 @@ nominatorResult = WorkspaceHelper.GetLVGResultFromWorkspace(nominatorName);
 denominatorName = getPopupmenuStringValue(handles.lowerResultsPopup);
 denominatorResult = WorkspaceHelper.GetLVGResultFromWorkspace(denominatorName);
 
-UpperLevel = str2double(get(handles.upperLevelEdit, 'String')) + 1;
-LowerLevel = str2double(get(handles.lowerLevelEdit, 'String')) + 1;
+UpperLevel = getParameterIndex(handles.upperLevelPopup) + 1;
+LowerLevel = getParameterIndex(handles.lowerLevelPopup) + 1;
 LevelPair = [UpperLevel LowerLevel];
-
-XAxisProperty = LVGParameterCodes.ToCodeFromGUIFormat(getPopupmenuStringValue(handles.xAxisPopupmenu));
-YAxisProperty = LVGParameterCodes.ToCodeFromGUIFormat(getPopupmenuStringValue(handles.yAxisPopupmenu));
 
 ComparisonTypeCode = ComparisonTypeCodes.ToCodeFromGUIFormat(getPopupmenuStringValue(handles.comparisonTypePopupmenu));
 
@@ -393,9 +491,13 @@ end
 
 ResultsPairs = [nominatorResult, denominatorResult];
 
-[Ratios, RatioTitle, NominatorData, DenominatorData] = Scripts.CalculateResultsRatio(ResultsPairs, LevelPair, XAxisProperty, YAxisProperty, ComparisonTypeCode);
-Ratios(Ratios<=0)=NaN;
-Ratios(Ratios==Inf)=NaN;
+[nominatorProperties XAxisProperty YAxisProperty]= buildNominatorPropertiesAndIndicesPairs(handles);
+denominatorProperties = buildDenominatorPropertiesAndIndicesPairs(handles);
+[Ratios, RatioTitle, NominatorData, DenominatorData] = Scripts.CalculateResultsRatio(ResultsPairs, LevelPair, nominatorProperties, denominatorProperties, ComparisonTypeCode);
+
+Ratios = RemoveIllegalEntries(Ratios);
+NominatorData = RemoveIllegalEntries(NominatorData);
+DenominatorData = RemoveIllegalEntries(DenominatorData);
 
 plotTypeCode = getPlotTypeCode(handles);
 ContourLevels = buildContourLevelsArray(handles);
@@ -408,8 +510,24 @@ DisplayDataCode = DisplayDataCodes.ToCodeFromGUIFormat(getPopupmenuStringValue(h
 Data = selectDisplayData(DisplayDataCode, Ratios, NominatorData, DenominatorData);
 displayColorbar = logical(get(handles.colorbarCheckbox, 'Value'));
 
+CheckForErrors(XAxisProperty, YAxisProperty);
+
 Scripts.DrawContours(Data, RatioTitle, ContourLevels, nominatorResult.OriginalRequest, XAxisProperty, YAxisProperty, plotTypeCode, ...
     'axesHandle', handles.ratiosAxes, 'toggleLegend', false, 'displayTitle', false, 'displayColorbar', displayColorbar);
+end
+
+function Result = RemoveIllegalEntries(Data)
+Data(Data<=0)=NaN;
+Data(Data==Inf)=NaN;
+Result = Data;
+end
+
+function CheckForErrors (XAxisProperty, YAxisProperty)
+
+if numel(XAxisProperty)~=1 || numel(YAxisProperty)~=1
+msgbox('Please select exactly one X axis property and one Y axis property.','Error', 'error');
+end
+
 end
 
 function result = getPopupmenuStringValue (handle)
@@ -418,6 +536,47 @@ value = get(handle, 'Value');
 strings = get(handle, 'String');
 result = strings{value};
 end 
+
+function [Pairs, XAxisProperty, YAxisProperty]= buildNominatorPropertiesAndIndicesPairs(handles)
+
+Pairs = zeros(5,2);
+
+Pairs(1, :) = [LVGParameterCodes.Temperature, getParameterIndex(handles.temperaturePopup)];
+Pairs(2, :) = [LVGParameterCodes.CollisionPartnerDensity, getParameterIndex(handles.collisionPartnerPopup)];
+Pairs(3, :) = [LVGParameterCodes.VelocityDerivative, getParameterIndex(handles.velocityDerivativePopup)];
+Pairs(4, :) = [LVGParameterCodes.MoleculeAbundanceRatio, getParameterIndex(handles.molAbundanceNomPopup)];
+Pairs(5, :) = [LVGParameterCodes.ConstantNpartnerBydVdR, getParameterIndex(handles.NpartnerBydVdRPopup)];
+
+propertiesList = Pairs(:,1);
+XAxisProperty = propertiesList(Pairs(:,2)==-1);
+YAxisProperty = propertiesList(Pairs(:,2)==-2);
+
+end
+
+function Pairs = buildDenominatorPropertiesAndIndicesPairs(handles)
+
+Pairs = buildNominatorPropertiesAndIndicesPairs(handles);
+Pairs(4, 2) = getParameterIndex(handles.molAbundanceDenomPopup);
+
+end
+
+function Index = getParameterIndex (handle) 
+
+strings = get(handle, 'String');
+value = get(handle, 'Value');
+
+if strcmp(strings{1}, 'X Axis')
+    if value >=3
+        Index = value - 2;
+    elseif value == 1
+        Index = -1;
+    elseif value == 2
+        Index = -2;
+    end
+else
+    Index = value;
+end
+end
 
 function Data = selectDisplayData (DisplayDataCode, Ratios, NominatorData, DenominatorData)
 
@@ -541,7 +700,114 @@ function refreshPushTool_ClickedCallback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-upperResultsPopup_CreateFcn(handles.upperResultsPopup, eventdata, handles)
-lowerResultsPopup_CreateFcn(handles.lowerResultsPopup, eventdata, handles)
-    
+upperResultsPopup_CreateFcn(handles.upperResultsPopup, eventdata, handles);
+setLowerResultsPopupKeys (handles);
+setParameterSpaceNominatorPopupKeys(handles);
+setParameterSpaceDenominatorPopupKeys(handles);
+
+end
+
+
+% --- Executes during object creation, after setting all properties.
+function temperaturePopup_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to temperaturePopup (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: popupmenu controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+end
+
+% --- Executes during object creation, after setting all properties.
+function collisionPartnerPopup_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to collisionPartnerPopup (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: popupmenu controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+end
+
+% --- Executes during object creation, after setting all properties.
+function NpartnerBydVdRPopup_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to NpartnerBydVdRPopup (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: popupmenu controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+end
+
+% --- Executes during object creation, after setting all properties.
+function velocityDerivativePopup_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to velocityDerivativePopup (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: popupmenu controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+end
+
+% --- Executes during object creation, after setting all properties.
+function molAbundanceNomPopup_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to molAbundanceNomPopup (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: popupmenu controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+end
+
+% --- Executes during object creation, after setting all properties.
+function molAbundanceDenomPopup_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to molAbundanceDenomPopup (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: popupmenu controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+end
+
+% --- Executes during object creation, after setting all properties.
+function upperLevelPopup_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to upperLevelPopup (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: popupmenu controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+end
+
+% --- Executes during object creation, after setting all properties.
+function lowerLevelPopup_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to lowerLevelPopup (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: popupmenu controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
 end
