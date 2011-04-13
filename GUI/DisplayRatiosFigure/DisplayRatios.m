@@ -164,9 +164,10 @@ selectedResultKey = keys(selectedIndex);
 
 resultsHash = WorkspaceHelper.GetLVGResultsHashFromWorkspace();
 selectedResult = resultsHash.Get(selectedResultKey);
-originalRequest = selectedResult.OriginalRequest;
 
-if ~isempty(originalRequest)    
+if ~isempty(selectedResult)
+    originalRequest = selectedResult.OriginalRequest;
+    
     setPopupValues(handles.temperaturePopup,originalRequest.Temperature, '%d', true);
     setPopupValues(handles.collisionPartnerPopup,originalRequest.CollisionPartnerDensities, '%g', true);
     setPopupValues(handles.NpartnerBydVdRPopup,originalRequest.ConstantNpartnerBydVdR, '%g', true);
@@ -186,9 +187,10 @@ selectedResultKey = keys(selectedIndex);
 
 resultsHash = WorkspaceHelper.GetLVGResultsHashFromWorkspace();
 selectedResult = resultsHash.Get(selectedResultKey);
-originalRequest = selectedResult.OriginalRequest;
 
-if ~isempty(originalRequest)
+if ~isempty(selectedResult)
+    originalRequest = selectedResult.OriginalRequest;
+    
     setPopupValues(handles.molAbundanceDenomPopup,originalRequest.MoleculeAbundanceRatios, '%g', false);    
     setPopupValues(handles.lowerLevelPopup,1:originalRequest.NumLevelsForSolution, '%g', false);
 end
@@ -510,10 +512,11 @@ DisplayDataCode = DisplayDataCodes.ToCodeFromGUIFormat(getPopupmenuStringValue(h
 Data = selectDisplayData(DisplayDataCode, Ratios, NominatorData, DenominatorData);
 displayColorbar = logical(get(handles.colorbarCheckbox, 'Value'));
 
-CheckForErrors(XAxisProperty, YAxisProperty);
+if ~CheckForErrors(XAxisProperty, YAxisProperty, Data)    
+    Scripts.DrawContours(Data, RatioTitle, ContourLevels, nominatorResult.OriginalRequest, XAxisProperty, YAxisProperty, plotTypeCode, ...
+        'axesHandle', handles.ratiosAxes, 'toggleLegend', false, 'displayTitle', false, 'displayColorbar', displayColorbar);
+end
 
-Scripts.DrawContours(Data, RatioTitle, ContourLevels, nominatorResult.OriginalRequest, XAxisProperty, YAxisProperty, plotTypeCode, ...
-    'axesHandle', handles.ratiosAxes, 'toggleLegend', false, 'displayTitle', false, 'displayColorbar', displayColorbar);
 end
 
 function Result = RemoveIllegalEntries(Data)
@@ -522,10 +525,16 @@ Data(Data==Inf)=NaN;
 Result = Data;
 end
 
-function CheckForErrors (XAxisProperty, YAxisProperty)
+function Error = CheckForErrors (XAxisProperty, YAxisProperty, Data)
+
+Error = false;
 
 if numel(XAxisProperty)~=1 || numel(YAxisProperty)~=1
 msgbox('Please select exactly one X axis property and one Y axis property.','Error', 'error');
+Error = true;
+elseif all(Data(:,:)==Data(1,1))
+msgbox('Can''t render constant data.','Error', 'error');
+Error = true;
 end
 
 end
