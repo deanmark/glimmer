@@ -613,7 +613,7 @@ classdef Scripts
                     AxisName = 'X_m_o_l_e_c_u_l_e';
                 case LVGParameterCodes.ConstantNpartnerBydVdR
                     AxisData = PopulationRequest.ConstantNpartnerBydVdR;
-                    AxisName = 'N_p_a_r_t_n_e_r/dv';
+                    AxisName = 'N_p_a_r_t_n_e_r/dv [cm^-^3 s]';
                 otherwise
                     ME = MException('VerifyInput:unknownLVGParameterCode','Error in input. LVG Parameter Code [%d] is unknown', AxisProperty);
                     throw(ME);

@@ -497,9 +497,9 @@ ResultsPairs = [nominatorResult, denominatorResult];
 denominatorProperties = buildDenominatorPropertiesAndIndicesPairs(handles);
 [Ratios, RatioTitle, NominatorData, DenominatorData] = Scripts.CalculateResultsRatio(ResultsPairs, LevelPair, nominatorProperties, denominatorProperties, ComparisonTypeCode);
 
-Ratios = RemoveIllegalEntries(Ratios);
-NominatorData = RemoveIllegalEntries(NominatorData);
-DenominatorData = RemoveIllegalEntries(DenominatorData);
+Ratios = RemoveIllegalEntries(Ratios, ComparisonTypeCode);
+NominatorData = RemoveIllegalEntries(NominatorData, ComparisonTypeCode);
+DenominatorData = RemoveIllegalEntries(DenominatorData, ComparisonTypeCode);
 
 plotTypeCode = getPlotTypeCode(handles);
 ContourLevels = buildContourLevelsArray(handles);
@@ -519,9 +519,18 @@ end
 
 end
 
-function Result = RemoveIllegalEntries(Data)
-Data(Data<=0)=NaN;
-Data(Data==Inf)=NaN;
+function Result = RemoveIllegalEntries(Data, ComparisonTypeCode)
+
+if (ComparisonTypeCode == ComparisonTypeCodes.Beta || ...
+        ComparisonTypeCode == ComparisonTypeCodes.Population || ...
+        ComparisonTypeCode == ComparisonTypeCodes.Intensities)
+    Data(Data<=0)=NaN;
+    Data(Data==Inf)=NaN;
+elseif ComparisonTypeCode == ComparisonTypeCodes.Tau
+    Data(Data==Inf)=NaN;
+    Data(Data==0)=NaN;
+end
+
 Result = Data;
 end
 
