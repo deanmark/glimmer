@@ -33,10 +33,33 @@ classdef LVGBetaProvider < handle
     end
     
         
-    methods (Access=public, Abstract)
-
-        [BetaCoefficients, TauCoefficients] = CalculateBetaCoefficients (obj, Population, MoleculeDensity, VelocityDerivative);
-    
+    methods (Access=public)
+        
+        function [BetaCoefficients, TauCoefficients] = CalculateBetaCoefficients (obj, Population, MoleculeDensity, VelocityDerivative)
+            
+            TauCoefficients = obj.m_opticalDepthProvider.CalculateTauCoefficients(Population, MoleculeDensity, VelocityDerivative);
+            
+            if (obj.IgnoreNegativeTau)
+                TauCoefficients(TauCoefficients < 0) = 0;
+            end
+            
+            BetaCoefficients = obj.TauCoefficientsToBetaCoefficients (TauCoefficients);
+            
+            if (obj.IncludeBackgroundRadiation)
+                BetaCoefficients = obj.m_cosmicBackgroundProvider.AddBackgroundRadiation(Population, BetaCoefficients);
+            end
+            
+            BetaCoefficients(1) = 0;
+            
+        end
+        
     end
+    
+    methods (Access=public, Abstract)
+        
+        BetaCoefficients = TauCoefficientsToBetaCoefficients (TauCoefficients);
+        
+    end
+
     
 end

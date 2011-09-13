@@ -7,11 +7,13 @@ classdef IntensitiesCalculator < handle
         m_frequencies;
         m_statisticalWeightsRatio;
         
+        m_expandingSphereBetaProvider;
+        
     end
-    
+        
     methods(Access=public)
         
-        function Inten = IntensitiesCalculator(MoleculeData)
+        function Inten = IntensitiesCalculator(MoleculeData, IncludeBackgroundRadiation, BackgroundTemperature)
             
             Inten.m_einsteinCoefficients = zeros(MoleculeData.MolecularLevels,1);
             Inten.m_transitionEnergies = zeros(MoleculeData.MolecularLevels,1);
@@ -26,40 +28,39 @@ classdef IntensitiesCalculator < handle
             Inten.m_transitionEnergies(2:end) = MoleculeData.TransitionEnergy(HighLevels, LowLevels);
             Inten.m_frequencies(2:end) = MoleculeData.TransitionFrequency(HighLevels, LowLevels);
             Inten.m_statisticalWeightsRatio(2:end) = MoleculeData.StatisticalWeight(LowLevels)./MoleculeData.StatisticalWeight(HighLevels);
+            
+            Inten.m_expandingSphereBetaProvider = ExpandingSphereBetaProvider(MoleculeData, false, IncludeBackgroundRadiation, BackgroundTemperature);
                         
         end
         
-        function Intensities = CalculateIntensitiesLVG(obj, LevelPopulation, TauCoefficients)
+        function Intensities = CalculateIntensitiesLVG(obj, LevelPopulation, TauCoefficients, MoleculeAbundanceRatio)
                         
             numDensities = size(LevelPopulation,2);
             
             repeatedEinsteinCoefficients = repmat(obj.m_einsteinCoefficients,[1 numDensities]);
             repeatedTransitionEnergies = repmat(obj.m_transitionEnergies,[1 numDensities]);
             
-            smallNumbersLogicalIndex = (-10^-5 < TauCoefficients) & (TauCoefficients < 10^-5);
+            BetaCoefficients = obj.m_expandingSphereBetaProvider.TauCoefficientsToBetaCoefficients(TauCoefficients);
             
-            BetaCoefficients = zeros(size(TauCoefficients));
-            %use taylor expansion for small numbers. because matlab doesn't
-            %handle small numbers well
-            BetaCoefficients(smallNumbersLogicalIndex) = 1-0.5*TauCoefficients(smallNumbersLogicalIndex);
+            if (obj.m_expandingSphereBetaProvider.IncludeBackgroundRadiation)
+                BetaCoefficients = obj.m_expandingSphereBetaProvider.m_cosmicBackgroundProvider.AddBackgroundRadiation(LevelPopulation, BetaCoefficients);
+            end
             
-            BetaCoefficients(~smallNumbersLogicalIndex) = (1-exp(-TauCoefficients(~smallNumbersLogicalIndex)))./TauCoefficients(~smallNumbersLogicalIndex);            
-            
-            Intensities = (LevelPopulation.*repeatedEinsteinCoefficients.*repeatedTransitionEnergies.*BetaCoefficients)/(4*Constants.pi);
+            Intensities = (LevelPopulation.*repeatedEinsteinCoefficients.*repeatedTransitionEnergies.*BetaCoefficients*MoleculeAbundanceRatio)/(4*Constants.pi);
 
         end
         
-        function Intensities = CalculateIntensitiesOpticallyThin(obj, LevelPopulation)
+        function Intensities = CalculateIntensitiesOpticallyThin(obj, LevelPopulation, MoleculeAbundanceRatio)
             
-            Intensities = (LevelPopulation.*obj.m_einsteinCoefficients.*obj.m_transitionEnergies)/(4*Constants.pi);
+            Intensities = (LevelPopulation.*obj.m_einsteinCoefficients.*obj.m_transitionEnergies*MoleculeAbundanceRatio)/(4*Constants.pi);
             
         end
         
-        function Flux = CalculateFluxLTE(obj, Temperature)
+        function Flux = CalculateFluxLTE(obj, Temperature, MoleculeAbundanceRatio)
            
             %(2 h nu^3 / c^2) (1/[exp(h nu / kT) - 1])
             
-            Flux = (2 * Constants.h * obj.m_frequencies.^4 / Constants.c^2) .* (1./(exp(Constants.h * obj.m_frequencies / (Constants.k * Temperature))-1));
+            Flux = (2 * Constants.h * obj.m_frequencies.^4 * MoleculeAbundanceRatio / Constants.c^2) .* (1./(exp(Constants.h * obj.m_frequencies / (Constants.k * Temperature))-1));
             Flux(1)=0;
             
         end

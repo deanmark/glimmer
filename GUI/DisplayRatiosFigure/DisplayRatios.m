@@ -481,16 +481,6 @@ LevelPair = [UpperLevel LowerLevel];
 
 ComparisonTypeCode = ComparisonTypeCodes.ToCodeFromGUIFormat(getPopupmenuStringValue(handles.comparisonTypePopupmenu));
 
-if ComparisonTypeCode == ComparisonTypeCodes.Intensities
-    if nominatorResult.OriginalRequest.RunTypeCode ~= RunTypeCodes.Radex
-        nominatorResult = IntensitiesHelper.PinColumnDensityToProperty(LVGParameterCodes.MoleculeAbundanceRatio, nominatorResult.OriginalRequest.MoleculeAbundanceRatios, nominatorResult);
-    end
-    
-    if nominatorResult.OriginalRequest.RunTypeCode ~= RunTypeCodes.Radex
-        denominatorResult = IntensitiesHelper.PinColumnDensityToProperty(LVGParameterCodes.MoleculeAbundanceRatio, denominatorResult.OriginalRequest.MoleculeAbundanceRatios, denominatorResult);
-    end
-end
-
 ResultsPairs = [nominatorResult, denominatorResult];
 
 [nominatorProperties XAxisProperty YAxisProperty]= buildNominatorPropertiesAndIndicesPairs(handles);

@@ -18,7 +18,7 @@ classdef PopulationSolverHelper < handle
             LVGSolverHighExcitation = LevelPopulationSolverLVG(MoleculeData, BetaProvider, LVGSolverAlgorithmParameters.DefaultInitialRunParamsHighExcitation);
             LVGSolverAccurate = LevelPopulationSolverLVG(MoleculeData, BetaProvider, LVGSolverAlgorithmParameters.DefaultConfirmationRunParamsHighExcitation());
             
-            IntensitiesClc = IntensitiesCalculator(MoleculeData);
+            IntensitiesClc = IntensitiesCalculator(MoleculeData, OuterPopulationRequest.BackgroundTemperature~=0, OuterPopulationRequest.BackgroundTemperature);
             
             totalComputations = numel(PopulationRequest.VelocityDerivative)*numel(PopulationRequest.Temperature)*numel(PopulationRequest.CollisionPartnerDensities)*...
                 numel(PopulationRequest.MoleculeAbundanceRatios)*numel(PopulationRequest.ConstantNpartnerBydVdR);
@@ -30,6 +30,7 @@ classdef PopulationSolverHelper < handle
                         for collPartnerDensityIndex=1:numel(PopulationRequest.CollisionPartnerDensities)
                             for constantNpartnerBydVdRIndex=1:numel(PopulationRequest.ConstantNpartnerBydVdR)
                                 
+                                %each request runs individually
                                 PopulationSolverHelper.fillInnerRequest(innerRequest,PopulationRequest.Temperature(tempIndex),PopulationRequest.VelocityDerivative(dvDrIndex),PopulationRequest.VelocityDerivativeUnits,...
                                     PopulationRequest.CollisionPartnerDensities(collPartnerDensityIndex),PopulationRequest.MoleculeAbundanceRatios(molAbundanceIndex), ...
                                     PopulationRequest.ConstantNpartnerBydVdR(constantNpartnerBydVdRIndex), PopulationRequest.FirstPopulationGuess);
@@ -40,10 +41,6 @@ classdef PopulationSolverHelper < handle
                                     innerRequest.FirstPopulationGuess = [];
                                     NoNegativeTauResult = LVGSolverHighExcitation.SolveLevelsPopulation(innerRequest);
                                     
-                                    if ~NoNegativeTauResult.Converged
-                                        display('arrgh!');
-                                    end
-                                    
                                     BetaProvider.IgnoreNegativeTau = false;
                                     innerRequest.FirstPopulationGuess = NoNegativeTauResult.Population;
                                     Result = LVGSolverAccurate.SolveLevelsPopulation(innerRequest);
@@ -52,8 +49,6 @@ classdef PopulationSolverHelper < handle
                                     
                                     if NoNegativeTauResult.Converged
                                         innerRequest.FirstPopulationGuess = NoNegativeTauResult.Population;
-                                    else
-                                        display('arrgh!');
                                     end
                                     
                                     BetaProvider.IgnoreNegativeTau = false;
@@ -69,7 +64,7 @@ classdef PopulationSolverHelper < handle
                                     FinalResult.FinalTauCoefficients(:,tempIndex,collPartnerDensityIndex,dvDrIndex,molAbundanceIndex,constantNpartnerBydVdRIndex) = Result.FinalTauCoefficients;
                                                                             
                                     FinalResult.Intensities(:,tempIndex,collPartnerDensityIndex,dvDrIndex,molAbundanceIndex,constantNpartnerBydVdRIndex) = IntensitiesClc.CalculateIntensitiesLVG(Result.Population, ...
-                                        Result.FinalTauCoefficients);
+                                        Result.FinalTauCoefficients, PopulationRequest.MoleculeAbundanceRatios(molAbundanceIndex));
                                     FinalResult.ExcitationTemperature(:,tempIndex,collPartnerDensityIndex,dvDrIndex,molAbundanceIndex,constantNpartnerBydVdRIndex) = ...
                                         IntensitiesClc.CalculateExcitationTemperature(Result.Population);
                                     
@@ -103,7 +98,7 @@ classdef PopulationSolverHelper < handle
                     solver = LevelPopulationSolverOpticallyThinWithBackground(MoleculeData, PopulationRequest.BackgroundTemperature);
             end
                        
-            IntensitiesClc = IntensitiesCalculator(MoleculeData);
+            IntensitiesClc = IntensitiesCalculator(MoleculeData, OuterPopulationRequest.BackgroundTemperature~=0, OuterPopulationRequest.BackgroundTemperature);
                         
             FinalResult.Converged = ones(size(FinalResult.Converged));
             FinalResult.FinalBetaCoefficients = ones(size(FinalResult.FinalBetaCoefficients));
@@ -127,11 +122,11 @@ classdef PopulationSolverHelper < handle
                             FinalResult.Population(:,tempIndex,:,dvDrIndex,molAbundanceIndex,constantNpartnerBydVdRIndex) = Population;
                             
                             if PopulationRequest.RunTypeCode == RunTypeCodes.LTE
-                                FinalResult.Intensities(:,tempIndex,:,dvDrIndex,molAbundanceIndex,constantNpartnerBydVdRIndex) = repmat(IntensitiesClc.CalculateFluxLTE(PopulationRequest.Temperature(tempIndex)),...
-                                    1,numel(PopulationRequest.CollisionPartnerDensities));
+                                FinalResult.Intensities(:,tempIndex,:,dvDrIndex,molAbundanceIndex,constantNpartnerBydVdRIndex) = repmat(IntensitiesClc.CalculateFluxLTE(PopulationRequest.Temperature(tempIndex),...
+                                    PopulationRequest.MoleculeAbundanceRatios(molAbundanceIndex)),1,numel(PopulationRequest.CollisionPartnerDensities));
                             else
                                 FinalResult.Intensities(:,tempIndex,:,dvDrIndex,molAbundanceIndex,constantNpartnerBydVdRIndex) = IntensitiesClc.CalculateIntensitiesLVG(Population, ...
-                                    squeeze(FinalResult.FinalTauCoefficients(:,tempIndex,:,dvDrIndex,molAbundanceIndex,constantNpartnerBydVdRIndex)));
+                                    squeeze(FinalResult.FinalTauCoefficients(:,tempIndex,:,dvDrIndex,molAbundanceIndex,constantNpartnerBydVdRIndex)),PopulationRequest.MoleculeAbundanceRatios(molAbundanceIndex));
                             end
                             
                             i=i+1;
