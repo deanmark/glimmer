@@ -9,6 +9,7 @@ classdef LVGSolverPopulationResult < handle
         FinalTauCoefficients;
         %Intensity per column density
         Intensities;
+        IntensitiesTempUnit;
         ExcitationTemperature;
         Converged; 
         Iterations; 

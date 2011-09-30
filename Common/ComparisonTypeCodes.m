@@ -4,8 +4,9 @@ classdef (Sealed) ComparisonTypeCodes
     properties  (Constant)
         Population = 1;
         Intensities = 2;
-        Tau = 3;
-        Beta = 4;
+        IntensitiesTempUnit = 3;
+        Tau = 4;
+        Beta = 5;
     end
     
     methods (Access = private)
@@ -21,7 +22,9 @@ classdef (Sealed) ComparisonTypeCodes
                 case ComparisonTypeCodes.Population
                     Result = 'Population';                    
                 case ComparisonTypeCodes.Intensities
-                    Result = 'Intensities';                    
+                    Result = 'Intensities erg/cm2/s';                                        
+                case ComparisonTypeCodes.IntensitiesTempUnit
+                    Result = 'Intensities K*km/s';                    
                 case ComparisonTypeCodes.Tau
                     Result = 'Tau';                    
                 case ComparisonTypeCodes.Beta
@@ -36,8 +39,10 @@ classdef (Sealed) ComparisonTypeCodes
             switch ComparisonTypeCode
                 case 'Population'
                     Result = ComparisonTypeCodes.Population;
-                case 'Intensities'
+                case 'Intensities erg/cm2/s'
                     Result = ComparisonTypeCodes.Intensities;
+                case 'Intensities K*km/s'
+                    Result = ComparisonTypeCodes.IntensitiesTempUnit;
                 case 'Tau'
                     Result = ComparisonTypeCodes.Tau;
                 case 'Beta'
@@ -55,6 +60,8 @@ classdef (Sealed) ComparisonTypeCodes
                     Result = Result.Population;
                 case ComparisonTypeCodes.Intensities
                     Result = Result.Intensities;
+                case ComparisonTypeCodes.IntensitiesTempUnit
+                    Result = Result.IntensitiesTempUnit;
                 case ComparisonTypeCodes.Tau
                     Result = Result.FinalTauCoefficients;
                 case ComparisonTypeCodes.Beta
