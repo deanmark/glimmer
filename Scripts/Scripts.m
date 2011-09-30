@@ -42,7 +42,8 @@ classdef Scripts
             
         end
                 
-        function [Ratio, RatiosTitle, NominatorData, DenominatorData] = CalculateResultsRatio(PopulationResultPair, LevelPair, PropertiesAndIndicesPairsNominator, PropertiesAndIndicesPairsDenominator, ComparisonTypeCode)
+        function [Ratio, RatiosTitle, NominatorData, DenominatorData] = CalculateResultsRatio(PopulationResultPair, LevelPair, ...
+                PropertiesAndIndicesPairsNominator, PropertiesAndIndicesPairsDenominator, ComparisonTypeCode, XAxisProperty, YAxisProperty)
             
             if size(PopulationResultPair,2)~=2 || size(LevelPair,2)~=2
                 ME = MException('CalculateIntensityRatios:InputArgumentError','Error in input. Input matrices should contain two columns');
@@ -61,7 +62,7 @@ classdef Scripts
             
             % Extract data
             UpperValues = ComparisonTypeCodes.GetLVGResultsValue(PopulationResultPair(1,1),ComparisonTypeCode);
-            [UpperValues, XAxisProperty, YAxisProperty] = Scripts.ExtractDataFromResultsDataset(UpperValues, PropertiesAndIndicesPairsNominator);
+            UpperValues = Scripts.ExtractDataFromResultsDataset(UpperValues, PropertiesAndIndicesPairsNominator);
             
             LowerValues = ComparisonTypeCodes.GetLVGResultsValue(PopulationResultPair(1,2),ComparisonTypeCode);
             LowerValues = Scripts.ExtractDataFromResultsDataset(LowerValues, PropertiesAndIndicesPairsDenominator);
@@ -71,6 +72,10 @@ classdef Scripts
             
             NominatorData = squeeze(UpperValues(UpperValuesLevelIndex,:,:));
             DenominatorData = squeeze(LowerValues(LowerValuesLevelIndex,:,:));
+            
+            [NominatorData, DenominatorData] = Scripts.AdjustDataSizeWhenSelectingMoleculeAbundanceRatiosAsAxis(NominatorData, DenominatorData, ...
+               XAxisProperty, YAxisProperty, PropertiesAndIndicesPairsNominator, PropertiesAndIndicesPairsDenominator);
+            
             Ratio = NominatorData./DenominatorData;
 
             if YAxisProperty > XAxisProperty
@@ -88,10 +93,29 @@ classdef Scripts
             
         end
         
-        function [Result XAxisProperty YAxisProperty] = ExtractDataFromResultsDataset (Data, PropertiesAndIndicesPairs)
+        function [NominatorData, DenominatorData] = AdjustDataSizeWhenSelectingMoleculeAbundanceRatiosAsAxis(NominatorData, DenominatorData, ...
+               XAxisProperty, YAxisProperty, PropertiesAndIndicesPairsNominator, PropertiesAndIndicesPairsDenominator)    
+            %If the selected axis is one of the MoleculeAbundanceRatios (either nominator or denominator), we need 
+            %to adjust the size of the other data matrix to fit the proper size
+            if (PropertiesAndIndicesPairsNominator(LVGParameterCodes.MoleculeAbundanceRatio,2) < 0)
+                if (LVGParameterCodes.MoleculeAbundanceRatio > YAxisProperty || ...
+                        LVGParameterCodes.MoleculeAbundanceRatio > XAxisProperty)
+                    DenominatorData = repmat(DenominatorData', 1, size(NominatorData,2));
+                else
+                    DenominatorData = repmat(DenominatorData, size(NominatorData,1), 1);
+                end                
+            elseif (PropertiesAndIndicesPairsDenominator(LVGParameterCodes.MoleculeAbundanceRatio,2) < 0)
+                if (LVGParameterCodes.MoleculeAbundanceRatio > YAxisProperty || ...
+                        LVGParameterCodes.MoleculeAbundanceRatio > XAxisProperty)
+                    NominatorData = repmat(NominatorData', 1, size(DenominatorData,2));
+                else
+                    NominatorData = repmat(NominatorData, size(DenominatorData,1), 1);
+                end
+            end
+        end
+        
+        function [Result] = ExtractDataFromResultsDataset (Data, PropertiesAndIndicesPairs)
             
-            XAxisProperty = 0;
-            YAxisProperty = 0;
             Properties = PropertiesAndIndicesPairs(:,1);
             Indices = PropertiesAndIndicesPairs(:,2);
             FetchString = ':,';
@@ -103,12 +127,6 @@ classdef Scripts
                     FetchString = [FetchString, num2str(index), ','];                    
                 else
                     FetchString = [FetchString, ':', ','];
-                    
-                    if index == -1
-                        XAxisProperty = i;
-                    elseif index == -2
-                        YAxisProperty = i;
-                    end
                 end                
             end
             
@@ -118,16 +136,16 @@ classdef Scripts
             
         end
         
-        function [XData, YData, ZData] = DrawContours(Data, DataTitles, ContourLevels, PopulationRequest, XAxisProperty, YAxisProperty, PlotTypeCode, varargin)
+        function [XData, YData, ZData] = DrawContours(Data, DataTitles, ContourLevels, XAxisProperty, XData, YAxisProperty, YData, PlotTypeCode, varargin)
             
-            [x,y,xName,yName,titleName] = Scripts.contourParameters (PopulationRequest, XAxisProperty, YAxisProperty);
+            [xName,yName] = Scripts.contourParameters (XAxisProperty, YAxisProperty);
             
             p = inputParser;   % Create instance of inputParser class.
-            p.addParamValue('x', x, @isnumeric);
+            p.addParamValue('XData', XData, @isnumeric);
             p.addParamValue('xName', xName, @ischar);
-            p.addParamValue('y', y, @isnumeric);
+            p.addParamValue('YData', YData, @isnumeric);
             p.addParamValue('yName', yName, @ischar);
-            p.addParamValue('titleName', titleName, @ischar);
+            p.addParamValue('titleName', '', @ischar);
             p.addParamValue('XScale', 'log', @(x)any(strcmpi(x,{'log','linear'})));
             p.addParamValue('YScale', 'log', @(x)any(strcmpi(x,{'log','linear'})));
             p.addParamValue('snapPlot', true, @(x)isscalar(x)&&islogical(x));
@@ -136,10 +154,8 @@ classdef Scripts
             p.addParamValue('displayTitle', true, @(x)isscalar(x)&&islogical(x));
             p.addParamValue('displayColorbar', false, @(x)isscalar(x)&&islogical(x));
             p.parse(varargin{:});
-                     
-            XData = p.Results.x;
-            YData = p.Results.y;            
-            ZData = zeros(numel(p.Results.y), numel(p.Results.x), size(Data,6));
+       
+            ZData = zeros(numel(p.Results.YData), numel(p.Results.XData), size(Data,6));
             
             drawInsideForm = p.Results.axesHandle ~= 0;
             
@@ -154,9 +170,9 @@ classdef Scripts
                 ZData (:,:,i) = z;
                 
                 if ~drawInsideForm
-                    [C,h] = plotPtr (p.Results.x, p.Results.y, z, ContourLevels{i}, Scripts.lineStyleChooser(i)); hold all;
+                    [C,h] = plotPtr (p.Results.XData, p.Results.YData, z, ContourLevels{i}, Scripts.lineStyleChooser(i)); hold all;
                 else
-                    [C,h] = plotPtr (p.Results.axesHandle, p.Results.x, p.Results.y, z, ContourLevels{i}, Scripts.lineStyleChooser(i)); hold all;
+                    [C,h] = plotPtr (p.Results.axesHandle, p.Results.XData, p.Results.YData, z, ContourLevels{i}, Scripts.lineStyleChooser(i)); hold all;
                 end
                 
                 hGroup = hggroup;
@@ -586,33 +602,25 @@ classdef Scripts
     
     methods (Access=public, Static=true)
         
-        function [x,y,xName,yName,titleName] = contourParameters (PopulationRequest, XAxisProperty, YAxisProperty)
+        function [xName,yName] = contourParameters (XAxisProperty, YAxisProperty)
             
-            [x, xName] = Scripts.buildAxisData(PopulationRequest,XAxisProperty);
-            [y, yName] = Scripts.buildAxisData(PopulationRequest,YAxisProperty);
-            
-            titleName = Scripts.buildSEDTitleName(PopulationRequest.VelocityDerivative, PopulationRequest.VelocityDerivativeUnits,...
-                PopulationRequest.Temperature, PopulationRequest.CollisionPartnerDensities, PopulationRequest.MoleculeAbundanceRatios, []);
+            xName = Scripts.buildAxisTitle(XAxisProperty);
+            yName = Scripts.buildAxisTitle(YAxisProperty);
 
         end
         
-        function [AxisData, AxisName] = buildAxisData (PopulationRequest, AxisProperty)
+        function [AxisName] = buildAxisTitle (AxisProperty)
             
             switch AxisProperty
                 case LVGParameterCodes.Temperature
-                    AxisData = PopulationRequest.Temperature;
                     AxisName = 'Temperatures [K]';
                 case LVGParameterCodes.CollisionPartnerDensity
-                    AxisData = PopulationRequest.CollisionPartnerDensities;
                     AxisName = 'n_p_a_r_t_n_e_r_s [cm^-^3]';
                 case LVGParameterCodes.VelocityDerivative
-                    AxisData = PopulationRequest.VelocityDerivative;
                     AxisName = sprintf('dv/dr [%s]', VelocityDerivativeUnits.GetHelpDescription(PopulationRequest.VelocityDerivativeUnits));
                 case LVGParameterCodes.MoleculeAbundanceRatio
-                    AxisData = PopulationRequest.MoleculeAbundanceRatios;
                     AxisName = 'X_m_o_l_e_c_u_l_e';
                 case LVGParameterCodes.ConstantNpartnerBydVdR
-                    AxisData = PopulationRequest.ConstantNpartnerBydVdR;
                     AxisName = 'N_p_a_r_t_n_e_r/dv [cm^-^3 s]';
                 otherwise
                     ME = MException('VerifyInput:unknownLVGParameterCode','Error in input. LVG Parameter Code [%d] is unknown', AxisProperty);
@@ -620,6 +628,27 @@ classdef Scripts
             end
             
         end
+        
+        function [AxisData] = buildAxisData (PopulationRequest, AxisProperty)
+            
+            switch AxisProperty
+                case LVGParameterCodes.Temperature
+                    AxisData = PopulationRequest.Temperature;
+                case LVGParameterCodes.CollisionPartnerDensity
+                    AxisData = PopulationRequest.CollisionPartnerDensities;
+                case LVGParameterCodes.VelocityDerivative
+                    AxisData = PopulationRequest.VelocityDerivative;
+                case LVGParameterCodes.MoleculeAbundanceRatio
+                    AxisData = PopulationRequest.MoleculeAbundanceRatios;
+                case LVGParameterCodes.ConstantNpartnerBydVdR
+                    AxisData = PopulationRequest.ConstantNpartnerBydVdR;
+                otherwise
+                    ME = MException('VerifyInput:unknownLVGParameterCode','Error in input. LVG Parameter Code [%d] is unknown', AxisProperty);
+                    throw(ME);
+            end
+            
+        end
+
         
         function [Data, XAxis, YAxis, YRange, YAxisLog] = buildResultDisplayData(DrawType, PopulationResult)
             switch DrawType

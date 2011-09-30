@@ -168,6 +168,7 @@ classdef PopulationSolverHelper < handle
                                     FinalResult.Population(1:numel(Result.Population),tempIndex,collPartnerDensityIndex,dvDrIndex,molAbundanceIndex,constantNpartnerBydVdRIndex) = Result.Population;
                                     FinalResult.FinalTauCoefficients(2:end,tempIndex,collPartnerDensityIndex,dvDrIndex,molAbundanceIndex,constantNpartnerBydVdRIndex) = Result.Tau(1:PopulationRequest.NumLevelsForSolution-1);
                                     FinalResult.Intensities(2:end,tempIndex,collPartnerDensityIndex,dvDrIndex,molAbundanceIndex,constantNpartnerBydVdRIndex) = Result.Flux_erg_cm2_s(1:PopulationRequest.NumLevelsForSolution-1)/4/Constants.pi;
+                                    FinalResult.IntensitiesTempUnit(2:end,tempIndex,collPartnerDensityIndex,dvDrIndex,molAbundanceIndex,constantNpartnerBydVdRIndex) = Result.Flux_K_km_s(1:PopulationRequest.NumLevelsForSolution-1)/4/Constants.pi;
                                     FinalResult.ExcitationTemperature(2:end,tempIndex,collPartnerDensityIndex,dvDrIndex,molAbundanceIndex,constantNpartnerBydVdRIndex) = Result.ExcitationTemperature(1:PopulationRequest.NumLevelsForSolution-1);
                                     
                                 end
@@ -291,6 +292,7 @@ classdef PopulationSolverHelper < handle
             FinalResult.FinalBetaCoefficients = zeros(dimensions);
             FinalResult.FinalTauCoefficients = zeros(dimensions);
             FinalResult.Intensities = zeros(dimensions);
+            FinalResult.IntensitiesTempUnit = zeros(dimensions);
             FinalResult.ExcitationTemperature = zeros(dimensions);
             FinalResult.Converged = zeros(dimensions(2:end));
             

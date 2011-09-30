@@ -172,7 +172,7 @@ if ~isempty(selectedResult)
     setPopupValues(handles.collisionPartnerPopup,originalRequest.CollisionPartnerDensities, '%g', true);
     setPopupValues(handles.NpartnerBydVdRPopup,originalRequest.ConstantNpartnerBydVdR, '%g', true);
     setPopupValues(handles.velocityDerivativePopup,originalRequest.VelocityDerivative, '%g', true);
-    setPopupValues(handles.molAbundanceNomPopup,originalRequest.MoleculeAbundanceRatios, '%g', false);
+    setPopupValues(handles.molAbundanceNomPopup,originalRequest.MoleculeAbundanceRatios, '%g', true);
     
     setPopupValues(handles.upperLevelPopup,1:originalRequest.NumLevelsForSolution, '%g', false);    
 end
@@ -191,7 +191,7 @@ selectedResult = resultsHash.Get(selectedResultKey);
 if ~isempty(selectedResult)
     originalRequest = selectedResult.OriginalRequest;
     
-    setPopupValues(handles.molAbundanceDenomPopup,originalRequest.MoleculeAbundanceRatios, '%g', false);    
+    setPopupValues(handles.molAbundanceDenomPopup,originalRequest.MoleculeAbundanceRatios, '%g', true);    
     setPopupValues(handles.lowerLevelPopup,1:originalRequest.NumLevelsForSolution, '%g', false);
 end
 
@@ -483,9 +483,10 @@ ComparisonTypeCode = ComparisonTypeCodes.ToCodeFromGUIFormat(getPopupmenuStringV
 
 ResultsPairs = [nominatorResult, denominatorResult];
 
-[nominatorProperties XAxisProperty YAxisProperty]= buildNominatorPropertiesAndIndicesPairs(handles);
-denominatorProperties = buildDenominatorPropertiesAndIndicesPairs(handles);
-[Ratios, RatioTitle, NominatorData, DenominatorData] = Scripts.CalculateResultsRatio(ResultsPairs, LevelPair, nominatorProperties, denominatorProperties, ComparisonTypeCode);
+[nominatorProperties denominatorProperties XAxisProperty YAxisProperty]= buildNominatorAndDenominatorPropertiesAndIndicesPairs(handles);
+[XData, YData] = ExtractAxisValues(ResultsPairs, XAxisProperty, YAxisProperty, nominatorProperties, denominatorProperties);
+[Ratios, RatioTitle, NominatorData, DenominatorData] = Scripts.CalculateResultsRatio(ResultsPairs, LevelPair, nominatorProperties, ...
+    denominatorProperties, ComparisonTypeCode, XAxisProperty, YAxisProperty);
 
 Ratios = RemoveIllegalEntries(Ratios, ComparisonTypeCode);
 NominatorData = RemoveIllegalEntries(NominatorData, ComparisonTypeCode);
@@ -502,9 +503,29 @@ DisplayDataCode = DisplayDataCodes.ToCodeFromGUIFormat(getPopupmenuStringValue(h
 Data = selectDisplayData(DisplayDataCode, Ratios, NominatorData, DenominatorData);
 displayColorbar = logical(get(handles.colorbarCheckbox, 'Value'));
 
-if ~CheckForErrors(XAxisProperty, YAxisProperty, Data)    
-    Scripts.DrawContours(Data, RatioTitle, ContourLevels, nominatorResult.OriginalRequest, XAxisProperty, YAxisProperty, plotTypeCode, ...
+if ~CheckForErrors(XAxisProperty, YAxisProperty, nominatorProperties, denominatorProperties, Data)    
+    Scripts.DrawContours(Data, RatioTitle, ContourLevels, XAxisProperty, XData, YAxisProperty, YData, plotTypeCode, ...
         'axesHandle', handles.ratiosAxes, 'toggleLegend', false, 'displayTitle', false, 'displayColorbar', displayColorbar);
+end
+
+end
+
+function [XData, YData] = ExtractAxisValues(ResultsPairs, XAxisProperty, YAxisProperty, NominatorProperties, DenominatorProperties)
+
+if (XAxisProperty ~= LVGParameterCodes.MoleculeAbundanceRatio)
+    XData = Scripts.buildAxisData(ResultsPairs(1).OriginalRequest,XAxisProperty);
+elseif NominatorProperties(LVGParameterCodes.MoleculeAbundanceRatio, 2) < 0
+    XData = Scripts.buildAxisData(ResultsPairs(1).OriginalRequest,XAxisProperty);
+elseif DenominatorProperties(LVGParameterCodes.MoleculeAbundanceRatio, 2) < 0
+    XData = Scripts.buildAxisData(ResultsPairs(2).OriginalRequest,XAxisProperty);
+end
+
+if (YAxisProperty ~= LVGParameterCodes.MoleculeAbundanceRatio)
+    YData = Scripts.buildAxisData(ResultsPairs(1).OriginalRequest,YAxisProperty);
+elseif NominatorProperties(LVGParameterCodes.MoleculeAbundanceRatio, 2) < 0
+    YData = Scripts.buildAxisData(ResultsPairs(1).OriginalRequest,YAxisProperty);
+elseif DenominatorProperties(LVGParameterCodes.MoleculeAbundanceRatio, 2) < 0
+    YData = Scripts.buildAxisData(ResultsPairs(2).OriginalRequest,YAxisProperty);
 end
 
 end
@@ -524,16 +545,20 @@ end
 Result = Data;
 end
 
-function Error = CheckForErrors (XAxisProperty, YAxisProperty, Data)
+function Error = CheckForErrors(XAxisProperty, YAxisProperty, NominatorProperties, DenominatorProperties, Data)    
 
 Error = false;
 
 if numel(XAxisProperty)~=1 || numel(YAxisProperty)~=1
-msgbox('Please select exactly one X axis property and one Y axis property.','Error', 'error');
-Error = true;
+    msgbox('Please select exactly one X axis property and one Y axis property.','Error', 'error');
+    Error = true;
 elseif all(Data(:,:)==Data(1,1))
-msgbox('Can''t render constant data.','Error', 'error');
-Error = true;
+    msgbox('Can''t render constant data.','Error', 'error');
+    Error = true;
+elseif NominatorProperties(LVGParameterCodes.MoleculeAbundanceRatio,2) < 0 && ...
+        DenominatorProperties(LVGParameterCodes.MoleculeAbundanceRatio,2) < 0
+    msgbox('Can''t select both Xmol nominator & Xmol denominator as plot axis.','Error', 'error');
+    Error = true;
 end
 
 end
@@ -545,26 +570,25 @@ strings = get(handle, 'String');
 result = strings{value};
 end 
 
-function [Pairs, XAxisProperty, YAxisProperty]= buildNominatorPropertiesAndIndicesPairs(handles)
+function [NominatorPairs, DenominatorPairs, XAxisProperty, YAxisProperty]= buildNominatorAndDenominatorPropertiesAndIndicesPairs(handles)
 
-Pairs = zeros(5,2);
+NominatorPairs = zeros(5,2);
 
-Pairs(1, :) = [LVGParameterCodes.Temperature, getParameterIndex(handles.temperaturePopup)];
-Pairs(2, :) = [LVGParameterCodes.CollisionPartnerDensity, getParameterIndex(handles.collisionPartnerPopup)];
-Pairs(3, :) = [LVGParameterCodes.VelocityDerivative, getParameterIndex(handles.velocityDerivativePopup)];
-Pairs(4, :) = [LVGParameterCodes.MoleculeAbundanceRatio, getParameterIndex(handles.molAbundanceNomPopup)];
-Pairs(5, :) = [LVGParameterCodes.ConstantNpartnerBydVdR, getParameterIndex(handles.NpartnerBydVdRPopup)];
+NominatorPairs(1, :) = [LVGParameterCodes.Temperature, getParameterIndex(handles.temperaturePopup)];
+NominatorPairs(2, :) = [LVGParameterCodes.CollisionPartnerDensity, getParameterIndex(handles.collisionPartnerPopup)];
+NominatorPairs(3, :) = [LVGParameterCodes.VelocityDerivative, getParameterIndex(handles.velocityDerivativePopup)];
+NominatorPairs(4, :) = [LVGParameterCodes.MoleculeAbundanceRatio, getParameterIndex(handles.molAbundanceNomPopup)];
+NominatorPairs(5, :) = [LVGParameterCodes.ConstantNpartnerBydVdR, getParameterIndex(handles.NpartnerBydVdRPopup)];
 
-propertiesList = Pairs(:,1);
-XAxisProperty = propertiesList(Pairs(:,2)==-1);
-YAxisProperty = propertiesList(Pairs(:,2)==-2);
+DenominatorPairs = NominatorPairs;
+DenominatorPairs(4, 2) = getParameterIndex(handles.molAbundanceDenomPopup);
 
-end
-
-function Pairs = buildDenominatorPropertiesAndIndicesPairs(handles)
-
-Pairs = buildNominatorPropertiesAndIndicesPairs(handles);
-Pairs(4, 2) = getParameterIndex(handles.molAbundanceDenomPopup);
+CombinedPairs = vertcat(NominatorPairs, DenominatorPairs);
+propertiesList = CombinedPairs(:,1);
+XAxisProperty = propertiesList(CombinedPairs(:,2)==-1);
+XAxisProperty = XAxisProperty(1);
+YAxisProperty = propertiesList(CombinedPairs(:,2)==-2);
+YAxisProperty = YAxisProperty(1);
 
 end
 
