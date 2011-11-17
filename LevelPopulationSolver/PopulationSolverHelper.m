@@ -38,7 +38,6 @@ classdef PopulationSolverHelper < handle
                                 BetaProvider.IgnoreNegativeTau = true;
                                 
                                 if innerRequest.CollisionPartnerDensities >= 10
-                                    innerRequest.FirstPopulationGuess = [];
                                     NoNegativeTauResult = LVGSolverHighExcitation.SolveLevelsPopulation(innerRequest);
                                     
                                     BetaProvider.IgnoreNegativeTau = false;
@@ -258,6 +257,7 @@ classdef PopulationSolverHelper < handle
         
         function fillInnerRequest(InnerRequest, Temperature, VelocityDerivative, VelocityDerivativeUnit, CollisionPartnerDensities, MoleculeAbundanceRatios, ConstantNpartnerBydVdR, FirstPopulationGuess)
             
+            InnerRequest.FirstPopulationGuess = [];
             InnerRequest.Temperature = Temperature;
             InnerRequest.VelocityDerivativeUnits = VelocityDerivativeUnits.sec;
             InnerRequest.VelocityDerivative = VelocityDerivative * VelocityDerivativeUnits.ConversionFactorToCGS(VelocityDerivativeUnit);

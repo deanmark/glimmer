@@ -136,15 +136,13 @@ classdef Scripts
             
         end
         
-        function [XData, YData, ZData] = DrawContours(Data, DataTitles, ContourLevels, XAxisProperty, XData, YAxisProperty, YData, PlotTypeCode, varargin)
-            
-            [xName,yName] = Scripts.contourParameters (XAxisProperty, YAxisProperty);
+        function [XData, YData, ZData] = DrawContours(Data, DataTitles, ContourLevels, XAxisTitle, XData, YAxisTitle, YData, PlotTypeCode, varargin)
             
             p = inputParser;   % Create instance of inputParser class.
             p.addParamValue('XData', XData, @isnumeric);
-            p.addParamValue('xName', xName, @ischar);
+            p.addParamValue('xName', XAxisTitle, @ischar);
             p.addParamValue('YData', YData, @isnumeric);
-            p.addParamValue('yName', yName, @ischar);
+            p.addParamValue('yName', YAxisTitle, @ischar);
             p.addParamValue('titleName', '', @ischar);
             p.addParamValue('XScale', 'log', @(x)any(strcmpi(x,{'log','linear'})));
             p.addParamValue('YScale', 'log', @(x)any(strcmpi(x,{'log','linear'})));
@@ -602,14 +600,14 @@ classdef Scripts
     
     methods (Access=public, Static=true)
         
-        function [xName,yName] = contourParameters (XAxisProperty, YAxisProperty)
+        function [xName,yName] = contourParameters (XAxisProperty, YAxisProperty, PopulationRequest)
             
-            xName = Scripts.buildAxisTitle(XAxisProperty);
-            yName = Scripts.buildAxisTitle(YAxisProperty);
+            xName = Scripts.buildAxisTitle(XAxisProperty, PopulationRequest);
+            yName = Scripts.buildAxisTitle(YAxisProperty, PopulationRequest);
 
         end
         
-        function [AxisName] = buildAxisTitle (AxisProperty)
+        function [AxisName] = buildAxisTitle (AxisProperty, PopulationRequest)
             
             switch AxisProperty
                 case LVGParameterCodes.Temperature

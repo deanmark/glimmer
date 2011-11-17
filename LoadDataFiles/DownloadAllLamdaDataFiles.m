@@ -44,7 +44,7 @@ lamdaFilesPath = FileIOHelper.LamdaMolecularDataFilesPath();
 
 for i=1:numel(MoldataLinks)
     
-    [pathstr, name, ext, versn] = fileparts(MoldataLinks{i});
+    [pathstr, name, ext] = fileparts(MoldataLinks{i});
     fileName = strcat(name, ext);
     fullFilePath = fullfile(lamdaFilesPath, fileName);
     
