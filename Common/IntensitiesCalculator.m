@@ -33,7 +33,7 @@ classdef IntensitiesCalculator < handle
                         
         end
         
-        function Intensities = CalculateIntensitiesLVG(obj, LevelPopulation, TauCoefficients, MoleculeAbundanceRatio)
+        function Intensities = CalculateIntensitiesLVG(obj, LevelPopulation, TauCoefficients, MoleculeAbundanceRatio, CollisionPartnerColumnDensity)
                         
             numDensities = size(LevelPopulation,2);
             
@@ -46,7 +46,7 @@ classdef IntensitiesCalculator < handle
                 BetaCoefficients = BetaCoefficients .* obj.m_expandingSphereBetaProvider.m_cosmicBackgroundProvider.BackgroundRadiationFactor(LevelPopulation);
             end
             
-            Intensities = (LevelPopulation.*repeatedEinsteinCoefficients.*repeatedTransitionEnergies.*BetaCoefficients*MoleculeAbundanceRatio)/(4*Constants.pi);
+            Intensities = (LevelPopulation.*repeatedEinsteinCoefficients.*repeatedTransitionEnergies.*BetaCoefficients*MoleculeAbundanceRatio*CollisionPartnerColumnDensity)/(4*Constants.pi);
 
         end
         
@@ -73,9 +73,9 @@ classdef IntensitiesCalculator < handle
             
         end
         
-        function IntensityTemperatureUnits = CalculateIntensityInTemperatureUnits (obj, LevelPopulation, TauCoefficients, MoleculeAbundanceRatio)
+        function IntensityTemperatureUnits = CalculateIntensityInTemperatureUnits (obj, LevelPopulation, TauCoefficients, MoleculeAbundanceRatio, CollisionPartnerColumnDensity)
         
-            Intensity = obj.CalculateIntensitiesLVG(LevelPopulation, TauCoefficients, MoleculeAbundanceRatio);            
+            Intensity = obj.CalculateIntensitiesLVG(LevelPopulation, TauCoefficients, MoleculeAbundanceRatio, CollisionPartnerColumnDensity);            
             IntensityTemperatureUnits = (Intensity ./ (obj.m_frequencies .^ 3)) * Constants.c ^ 3 / (2 * Constants.k);
             
         end

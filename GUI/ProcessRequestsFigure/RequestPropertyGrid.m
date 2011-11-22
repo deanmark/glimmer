@@ -5,7 +5,7 @@ classdef RequestPropertyGrid
     properties(Constant)
         
         PropertyOrderList = {'RequestName','MoleculeFileName','RunTypeCode','BetaTypeCode','Temperature','VelocityDerivativeUnits','VelocityDerivative',...
-            'CollisionPartners','Weights','CollisionPartnerDensities','MoleculeAbundanceRatios','ConstantNpartnerBydVdR','BackgroundTemperature',...
+            'CollisionPartners','Weights','CollisionPartnerDensities','MoleculeAbundanceRatios','ConstantNpartnerBydVdR','CollisionPartnerColumnDensity', 'BackgroundTemperature',...
             'NumLevelsForSolution','Finished','FirstPopulationGuess','DebugIndicators'};
         
     end
@@ -108,7 +108,7 @@ classdef RequestPropertyGrid
 
             prop =properties.FindByName('FirstPopulationGuess');
             prop.Type = PropertyType('denserealdouble', 'matrix');
-            prop.ReadOnly = false;
+            prop.ReadOnly = true;
 
             prop =properties.FindByName('Weights');
             prop.Type = PropertyType('denserealdouble', 'matrix');
@@ -136,7 +136,11 @@ classdef RequestPropertyGrid
             
             prop =properties.FindByName('NumLevelsForSolution');
             prop.Type = PropertyType('denserealdouble', 'scalar');
-            prop.ReadOnly = false;            
+            prop.ReadOnly = false; 
+            
+            prop =properties.FindByName('CollisionPartnerColumnDensity');
+            prop.Type = PropertyType('denserealdouble', 'scalar');
+            prop.ReadOnly = false;
             
             %set readonly property
             for i=1:numel(properties)

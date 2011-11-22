@@ -2,9 +2,18 @@ classdef RadexSolver < handle
     
     properties (Constant)
         
-        RadexExpandingSphereFileName = 'radexExpandingSphere.exe';
-        RadexUniformSphereFileName = 'radexUniformSphere.exe';
-        RadexPlaneParallelSlabFileName = 'radexPlaneParallelSlab.exe';
+        RadexExpandingSphereWindowsFileName = 'radexExpandingSphereWin.exe';
+        RadexUniformSphereWindowsFileName = 'radexUniformSphereWin.exe';
+        RadexPlaneParallelSlabWindowsFileName = 'radexPlaneParallelSlabWin.exe';
+
+        RadexExpandingSphereLinuxFileName = 'radexExpandingSphereLinux';
+        RadexUniformSphereLinuxFileName = 'radexUniformSphereLinux';
+        RadexPlaneParallelSlabLinuxFileName = 'radexPlaneParallelSlabLinux';
+
+        RadexExpandingSphereMacFileName = 'radexExpandingSphereMac';
+        RadexUniformSphereMacFileName = 'radexUniformSphereMac';
+        RadexPlaneParallelSlabMacFileName = 'radexPlaneParallelSlabMac';
+        
         InputFileName = 'radex.inp';
         OutputFileName = 'radex.out';
     end
@@ -26,7 +35,13 @@ classdef RadexSolver < handle
             RadexSolver.buildRadexInputFile(RadexSolver.InputFileName, PopulationRequest.MoleculeFileName, RadexSolver.OutputFileName, 0, 0, PopulationRequest.Temperature, ...
                 PopulationRequest.CollisionPartners, collisionPartnerDensities, PopulationRequest.BackgroundTemperature, inputDensity, inputDvDr);
             
-            RuntimeMessage = evalc(sprintf('!%s < %s',radexFileName, RadexSolver.InputFileName));
+            if (ispc)
+                %computer is a windows machine
+                RuntimeMessage = evalc(sprintf('!%s < %s',radexFileName, RadexSolver.InputFileName));
+            else
+                %computer is a linux/unix/mac machine                
+                RuntimeMessage = evalc(sprintf('!./%s < %s',radexFileName, RadexSolver.InputFileName));
+            end
             
             Converged = RadexSolver.verifyThatRadexHasRun(RuntimeMessage);
             %parse results            
@@ -52,8 +67,8 @@ classdef RadexSolver < handle
             elseif any(~(1e-3 <= CollisionPartnerDensities & CollisionPartnerDensities <= 1e13))
                 ME = MException('VerifyInput:CollisionPartnerDensitiesOutOfRange','Error in input. Collision Parters density should be between 1e-3 and 1e13. Input: [%s]', num2str(CollisionPartnerDensities,'%g '));
                 throw(ME);
-            elseif ~(-1e4 <= BackgroundTemperature && BackgroundTemperature <= 1e4)
-                ME = MException('VerifyInput:BackgroundTemperatureOutOfRange','Error in input. Background Temperature [K] should be between -1e4 and 1e4. Input: [%g]', BackgroundTemperature);
+            elseif ~(1e-1 <= BackgroundTemperature && BackgroundTemperature <= 1e4)
+                ME = MException('VerifyInput:BackgroundTemperatureOutOfRange','Error in input. Background Temperature [K] should be between 1e-1 and 1e4. Input: [%g]', BackgroundTemperature);
                 throw(ME);
             elseif ~(1e5 <= ColumnDensity && ColumnDensity <= 1e25)
                 ME = MException('VerifyInput:ColumnDensityOutOfRange','Error in input. Column Density [cm^-2] should be between 1e5 and 1e25. Input: [%g]', ColumnDensity);
@@ -94,16 +109,45 @@ classdef RadexSolver < handle
         
         function FileName = convertBetaTypeToFileName (BetaType)
             
-            switch BetaType
-                case BetaTypeCodes.ExpandingSphere
-                    FileName = RadexSolver.RadexExpandingSphereFileName;
-                case BetaTypeCodes.UniformSphere
-                    FileName = RadexSolver.RadexUniformSphereFileName;
-                case BetaTypeCodes.HomogeneousSlab
-                    FileName = RadexSolver.RadexPlaneParallelSlabFileName;
-                otherwise
-                    ME = MException('VerifyInput:BetaTypeUnkown','Error in input. BetaType is unknown. Input: [%g]', BetaType);
-                    throw(ME);
+            if (ispc)
+                %computer is a windows machine
+                switch BetaType
+                    case BetaTypeCodes.ExpandingSphere
+                        FileName = RadexSolver.RadexExpandingSphereWindowsFileName;
+                    case BetaTypeCodes.UniformSphere
+                        FileName = RadexSolver.RadexUniformSphereWindowsFileName;
+                    case BetaTypeCodes.HomogeneousSlab
+                        FileName = RadexSolver.RadexPlaneParallelSlabWindowsFileName;
+                    otherwise
+                        ME = MException('VerifyInput:BetaTypeUnkown','Error in input. BetaType is unknown. Input: [%g]', BetaType);
+                        throw(ME);
+                end
+            elseif (isunix && ~ismac)
+                %computer is a linux/unix machine
+                switch BetaType
+                    case BetaTypeCodes.ExpandingSphere
+                        FileName = RadexSolver.RadexExpandingSphereLinuxFileName;
+                    case BetaTypeCodes.UniformSphere
+                        FileName = RadexSolver.RadexUniformSphereLinuxFileName;
+                    case BetaTypeCodes.HomogeneousSlab
+                        FileName = RadexSolver.RadexPlaneParallelSlabLinuxFileName;
+                    otherwise
+                        ME = MException('VerifyInput:BetaTypeUnkown','Error in input. BetaType is unknown. Input: [%g]', BetaType);
+                        throw(ME);
+                end
+            else
+                %computer is a mac machine
+                switch BetaType
+                    case BetaTypeCodes.ExpandingSphere
+                        FileName = RadexSolver.RadexExpandingSphereMacFileName;
+                    case BetaTypeCodes.UniformSphere
+                        FileName = RadexSolver.RadexUniformSphereMacFileName;
+                    case BetaTypeCodes.HomogeneousSlab
+                        FileName = RadexSolver.RadexPlaneParallelSlabMacFileName;
+                    otherwise
+                        ME = MException('VerifyInput:BetaTypeUnkown','Error in input. BetaType is unknown. Input: [%g]', BetaType);
+                        throw(ME);
+                end
             end
             
         end

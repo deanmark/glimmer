@@ -36,6 +36,8 @@ classdef LVGSolverPopulationRequest < handle
         CollisionPartnerDensities;         
         %Sets the Molecule Abundance Ratios. Units: cm^-3
         MoleculeAbundanceRatios;
+        %Sets the Collision Partner (H2) Column Density. Units: cm^-2
+        CollisionPartnerColumnDensity;
          
         %By setting this you MUST set 0 for CollisionPartnerDensities or VelocityDerivative. This sets Npartner/dvdr = const. Units: cm^-3 s
         ConstantNpartnerBydVdR;
@@ -111,6 +113,7 @@ classdef LVGSolverPopulationRequest < handle
             dvdrArray = 10.^[ -5:1:1 ];
             dvdrArrayUnits = VelocityDerivativeUnits.kmSecParsec;
             
+            CollisionPartnerColumnDensity = 10^10;
             BackgroundTemperature = 2.73;
             
             Req = LVGSolverPopulationRequest('RunTypeCode', RunTypeCodes.LVG, ...
@@ -126,6 +129,7 @@ classdef LVGSolverPopulationRequest < handle
                 'MoleculeAbundanceRatios',MoleculeAbundanceRatios,...
                 'NumLevelsForSolution',0,...
                 'FirstPopulationGuess',[],...
+                'CollisionPartnerColumnDensity',CollisionPartnerColumnDensity,...
                 'DebugIndicators',false,...
                 'ConstantNpartnerBydVdR', 0);
             
