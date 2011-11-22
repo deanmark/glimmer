@@ -65,8 +65,12 @@ classdef PopulationSolverHelper < handle
                                     FinalResult.Intensities(:,tempIndex,collPartnerDensityIndex,dvDrIndex,molAbundanceIndex,constantNpartnerBydVdRIndex) = IntensitiesClc.CalculateIntensitiesLVG(Result.Population, ...
                                         Result.FinalTauCoefficients, PopulationRequest.MoleculeAbundanceRatios(molAbundanceIndex));
                                     FinalResult.ExcitationTemperature(:,tempIndex,collPartnerDensityIndex,dvDrIndex,molAbundanceIndex,constantNpartnerBydVdRIndex) = ...
-                                        IntensitiesClc.CalculateExcitationTemperature(Result.Population);
-                                    
+                                        IntensitiesClc.CalculateExcitationTemperature(Result.Population);                                    
+                                    FinalResult.IntensitiesTempUnit(:,tempIndex,collPartnerDensityIndex,dvDrIndex,molAbundanceIndex,constantNpartnerBydVdRIndex) = ...
+                                        IntensitiesClc.CalculateIntensityInTemperatureUnits(Result.Population, Result.FinalTauCoefficients, PopulationRequest.MoleculeAbundanceRatios(molAbundanceIndex));                                    
+                                    FinalResult.RadiationTemeperature(:,tempIndex,collPartnerDensityIndex,dvDrIndex,molAbundanceIndex,constantNpartnerBydVdRIndex) = ...
+                                        IntensitiesClc.CalculateRadiationTemperature(Result.Population, Result.FinalTauCoefficients);
+
                                 end
                                 
                                 i=i+1;
@@ -169,6 +173,7 @@ classdef PopulationSolverHelper < handle
                                     FinalResult.Intensities(2:end,tempIndex,collPartnerDensityIndex,dvDrIndex,molAbundanceIndex,constantNpartnerBydVdRIndex) = Result.Flux_erg_cm2_s(1:PopulationRequest.NumLevelsForSolution-1)/4/Constants.pi;
                                     FinalResult.IntensitiesTempUnit(2:end,tempIndex,collPartnerDensityIndex,dvDrIndex,molAbundanceIndex,constantNpartnerBydVdRIndex) = Result.Flux_K_km_s(1:PopulationRequest.NumLevelsForSolution-1)/4/Constants.pi;
                                     FinalResult.ExcitationTemperature(2:end,tempIndex,collPartnerDensityIndex,dvDrIndex,molAbundanceIndex,constantNpartnerBydVdRIndex) = Result.ExcitationTemperature(1:PopulationRequest.NumLevelsForSolution-1);
+                                    FinalResult.RadiationTemeperature(2:end,tempIndex,collPartnerDensityIndex,dvDrIndex,molAbundanceIndex,constantNpartnerBydVdRIndex) = Result.RadiationTemeperature(1:PopulationRequest.NumLevelsForSolution-1);
                                     
                                 end
                                 
@@ -192,7 +197,6 @@ classdef PopulationSolverHelper < handle
                 
                 case RunTypeCodes.LVG
                     FinalResult = obj.CalculateLVGPopulation(PopulationRequest);
-                    %FinalResult = obj.CalculateLVGPopulationDensityParallel(PopulationRequest);
                     
                 case {RunTypeCodes.OpticallyThin, RunTypeCodes.OpticallyThinWithBackground, RunTypeCodes.LTE}
                     FinalResult = obj.CalculateNonLVGPopulation(PopulationRequest);
@@ -294,6 +298,7 @@ classdef PopulationSolverHelper < handle
             FinalResult.Intensities = zeros(dimensions);
             FinalResult.IntensitiesTempUnit = zeros(dimensions);
             FinalResult.ExcitationTemperature = zeros(dimensions);
+            FinalResult.RadiationTemeperature = zeros(dimensions);
             FinalResult.Converged = zeros(dimensions(2:end));
             
         end

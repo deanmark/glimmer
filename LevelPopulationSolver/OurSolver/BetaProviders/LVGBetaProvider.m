@@ -46,7 +46,7 @@ classdef LVGBetaProvider < handle
             BetaCoefficients = obj.TauCoefficientsToBetaCoefficients (TauCoefficients);
             
             if (obj.IncludeBackgroundRadiation)
-                BetaCoefficients = obj.m_cosmicBackgroundProvider.AddBackgroundRadiation(Population, BetaCoefficients);
+                BetaCoefficients = BetaCoefficients .* obj.m_cosmicBackgroundProvider.BackgroundRadiationFactor(Population);
             end
             
             BetaCoefficients(1) = 0;

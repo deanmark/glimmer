@@ -10,7 +10,8 @@ classdef LVGSolverPopulationResult < handle
         %Intensity per column density
         Intensities;
         IntensitiesTempUnit;
-        ExcitationTemperature;
+        ExcitationTemperature;        
+        RadiationTemeperature;
         Converged; 
         Iterations; 
         MaxDiffPercentHistory; 

@@ -43,7 +43,7 @@ classdef IntensitiesCalculator < handle
             BetaCoefficients = obj.m_expandingSphereBetaProvider.TauCoefficientsToBetaCoefficients(TauCoefficients);
             
             if (obj.m_expandingSphereBetaProvider.IncludeBackgroundRadiation)
-                BetaCoefficients = obj.m_expandingSphereBetaProvider.m_cosmicBackgroundProvider.AddBackgroundRadiation(LevelPopulation, BetaCoefficients);
+                BetaCoefficients = BetaCoefficients .* obj.m_expandingSphereBetaProvider.m_cosmicBackgroundProvider.BackgroundRadiationFactor(LevelPopulation);
             end
             
             Intensities = (LevelPopulation.*repeatedEinsteinCoefficients.*repeatedTransitionEnergies.*BetaCoefficients*MoleculeAbundanceRatio)/(4*Constants.pi);
@@ -57,10 +57,10 @@ classdef IntensitiesCalculator < handle
         end
         
         function Flux = CalculateFluxLTE(obj, Temperature, MoleculeAbundanceRatio)
-           
+
             %(2 h nu^3 / c^2) (1/[exp(h nu / kT) - 1])
             
-            Flux = (2 * Constants.h * obj.m_frequencies.^4 * MoleculeAbundanceRatio / Constants.c^2) .* (1./(exp(Constants.h * obj.m_frequencies / (Constants.k * Temperature))-1));
+            Flux = (2 * Constants.h * obj.m_frequencies.^ 3 * MoleculeAbundanceRatio / Constants.c^2) .* (1./(exp(Constants.h * obj.m_frequencies / (Constants.k * Temperature))-1));
             Flux(1)=0;
             
         end
@@ -73,6 +73,24 @@ classdef IntensitiesCalculator < handle
             
         end
         
+        function IntensityTemperatureUnits = CalculateIntensityInTemperatureUnits (obj, LevelPopulation, TauCoefficients, MoleculeAbundanceRatio)
+        
+            Intensity = obj.CalculateIntensitiesLVG(LevelPopulation, TauCoefficients, MoleculeAbundanceRatio);            
+            IntensityTemperatureUnits = (Intensity ./ (obj.m_frequencies .^ 3)) * Constants.c ^ 3 / (2 * Constants.k);
+            
+        end
+        
+        function RadiationTemperature = CalculateRadiationTemperature (obj, LevelPopulation, TauCoefficients)
+        
+            ExcitationTemperature = obj.CalculateExcitationTemperature(LevelPopulation);
+            
+            RadiationTemperature = ExcitationTemperature .* (1-exp(-TauCoefficients))  +  obj.m_expandingSphereBetaProvider.m_cosmicBackgroundProvider.BackgroundTemperature * exp(-TauCoefficients);
+            RadiationTemperature(1)=0;
+            
+            
+        end
+        
+                
     end
     
 end
