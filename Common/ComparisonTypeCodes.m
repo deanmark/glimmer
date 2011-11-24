@@ -25,9 +25,9 @@ classdef (Sealed) ComparisonTypeCodes
                 case ComparisonTypeCodes.Population
                     Result = 'Population';                    
                 case ComparisonTypeCodes.Intensities
-                    Result = 'Intensities erg/cm2/s';                                        
+                    Result = 'Flux erg/cm2/s';                                        
                 case ComparisonTypeCodes.IntensitiesTempUnit
-                    Result = 'Intensities K*km/s';                    
+                    Result = 'Flux K*km/s';                    
                 case ComparisonTypeCodes.Tau
                     Result = 'Tau';                    
                 case ComparisonTypeCodes.Beta
@@ -46,9 +46,9 @@ classdef (Sealed) ComparisonTypeCodes
             switch ComparisonTypeCode
                 case 'Population'
                     Result = ComparisonTypeCodes.Population;
-                case 'Intensities erg/cm2/s'
+                case 'Flux erg/cm2/s'
                     Result = ComparisonTypeCodes.Intensities;
-                case 'Intensities K*km/s'
+                case 'Flux K*km/s'
                     Result = ComparisonTypeCodes.IntensitiesTempUnit;
                 case 'Tau'
                     Result = ComparisonTypeCodes.Tau;
