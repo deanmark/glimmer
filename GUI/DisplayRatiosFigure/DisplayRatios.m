@@ -503,8 +503,10 @@ DisplayDataCode = DisplayDataCodes.ToCodeFromGUIFormat(getPopupmenuStringValue(h
 Data = selectDisplayData(DisplayDataCode, Ratios, NominatorData, DenominatorData);
 displayColorbar = logical(get(handles.colorbarCheckbox, 'Value'));
 
+[xName,yName] = Scripts.contourParameters(XAxisProperty, YAxisProperty, nominatorResult.OriginalRequest);
+
 if ~CheckForErrors(XAxisProperty, YAxisProperty, nominatorProperties, denominatorProperties, Data)    
-    Scripts.DrawContours(Data, RatioTitle, ContourLevels, XAxisProperty, XData, YAxisProperty, YData, plotTypeCode, ...
+    Scripts.DrawContours(Data, RatioTitle, ContourLevels, xName, XData, yName, YData, plotTypeCode, ...
         'axesHandle', handles.ratiosAxes, 'toggleLegend', false, 'displayTitle', false, 'displayColorbar', displayColorbar);
 end
 
