@@ -271,6 +271,7 @@ classdef PopulationSolverHelper < handle
             InnerRequest.FirstPopulationGuess = FirstPopulationGuess;
             InnerRequest.MoleculeAbundanceRatios = MoleculeAbundanceRatios;
             InnerRequest.CollisionPartnerColumnDensity = CollisionPartnerColumnDensity;
+            InnerRequest.ConstantNpartnerBydVdR = ConstantNpartnerBydVdR;
             
             if ~isempty(ConstantNpartnerBydVdR) && ConstantNpartnerBydVdR ~= 0
                 if CollisionPartnerDensities == 0

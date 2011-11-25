@@ -211,8 +211,9 @@ classdef Scripts
             
             plot(0:(MoleculeData.MolecularLevels-1), NCritical, 'DisplayName', 'Critical Densities'); figure(gcf)
             title(sprintf('Critical Densities. T=%dK', Temperature));
-            xlabel('J');
+            xlabel('J');            
             ylabel('n_c_r_i_t [cm^-^3]');
+            set(gca, 'YScale', 'log');
             
         end
         

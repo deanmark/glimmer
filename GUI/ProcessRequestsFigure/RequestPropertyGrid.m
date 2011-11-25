@@ -139,7 +139,7 @@ classdef RequestPropertyGrid
             prop.ReadOnly = false; 
             
             prop =properties.FindByName('CollisionPartnerColumnDensity');
-            prop.Type = PropertyType('denserealdouble', 'scalar');
+            prop.Type = PropertyType('denserealdouble', 'matrix');
             prop.ReadOnly = false;
             
             %set readonly property
