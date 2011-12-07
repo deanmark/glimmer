@@ -352,7 +352,16 @@ classdef PopulationSolverHelper < handle
             
             for i=1:numel(collisionPartnerCodes)
                 
-                collisionPartnerRates(i) = MoleculeData.GetCollisionPartner(collisionPartnerCodes(i));
+                 collisionPartner = MoleculeData.GetCollisionPartner(collisionPartnerCodes(i));
+                 
+                 if ~isempty(collisionPartner)
+                     collisionPartnerRates(i) = collisionPartner;                    
+                 else
+                    names = MoleculeData.CollisionPartnerNames();
+                    namesLine = FileIOHelper.ConcatWithSeperator(names, ', ');
+                     ME = MException('VerifyInput:collisionPartnerMismatch','Error in input. The collision partner you selected does not exist for molecule "%s". Possible values: %s', MoleculeData.MoleculeFileName, namesLine{:});
+                    throw(ME);                     
+                 end
                 
             end
             

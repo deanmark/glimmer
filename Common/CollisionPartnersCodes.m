@@ -18,6 +18,28 @@ classdef (Sealed) CollisionPartnersCodes
     end
     
     methods (Access = public, Static=true)
+
+        function Result = ToString (CollisionPartnerCode)
+            switch CollisionPartnerCode
+                case CollisionPartnersCodes.H2
+                    Result = 'H2';
+                case CollisionPartnersCodes.H2para
+                    Result = 'H2 para';
+                case CollisionPartnersCodes.H2ortho
+                    Result = 'H2 ortho';
+                case CollisionPartnersCodes.electrons
+                    Result = 'Electron';
+                case CollisionPartnersCodes.H
+                    Result = 'H';
+                case CollisionPartnersCodes.He
+                    Result = 'He';
+                case CollisionPartnersCodes.HPlus
+                    Result = 'H+';
+                otherwise
+                    ME = MException('VerifyInput:unknownCollisionPartnerCode','Error in input. Collision partner code [%d] is unknown', CollisionPartnerCode);
+                    throw(ME);
+            end            
+        end
         
         function Result = ToStringRadexFormat (CollisionPartnerCode)            
             switch CollisionPartnerCode
@@ -40,7 +62,6 @@ classdef (Sealed) CollisionPartnersCodes
                     throw(ME);
             end            
         end
-        
         
         function Result = ToCodeFromRadexFormat (CollisionPartnerString)
             switch CollisionPartnerString

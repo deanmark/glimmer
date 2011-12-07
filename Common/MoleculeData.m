@@ -150,6 +150,18 @@ classdef MoleculeData < handle
             CollPartnerCodes = str2double(obj.m_collisionPartners.Keys());
         end
         
+        function CollPartnerNames = CollisionPartnerNames(obj)
+            partners = obj.m_collisionPartners.Values();
+            
+            names = {};
+            
+            for i=1:numel(partners)
+                names = [names, CollisionPartnersCodes.ToString(partners{i}.CollisionPartnerCode)];
+            end
+            
+            CollPartnerNames = names;
+        end
+        
         function CollisionPartner = GetCollisionPartner(obj, CollisionPartnerCode)
             CollisionPartner = obj.m_collisionPartners.Get(num2str(CollisionPartnerCode));
         end
