@@ -495,9 +495,10 @@ DenominatorData = RemoveIllegalEntries(DenominatorData, ComparisonTypeCode);
 plotTypeCode = getPlotTypeCode(handles);
 ContourLevels = buildContourLevelsArray(handles);
 
-set(handles.ratiosTable, 'Data', flipud(Ratios));
-set(handles.nominatorTable, 'Data', flipud(NominatorData));
-set(handles.denominatorTable, 'Data', flipud(DenominatorData));
+rnames = fliplr(1:numel(YData));
+set(handles.ratiosTable, 'Data', flipud(Ratios), 'RowName', rnames);
+set(handles.nominatorTable, 'Data', flipud(NominatorData), 'RowName', rnames);
+set(handles.denominatorTable, 'Data', flipud(DenominatorData), 'RowName', rnames);
 
 DisplayDataCode = DisplayDataCodes.ToCodeFromGUIFormat(getPopupmenuStringValue(handles.displayDataPopupmenu));
 Data = selectDisplayData(DisplayDataCode, Ratios, NominatorData, DenominatorData);
