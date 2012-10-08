@@ -1,8 +1,9 @@
 function fitModelToMeasurement()
 
-Result = WorkspaceHelper.GetLVGResultFromWorkspace('PACS LVG');
-Measurement = evalin('base', 'PacsHigh');
-PercentError = evalin('base', 'ErrorHigh');
+Result = WorkspaceHelper.GetLVGResultFromWorkspace('MEfindNH2');
+%Result = WorkspaceHelper.GetLVGResultFromWorkspace('PACS Middle - Natalie');
+Measurement = evalin('base', 'PacsMiddle');
+PercentError = evalin('base', 'ErrorMiddle');
 
 % Result = WorkspaceHelper.GetLVGResultFromWorkspace('PACS LVG - Middle - Best fit');
 % Measurement = evalin('base', 'PacsMiddle');
@@ -13,14 +14,17 @@ PercentError = evalin('base', 'ErrorHigh');
 % PercentError = evalin('base', 'ErrorLow');
 
 %dvdrKmParsecIndices = 1:numel(Result.OriginalRequest.VelocityDerivative);
-dvdrKmParsecIndices = find(Result.OriginalRequest.VelocityDerivative==100);
+%dvdrKmParsecIndices = find(Result.OriginalRequest.VelocityDerivative==10);
+dvdrKmParsecIndices = 1;
 % startIndex = find(Result.OriginalRequest.Temperature==100);
-temperatureIndices = find(Result.OriginalRequest.Temperature==500);
+temperatureIndices = 1;
+%temperatureIndices = find(Result.OriginalRequest.Temperature==150);
 %temperatureIndices = 1:numel(Result.OriginalRequest.Temperature);
 %densityIndices = 1:numel(Result.OriginalRequest.CollisionPartnerDensities);
-%densityIndices = 19;
-densityIndices = find(Result.OriginalRequest.CollisionPartnerDensities==1e6);
-moleculeAbundanceIndices = 1:numel(Result.OriginalRequest.MoleculeAbundanceRatios);
+densityIndices = 1;
+%densityIndices = find(Result.OriginalRequest.CollisionPartnerDensities==1e6);
+%moleculeAbundanceIndices = 1:numel(Result.OriginalRequest.MoleculeAbundanceRatios);
+moleculeAbundanceIndices = 1;
 
 SaveImages = 1;
 GenerateReport = 1;
@@ -29,7 +33,11 @@ ShowUpperAndLowerBounds = 0;
 YLabel = 'Intensity [W m^-^2]';
 XLabel = '';
 
-YRange = [.5e-18 3e-16];
+YRange = [1e-6 1e-4];
+
+ThetaInRadians = 9.4 *4.85e-6;
+DistanceIncm = 14.4 * 3.14e24;
+MassOfH2 = 2* 1.67e-24;
 
 %%%%%
 
@@ -65,10 +73,10 @@ for dvdrKmParsecIndex = dvdrKmParsecIndices
                 
                 [val, ind] = max(Measurement);
                 ourCmp = Result.Intensities(:,tempIndex,densityIndex,dvdrKmParsecIndex);
-                rawColumnDensityFactor = Measurement(ind)/max(ourCmp);
-                ourCmp = ourCmp*rawColumnDensityFactor;
+                rawCollisionPartnerColumnDensityFactor = Measurement(ind)/max(ourCmp);
+                ourCmp = ourCmp*rawCollisionPartnerColumnDensityFactor;
                 
-                mass = (1e3 * rawColumnDensityFactor) * (1.67e-24) * Constants.pi * (14.4 * 3.14e24)^2 * (8e-5)^-1;
+                mass = (rawCollisionPartnerColumnDensityFactor) * MassOfH2 * Constants.pi * (DistanceIncm * ThetaInRadians/2)^2;
                 solarMass = mass / (1.98892 * 10^33);
                 
                 if ~ShowUpperAndLowerBounds
