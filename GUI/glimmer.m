@@ -1,35 +1,35 @@
-function varargout = LVGGUI(varargin)
-% LVGGUI M-file for LVGGUI.fig
-%      LVGGUI, by itself, creates a new LVGGUI or raises the existing
+function varargout = glimmer(varargin)
+% glimmer M-file for glimmer.fig
+%      glimmer, by itself, creates a new glimmer or raises the existing
 %      singleton*.
 %
-%      H = LVGGUI returns the handle to a new LVGGUI or the handle to
+%      H = glimmer returns the handle to a new glimmer or the handle to
 %      the existing singleton*.
 %
-%      LVGGUI('CALLBACK',hObject,eventData,handles,...) calls the local
-%      function named CALLBACK in LVGGUI.M with the given input arguments.
+%      glimmer('CALLBACK',hObject,eventData,handles,...) calls the local
+%      function named CALLBACK in glimmer.M with the given input arguments.
 %
-%      LVGGUI('Property','Value',...) creates a new LVGGUI or raises the
+%      glimmer('Property','Value',...) creates a new glimmer or raises the
 %      existing singleton*.  Starting from the left, property value pairs are
-%      applied to the GUI before LVGGUI_OpeningFcn gets called.  An
+%      applied to the GUI before glimmer_OpeningFcn gets called.  An
 %      unrecognized property name or invalid value makes property application
-%      stop.  All inputs are passed to LVGGUI_OpeningFcn via varargin.
+%      stop.  All inputs are passed to glimmer_OpeningFcn via varargin.
 %
 %      *See GUI Options on GUIDE's Tools menu.  Choose "GUI allows only one
 %      instance to run (singleton)".
 %
 % See also: GUIDE, GUIDATA, GUIHANDLES
 
-% Edit the above text to modify the response to help LVGGUI
+% Edit the above text to modify the response to help glimmer
 
-% Last Modified by GUIDE v2.5 27-Mar-2011 15:23:55
+% Last Modified by GUIDE v2.5 11-Oct-2012 21:50:32
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
 gui_State = struct('gui_Name',       mfilename, ...
                    'gui_Singleton',  gui_Singleton, ...
-                   'gui_OpeningFcn', @LVGGUI_OpeningFcn, ...
-                   'gui_OutputFcn',  @LVGGUI_OutputFcn, ...
+                   'gui_OpeningFcn', @glimmer_OpeningFcn, ...
+                   'gui_OutputFcn',  @glimmer_OutputFcn, ...
                    'gui_LayoutFcn',  [] , ...
                    'gui_Callback',   []);
 if nargin && ischar(varargin{1})
@@ -44,24 +44,24 @@ end
 % End initialization code - DO NOT EDIT
 
 
-% --- Executes just before LVGGUI is made visible.
-function LVGGUI_OpeningFcn(hObject, eventdata, handles, varargin)
+% --- Executes just before glimmer is made visible.
+function glimmer_OpeningFcn(hObject, eventdata, handles, varargin)
 % This function has no output args, see OutputFcn.
 % hObject    handle to figure
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-% varargin   command line arguments to LVGGUI (see VARARGIN)
+% varargin   command line arguments to glimmer (see VARARGIN)
 
-% Choose default command line output for LVGGUI
+% Choose default command line output for glimmer
 handles.output = hObject;
 % Update handles structure
 guidata(hObject, handles);
 
-% UIWAIT makes LVGGUI wait for user response (see UIRESUME)
+% UIWAIT makes glimmer wait for user response (see UIRESUME)
 % uiwait(handles.lvgMainFigure);
 
 % --- Outputs from this function are returned to the command line.
-function varargout = LVGGUI_OutputFcn(hObject, eventdata, handles) 
+function varargout = glimmer_OutputFcn(hObject, eventdata, handles) 
 % varargout  cell array for returning output args (see VARARGOUT);
 % hObject    handle to figure
 % eventdata  reserved - to be defined in a future version of MATLAB
@@ -178,8 +178,8 @@ ProcessRequests;
 
 
 % --- Executes during object creation, after setting all properties.
-function lvggui_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to lvggui (see GCBO)
+function glimmer_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to glimmer (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
 
