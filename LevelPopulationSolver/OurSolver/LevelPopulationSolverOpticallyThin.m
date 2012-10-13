@@ -66,14 +66,13 @@ classdef LevelPopulationSolverOpticallyThin < handle
         
         function CollisionRateMatrix = createCollisionRateMatrix (obj, CollisionPartnerRates, Weights, Temperature)
             
-            totalWeights = sum(Weights);
             moleculerLevels = obj.m_moleculeData.MolecularLevels;
             
             CollisionRateMatrix = zeros(moleculerLevels,moleculerLevels);
             
             for i = 1: numel(CollisionPartnerRates)
                 
-                collisionRateMatrix = CollisionPartnerRates(i).CollisionRateMatrix(Temperature, Weights(i)/totalWeights);
+                collisionRateMatrix = CollisionPartnerRates(i).CollisionRateMatrix(Temperature, Weights(i));
                 collisionRateMatrix = transpose(collisionRateMatrix);
                 diagMembers = sum(collisionRateMatrix,1);
                 

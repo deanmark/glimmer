@@ -18,7 +18,7 @@ ColumnDensities = [1];
 Molecule = MoleculeData_12CO;
 MoleculeToCollisionPartnerDensityRatio = 8e-5;
 CollisionPartners = [CollisionRates_12CO_H2ortho,CollisionRates_12CO_H2para];
-CollisionPartnerWeights = [3 1];
+CollisionPartnerWeights = [0.75 0.25];
 %  
 % Molecule = MoleculeData_HCOplus;
 % MoleculeToCollisionPartnerDensityRatio = 10^-8;

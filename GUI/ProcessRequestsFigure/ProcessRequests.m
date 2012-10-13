@@ -22,7 +22,7 @@ function varargout = ProcessRequests(varargin)
 
 % Edit the above text to modify the response to help ProcessRequests
 
-% Last Modified by GUIDE v2.5 27-Feb-2011 20:28:40
+% Last Modified by GUIDE v2.5 12-Oct-2012 16:25:44
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -196,11 +196,40 @@ molecules = WorkspaceHelper.GetMoleculesHashFromWorkspace();
 
 for i=1:numel(InternalRequests)
     
-    if isempty(molecules.Get(InternalRequests(i).MoleculeFileName))
-        
-        errMsg = sprintf('Molecule ''%s'' not loaded!', InternalRequests(i).MoleculeFileName);
+    req = InternalRequests(i);
+    mol = molecules.Get(req.MoleculeFileName);
+    
+    if isempty(mol)        
+        errMsg = sprintf('Error in request "%s". Molecule ''%s'' not loaded.', req.RequestName, InternalRequests(i).MoleculeFileName);
         errordlg(errMsg, 'Error', 'modal');
         error(errMsg);
+    end
+    
+    for j=1:numel(req.CollisionPartners)
+        
+        partnerId = req.CollisionPartners(j);
+        collisionParternObj = mol.GetCollisionPartner(partnerId);
+        
+        if isempty(collisionParternObj)            
+            errMsg = sprintf('Error in request "%s". Molecule ''%s'' does not contain collision partner "%s".', req.RequestName, ...
+                InternalRequests(i).MoleculeFileName, CollisionPartnersCodes.ToString(partnerId));
+            errordlg(errMsg, 'Error', 'modal');
+            error(errMsg);
+        end
+        
+        maxReqTemp = max(req.Temperature);
+        minReqTemp = min(req.Temperature);
+        
+        maxCollPartnerTemp = max(collisionParternObj.Temperatures);
+        minCollPartnerTemp = min(collisionParternObj.Temperatures);
+
+        if minReqTemp < minCollPartnerTemp || maxCollPartnerTemp < maxReqTemp
+            errMsg = sprintf('Error in request "%s". For collision partner "%s" in molecule "%s", the allowed temperature range is %d-%d.', req.RequestName, ...
+                CollisionPartnersCodes.ToString(partnerId), InternalRequests(i).MoleculeFileName, minCollPartnerTemp, minCollPartnerTemp);
+            errordlg(errMsg, 'Error', 'modal');
+            error(errMsg);
+        end
+        
     end
     
 end
@@ -281,6 +310,13 @@ function saveRequestsChangesButton_Callback(hObject, eventdata, handles)
 % hObject    handle to saveRequestsChangesButton (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+
+rawRequest = handles.requestPropertiesEditor.Item;
+if numel(rawRequest.Weights) ~=sum(rawRequest.CollisionPartners)
+            errMsg = sprintf('Error saving request. Weights and CollisionPartners arrays must have the same size.');
+            errordlg(errMsg, 'Error', 'modal');
+            error(errMsg);    
+end
 
 %save current request
 if ~isempty(handles.ViewedRequestIndex)

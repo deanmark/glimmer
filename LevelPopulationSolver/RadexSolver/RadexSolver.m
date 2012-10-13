@@ -30,7 +30,7 @@ classdef RadexSolver < handle
 
             radexFileName = RadexSolver.convertBetaTypeToFileName(PopulationRequest.BetaTypeCode);
             [inputDensity, inputDvDr] = RadexSolver.computeDensityAndDvDrParams(PopulationRequest);
-            collisionPartnerDensities = PopulationRequest.CollisionPartnerDensities*PopulationRequest.Weights/(sum(PopulationRequest.Weights));
+            collisionPartnerDensities = PopulationRequest.CollisionPartnerDensities*PopulationRequest.Weights;
             
             RadexSolver.buildRadexInputFile(RadexSolver.InputFileName, PopulationRequest.MoleculeFileName, RadexSolver.OutputFileName, 0, 0, PopulationRequest.Temperature, ...
                 PopulationRequest.CollisionPartners, collisionPartnerDensities, PopulationRequest.BackgroundTemperature, inputDensity, inputDvDr);

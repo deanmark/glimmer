@@ -95,7 +95,7 @@ classdef LVGSolverPopulationRequest < handle
             %MoleculeFileName = 'hco+@xpol.dat';
             %MoleculeToCollisionPartnerDensityRatio = 10^-8;
             CollisionPartners = [CollisionPartnersCodes.H2para, CollisionPartnersCodes.H2ortho];
-            CollisionPartnerWeights = [1 3];
+            CollisionPartnerWeights = [0.25 0.75];
             
             %Molecule = WorkspaceHelper.GetMoleculeDataFromWorkspace(MoleculeFileName);
             %Temperatures = Molecule.GetCollisionPartner(CollisionPartners(1)).Temperatures;

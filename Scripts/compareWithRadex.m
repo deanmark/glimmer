@@ -1,8 +1,8 @@
 
-MoleculeFileName = 'oatom.dat';
-MoleculeToCollisionPartnerDensityRatio = 4.57e-4/2;
-CollisionPartners = [CollisionPartnersCodes.H2ortho, CollisionPartnersCodes.H2para, CollisionPartnersCodes.H, CollisionPartnersCodes.electrons];
-CollisionPartnerWeights = [MoleculeToCollisionPartnerDensityRatio, MoleculeToCollisionPartnerDensityRatio, 1, MoleculeToCollisionPartnerDensityRatio];
+% MoleculeFileName = 'oatom.dat';
+% MoleculeToCollisionPartnerDensityRatio = 4.57e-4/2;
+% CollisionPartners = [CollisionPartnersCodes.H2ortho, CollisionPartnersCodes.H2para, CollisionPartnersCodes.H, CollisionPartnersCodes.electrons];
+% CollisionPartnerWeights = [MoleculeToCollisionPartnerDensityRatio, MoleculeToCollisionPartnerDensityRatio, 1, MoleculeToCollisionPartnerDensityRatio];
 
 % MoleculeFileName = 'oatom.dat';
 % MoleculeToCollisionPartnerDensityRatio = 4.57e-4/2;
@@ -22,12 +22,12 @@ CollisionPartnerWeights = [MoleculeToCollisionPartnerDensityRatio, MoleculeToCol
 % MoleculeFileName = 'catom.dat';
 % MoleculeToCollisionPartnerDensityRatio = 2.45e-4/2;
 % CollisionPartners = [CollisionPartnersCodes.H2ortho, CollisionPartnersCodes.H2para];
-% CollisionPartnerWeights = [3 1];
+% CollisionPartnerWeights = [0.75 0.25];
 %  
-% MoleculeFileName = 'co.dat';
-% MoleculeToCollisionPartnerDensityRatio = 8e-5;
-% CollisionPartners = [CollisionPartnersCodes.H2ortho,CollisionPartnersCodes.H2para];
-% CollisionPartnerWeights = [3 1];
+MoleculeFileName = 'co.dat';
+MoleculeToCollisionPartnerDensityRatio = 8e-5;
+CollisionPartners = [CollisionPartnersCodes.H2ortho,CollisionPartnersCodes.H2para];
+CollisionPartnerWeights = [0.75 0.25];
 % %
 % MoleculeFileName = 'hco+@xpol.dat';
 % MoleculeToCollisionPartnerDensityRatio = 10^-8;
@@ -45,17 +45,20 @@ CollisionPartnerWeights = [MoleculeToCollisionPartnerDensityRatio, MoleculeToCol
 %Temperatures = cat(2, 1700:100:2000);
 %Temperatures = cat(2, 25:20:400, 400);
 %Temperatures = cat(2, 3000);
+Temperatures = 100;
 Molecule = WorkspaceHelper.GetMoleculeDataFromWorkspace(MoleculeFileName);
-Temperatures = Molecule.GetCollisionPartner(CollisionPartners(1)).Temperatures;
+%Temperatures = Molecule.GetCollisionPartner(CollisionPartners(1)).Temperatures;
 
-%CollisionPartnerDensities = 10.^(3);
-CollisionPartnerDensities = 10.^(1:1:7);
+CollisionPartnerDensities = 10.^(3);
+%CollisionPartnerDensities = 10.^(1:1:7);
 %CollisionPartnerDensities = 10.^(2.8:0.2:7);
 
 ColumnDensities = [1];
+ 
 
 %dvdrKmParsecArray = 1:0.05:1.05;
-dvdrKmParsecArray = 1;
+dvdrArray = 1;
+dvdrArrayUnits = VelocityDerivativeUnits.kmSecParsec;
 
 BackgroundTemperature = 2.73;
 
@@ -75,14 +78,30 @@ for dvdrKmParsec = dvdrKmParsecArray
         
         for dens = CollisionPartnerDensities
             
-            lvgReq = LVGSolverPopulationRequest(RunTypeCodes.LVG, MoleculeFileName, BetaTypeCodes.UniformSphere, BackgroundTemperature, CollisionPartners, CollisionPartnerWeights, temp, dens, ...
-                dvdrKmParsec*Constants.dVdRConversionFactor, dens*MoleculeToCollisionPartnerDensityRatio, Molecule.MolecularLevels, [], true, 1e5*dens*MoleculeToCollisionPartnerDensityRatio/(dvdrKmParsec*Constants.dVdRConversionFactor));
-
+            lvgReq = LVGSolverPopulationRequest('RunTypeCode', RunTypeCodes.LVG, ...
+                'MoleculeFileName', MoleculeFileName,...
+                'BetaTypeCode', BetaTypeCodes.UniformSphere,...
+                'BackgroundTemperature', BackgroundTemperature,...
+                'CollisionPartners', CollisionPartners,...
+                'Weights', CollisionPartnerWeights,...
+                'Temperature',Temperatures,...
+                'CollisionPartnerDensities',CollisionPartnerDensities,...
+                'VelocityDerivativeUnits',dvdrArrayUnits,...
+                'VelocityDerivative',dvdrArray,...
+                'MoleculeAbundanceRatios',MoleculeToCollisionPartnerDensityRatio,...
+                'NumLevelsForSolution',0,...
+                'FirstPopulationGuess',[],...
+                'CollisionPartnerColumnDensity',1e5*CollisionPartnerDensities*MoleculeToCollisionPartnerDensityRatio/(dvdrArray*VelocityDerivativeUnits.ConversionFactorToCGS(VelocityDerivativeUnits.kmSecParsec)),...
+                'DebugIndicators',false,...
+                'ConstantNpartnerBydVdR', 0);            
+           
+            solver = PopulationSolverHelper();
+            
             radexReq = lvgReq.Copy();
             radexReq.RunTypeCode = RunTypeCodes.Radex;
                                     
-            RadexLVGResult = PopulationSolverHelper.ProcessPopulationRequest(radexReq);
-            LVGResult = PopulationSolverHelper.ProcessPopulationRequest(lvgReq);
+            RadexLVGResult = solver.ProcessPopulationRequest(radexReq);
+            LVGResult = solver.ProcessPopulationRequest(lvgReq);
             
             %Compare results using a graph
             %picFileName = sprintf('Temperature%g_%g.jpg',temp, find(dvdrKmParsecArray==dvdrKmParsec));
