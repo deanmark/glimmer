@@ -1,0 +1,7 @@
+*.dat
+*.mat
+*.asv
+Results/*.*
+LevelPopulationSolver/RadexSolver/radex.inp
+LevelPopulationSolver/RadexSolver/radex.log
+LevelPopulationSolver/RadexSolver/radex.out

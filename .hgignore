@@ -1,7 +1,0 @@
-glob:*.dat
-glob:*.mat
-glob:*.asv
-glob:LevelPopulationSolver/RadexSolver/radex.inp
-glob:LevelPopulationSolver/RadexSolver/radex.log
-glob:LevelPopulationSolver/RadexSolver/radex.out
-relre:Results/*.*
