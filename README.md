@@ -1,0 +1,1 @@
+GLIMMER - Galaxy oriented Lvg Investigation of Massive Molecular Emission Regions, is a MATLAB program developed by Dean Mark and Amiel Sternberg of Tel Aviv University.
