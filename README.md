@@ -6,7 +6,7 @@ GLIMMER - Galaxy oriented Lvg Investigation of Massive Molecular Emission Region
 Quick start
 -----------
 
-+ Download the [manual](https://github.com/downloads/deanmark/glimmer/Manual.pdf) with install directions.
++ Download the [manual](http://www.github.com/downloads/deanmark/glimmer/glimmer_manual.pdf) with install directions.
 + Download the latest [release](https://github.com/deanmark/glimmer/zipball/master), or clone the repo, `git clone git://github.com/deanmark/glimmer.git`.
 
 Bug tracker
