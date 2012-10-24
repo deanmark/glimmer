@@ -43,7 +43,7 @@ classdef PopulationSolverHelper < handle
             LVGSolverHighExcitation = LevelPopulationSolverLVG(MoleculeData, BetaProvider, LVGSolverAlgorithmParameters.DefaultInitialRunParamsHighExcitation);
             LVGSolverAccurate = LevelPopulationSolverLVG(MoleculeData, BetaProvider, LVGSolverAlgorithmParameters.DefaultConfirmationRunParamsHighExcitation());
             
-            IntensitiesClc = IntensitiesCalculator(MoleculeData, OuterPopulationRequest.BackgroundTemperature~=0, OuterPopulationRequest.BackgroundTemperature);
+            RadiationClc = RadiationCalculator(MoleculeData, OuterPopulationRequest.BackgroundTemperature~=0, OuterPopulationRequest.BackgroundTemperature);
             
             totalComputations = numel(PopulationRequest.VelocityDerivative)*numel(PopulationRequest.Temperature)*numel(PopulationRequest.CollisionPartnerDensities)*...
                 numel(PopulationRequest.MoleculeAbundanceRatios)*numel(PopulationRequest.ConstantNpartnerBydVdR);
@@ -87,15 +87,15 @@ classdef PopulationSolverHelper < handle
                                     FinalResult.FinalBetaCoefficients(:,tempIndex,collPartnerDensityIndex,dvDrIndex,molAbundanceIndex,constantNpartnerBydVdRIndex) = Result.FinalBetaCoefficients;
                                     FinalResult.FinalTauCoefficients(:,tempIndex,collPartnerDensityIndex,dvDrIndex,molAbundanceIndex,constantNpartnerBydVdRIndex) = Result.FinalTauCoefficients;
                                     
-                                    FinalResult.IntegratedIntensity(:,tempIndex,collPartnerDensityIndex,dvDrIndex,molAbundanceIndex,constantNpartnerBydVdRIndex) = IntensitiesClc.CalculateIntensitiesLVG(Result.Population, ...
+                                    FinalResult.IntegratedIntensity(:,tempIndex,collPartnerDensityIndex,dvDrIndex,molAbundanceIndex,constantNpartnerBydVdRIndex) = RadiationClc.CalculateIntegratedIntensityLVG(Result.Population, ...
                                         Result.FinalTauCoefficients, PopulationRequest.MoleculeAbundanceRatios(molAbundanceIndex), PopulationRequest.CollisionPartnerColumnDensity);
                                     FinalResult.ExcitationTemperature(:,tempIndex,collPartnerDensityIndex,dvDrIndex,molAbundanceIndex,constantNpartnerBydVdRIndex) = ...
-                                        IntensitiesClc.CalculateExcitationTemperature(Result.Population);
+                                        RadiationClc.CalculateExcitationTemperature(Result.Population);
                                     FinalResult.IntegratedIntensityTempUnits(:,tempIndex,collPartnerDensityIndex,dvDrIndex,molAbundanceIndex,constantNpartnerBydVdRIndex) = ...
-                                        IntensitiesClc.CalculateIntensityInTemperatureUnits(Result.Population, Result.FinalTauCoefficients, ...
+                                        RadiationClc.CalculateIntegratedIntensityInTemperatureUnits(Result.Population, Result.FinalTauCoefficients, ...
                                         PopulationRequest.MoleculeAbundanceRatios(molAbundanceIndex), PopulationRequest.CollisionPartnerColumnDensity);
                                     FinalResult.RadiationTemeperature(:,tempIndex,collPartnerDensityIndex,dvDrIndex,molAbundanceIndex,constantNpartnerBydVdRIndex) = ...
-                                        IntensitiesClc.CalculateRadiationTemperature(Result.Population, Result.FinalTauCoefficients);
+                                        RadiationClc.CalculateRadiationTemperature(Result.Population, Result.FinalTauCoefficients);
                                     
                                 end
                                 
@@ -127,7 +127,7 @@ classdef PopulationSolverHelper < handle
                     solver = LevelPopulationSolverOpticallyThinWithBackground(MoleculeData, PopulationRequest.BackgroundTemperature);
             end
             
-            IntensitiesClc = IntensitiesCalculator(MoleculeData, OuterPopulationRequest.BackgroundTemperature~=0, OuterPopulationRequest.BackgroundTemperature);
+            RadiationClc = RadiationCalculator(MoleculeData, OuterPopulationRequest.BackgroundTemperature~=0, OuterPopulationRequest.BackgroundTemperature);
             
             FinalResult.Converged = ones(size(FinalResult.Converged));
             FinalResult.FinalBetaCoefficients = ones(size(FinalResult.FinalBetaCoefficients));
@@ -153,10 +153,10 @@ classdef PopulationSolverHelper < handle
                                 FinalResult.Population(:,tempIndex,collPartnerDensityIndex,dvDrIndex,molAbundanceIndex,constantNpartnerBydVdRIndex) = Population;
                                 
                                 if PopulationRequest.RunTypeCode == RunTypeCodes.LTE
-                                    FinalResult.IntegratedIntensity(:,tempIndex,collPartnerDensityIndex,dvDrIndex,molAbundanceIndex,constantNpartnerBydVdRIndex) = IntensitiesClc.CalculateFluxLTE(PopulationRequest.Temperature(tempIndex),...
+                                    FinalResult.IntegratedIntensity(:,tempIndex,collPartnerDensityIndex,dvDrIndex,molAbundanceIndex,constantNpartnerBydVdRIndex) = RadiationClc.CalculateFluxLTE(PopulationRequest.Temperature(tempIndex),...
                                         PopulationRequest.MoleculeAbundanceRatios(molAbundanceIndex));
                                 else
-                                    FinalResult.IntegratedIntensity(:,tempIndex,collPartnerDensityIndex,dvDrIndex,molAbundanceIndex,constantNpartnerBydVdRIndex) = IntensitiesClc.CalculateIntensitiesLVG(Population, ...
+                                    FinalResult.IntegratedIntensity(:,tempIndex,collPartnerDensityIndex,dvDrIndex,molAbundanceIndex,constantNpartnerBydVdRIndex) = RadiationClc.CalculateIntegratedIntensityLVG(Population, ...
                                         FinalResult.FinalTauCoefficients(:,tempIndex,collPartnerDensityIndex,dvDrIndex,molAbundanceIndex,constantNpartnerBydVdRIndex), PopulationRequest.MoleculeAbundanceRatios(molAbundanceIndex), PopulationRequest.CollisionPartnerColumnDensity);                                    
                                 end
                                 

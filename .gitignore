@@ -5,3 +5,9 @@ Results/*.*
 LevelPopulationSolver/RadexSolver/radex.inp
 LevelPopulationSolver/RadexSolver/radex.log
 LevelPopulationSolver/RadexSolver/radex.out
+LevelPopulationSolver/Radex/radex.inp
+LevelPopulationSolver/Radex/radex.log
+LevelPopulationSolver/Radex/radex.out
+LevelPopulationSolver/Radex/radexExpandingSphereWin.exe.exe
+LevelPopulationSolver/Radex/radexPlaneParallelSlabWin.exe
+LevelPopulationSolver/Radex/radexUniformSphereWin.exe
