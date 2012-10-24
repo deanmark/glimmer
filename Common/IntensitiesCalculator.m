@@ -92,6 +92,8 @@ classdef IntensitiesCalculator < handle
 
         function ExcitationTemp = CalculateExcitationTemperature(obj, LevelPopulation)
             
+            % h nu(i+1,i) / (k log ( n(i) g(i+1) / (n(i+1) g(i)) ))            
+            
             levelPopulationRatio = zeros(size(LevelPopulation));
             levelPopulationRatio(2:end) = LevelPopulation(1:end-1)./LevelPopulation(2:end);
             ExcitationTemp = obj.m_transitionEnergies./(Constants.k * log(levelPopulationRatio./obj.m_statisticalWeightsRatio));

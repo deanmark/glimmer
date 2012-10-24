@@ -1,8 +1,8 @@
 %{
 GLIMMER is a visual LVG (Large Velocity Gradient) analysis tool.
 
-Copyright (C) 2012  Dean Mark <deanmark at gmail>, 
-		Prof. Amiel Sternberg <amiel at wise.tau.ac.il>, 
+Copyright (C) 2012  Dean Mark <deanmark at gmail>,
+		Prof. Amiel Sternberg <amiel at wise.tau.ac.il>,
 		Department of Astrophysics, Tel-Aviv University
 
 Documentation for the program is posted at http://deanmark.github.com/glimmer/
@@ -30,11 +30,13 @@ classdef (Sealed) ComparisonTypeCodes
         Population = 1;
         Tau = 2;
         Beta = 3;
-        Intensities = 4;
-        IntensitiesTempUnit = 5;
-        RadiationTemperature = 6;
-        ExcitationTemperature = 7;
-
+        IntegratedIntensity = 4;
+        IntegratedIntensityTempUnits = 5;
+        Flux = 6;
+        FluxTempUnits = 7;
+        RadiationTemperature = 8;
+        ExcitationTemperature = 9;
+        
     end
     
     methods (Access = private)
@@ -48,19 +50,23 @@ classdef (Sealed) ComparisonTypeCodes
         function Result = ToStringGUIFormat (ComparisonTypeCode)
             switch ComparisonTypeCode
                 case ComparisonTypeCodes.Population
-                    Result = 'Population';                    
-                case ComparisonTypeCodes.Intensities
-                    Result = 'Flux erg/cm2/s';                                        
-                case ComparisonTypeCodes.IntensitiesTempUnit
-                    Result = 'Flux K*km/s';                    
+                    Result = 'Population';
+                case ComparisonTypeCodes.IntegratedIntensity
+                    Result = 'Int. Intensity [erg cm-2 s-1 sr-1]';
+                case ComparisonTypeCodes.IntegratedIntensityTempUnits
+                    Result = 'Int. Intensity [K cm s-1 sr-1]';
+                case ComparisonTypeCodes.Flux
+                    Result = 'Flux [erg cm-2 s-1]';
+                case ComparisonTypeCodes.FluxTempUnits
+                    Result = 'Flux [K km s-1]';
                 case ComparisonTypeCodes.Tau
-                    Result = 'Tau';                    
+                    Result = 'Tau';
                 case ComparisonTypeCodes.Beta
                     Result = 'Beta';
                 case ComparisonTypeCodes.RadiationTemperature
-                    Result = 'T radiation K';
+                    Result = 'T radiation [K]';
                 case ComparisonTypeCodes.ExcitationTemperature
-                    Result = 'T excitation K';
+                    Result = 'T excitation [K]';
                 otherwise
                     ME = MException('VerifyInput:unknownComparisonTypeCode','Error in input. Comparison Type Code [%d] is unknown', ComparisonTypeCode);
                     throw(ME);
@@ -71,18 +77,22 @@ classdef (Sealed) ComparisonTypeCodes
             switch ComparisonTypeCode
                 case 'Population'
                     Result = ComparisonTypeCodes.Population;
-                case 'Flux erg/cm2/s'
-                    Result = ComparisonTypeCodes.Intensities;
-                case 'Flux K*km/s'
-                    Result = ComparisonTypeCodes.IntensitiesTempUnit;
+                case 'Int. Intensity [erg cm-2 s-1 sr-1]'
+                    Result = ComparisonTypeCodes.IntegratedIntensity;
+                case 'Int. Intensity [K cm s-1 sr-1]'
+                    Result = ComparisonTypeCodes.IntegratedIntensityTempUnits;                        
+                case 'Flux [erg cm-2 s-1]'
+                    Result = ComparisonTypeCodes.Flux;
+                case 'Flux [K km s-1]'
+                    Result = ComparisonTypeCodes.FluxTempUnits;
                 case 'Tau'
                     Result = ComparisonTypeCodes.Tau;
                 case 'Beta'
-                    Result = ComparisonTypeCodes.Beta;                    
-                case 'T radiation K'
+                    Result = ComparisonTypeCodes.Beta;
+                case 'T radiation [K]'
                     Result = ComparisonTypeCodes.RadiationTemperature;
-                case 'T excitation K'
-                    Result = ComparisonTypeCodes.ExcitationTemperature;                    
+                case 'T excitation [K]'
+                    Result = ComparisonTypeCodes.ExcitationTemperature;
                 otherwise
                     ME = MException('VerifyInput:unknownLVGParameterCodes','Error in input. Comparison Type Code [%d] is unknown', ComparisonTypeCode);
                     throw(ME);
@@ -94,10 +104,14 @@ classdef (Sealed) ComparisonTypeCodes
                 
                 case ComparisonTypeCodes.Population
                     Result = LVGResult.Population;
-                case ComparisonTypeCodes.Intensities
-                    Result = LVGResult.Intensities;
-                case ComparisonTypeCodes.IntensitiesTempUnit
-                    Result = LVGResult.IntensitiesTempUnit;
+                case ComparisonTypeCodes.IntegratedIntensity
+                    Result = LVGResult.IntegratedIntensity;
+                case ComparisonTypeCodes.IntegratedIntensityTempUnits
+                    Result = LVGResult.IntegratedIntensityTempUnits;                    
+                case ComparisonTypeCodes.Flux
+                    Result = LVGResult.Flux;
+                case ComparisonTypeCodes.FluxTempUnits
+                    Result = LVGResult.FluxTempUnits;
                 case ComparisonTypeCodes.Tau
                     Result = LVGResult.FinalTauCoefficients;
                 case ComparisonTypeCodes.Beta

@@ -32,10 +32,17 @@ classdef LVGSolverPopulationResult < handle
         Population; 
         FinalBetaCoefficients; 
         FinalTauCoefficients;
-        %Intensity per column density
-        Intensities;
-        IntensitiesTempUnit;
+        % Units: erg cm-2 s-1 sr-1
+        IntegratedIntensity;
+        % Units: K cm s-1 sr-1
+        IntegratedIntensityTempUnits;
+        % Units: erg cm-2 s-1
+        Flux;
+        % Units: K km s-1
+        FluxTempUnits;
+        % Units: K
         ExcitationTemperature;        
+        % Units: K
         RadiationTemeperature;
         Converged; 
         Iterations; 

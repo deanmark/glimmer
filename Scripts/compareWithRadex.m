@@ -139,8 +139,8 @@ for dvdrKmParsec = dvdrKmParsecArray
             radexCmp = RadexLVGResult.Population;
             ourCmp = LVGResult.Population;
             
-            %radexCmp = RadexLVGResult.Intensities;
-            %ourCmp = LVGResult.Intensities;
+            %radexCmp = RadexLVGResult.Flux;
+            %ourCmp = LVGResult.IntegratedIntensity;
             
             minLength = min(numel(radexCmp), numel(ourCmp));
             Scripts.CompareWithRadex(radexCmp, ourCmp, dens, temp, dvdrKmParsec, FileName);

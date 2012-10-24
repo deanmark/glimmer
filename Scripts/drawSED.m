@@ -31,5 +31,5 @@ result2 = LVGResults.Get('PACS LVG');
 
 
 %(DrawType, PopulationResult, VelocityDerivativeIndices, TemperatureIndices, CollisionPartnerDensitiesIndices, FileName)
-Scripts.DrawResults1Molecule(ComparisonTypeCodes.Intensities, result1, [1], [13], [1], [1], 'OpenNew','');
-Scripts.DrawResults1Molecule(ComparisonTypeCodes.Intensities, result2, [1], [13], [1], [1], 'Add','');
+Scripts.DrawResults1Molecule(ComparisonTypeCodes.IntegratedIntensity, result1, [1], [13], [1], [1], 'OpenNew','');
+Scripts.DrawResults1Molecule(ComparisonTypeCodes.IntegratedIntensity, result2, [1], [13], [1], [1], 'Add','');

@@ -108,11 +108,11 @@ switch ComparisonType
         YLabel = 'x - Fractional population';
         FixYAxis = true;
         
-    case ComparisonTypeCodes.Intensities
+    case ComparisonTypeCodes.IntegratedIntensity
         
-        cmp1 = Result1.Intensities(:,tempIndex,densIndex,dvdrKmParsecIndex,molAbundanceIndex);
-        cmp2 = Result2.Intensities(:,tempIndex,densIndex,dvdrKmParsecIndex,molAbundanceIndex);
-        YLabel = 'Intensities';
+        cmp1 = Result1.IntegratedIntensity(:,tempIndex,densIndex,dvdrKmParsecIndex,molAbundanceIndex);
+        cmp2 = Result2.IntegratedIntensity(:,tempIndex,densIndex,dvdrKmParsecIndex,molAbundanceIndex);
+        YLabel = 'Integrated Intensity';
         FixYAxis = false;
 
         %normalize intensities

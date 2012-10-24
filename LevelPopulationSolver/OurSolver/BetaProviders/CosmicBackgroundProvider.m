@@ -44,11 +44,12 @@ classdef CosmicBackgroundProvider < handle
         
         function BackgroundRadiationFactor = BackgroundRadiationFactor(obj, Population)
             
-            levels = size(Population,1);
+            %BackgroundRadiationFactor = 1 - ( ((n(i)g(i+1)/(n(i+1)g(i))) - 1) / (exp((h * nu) / (k * Tbg)) - 1)
+
             popRatios = zeros(size(Population));
             popRatios(2:end,:) = Population(1:(end-1),:)./Population(2:end,:);
             
-            BackgroundRadiationFactor = repmat(obj.m_backgroundConstants(1:levels),1,size(Population,2)) + repmat(obj.m_backgroundVector(1:levels),1,size(Population,2)).*popRatios;
+            BackgroundRadiationFactor = obj.m_backgroundConstants + obj.m_backgroundVector.*popRatios;
             
             %The modification of the original beta should be within the
             %range of 0 to 1. Sometimes the calculation goes wrong and this
@@ -64,6 +65,11 @@ classdef CosmicBackgroundProvider < handle
     methods(Access=private)
        
         function initializeBackgroundVector (obj, MoleculeData, BackgroundTemperature)
+            
+            %exponents = (h * nu) / (k * Tbg)
+            %statisticalWeightRatios = g(i)/g(i-1)
+            %m_backgroundConstants = 1 + 1 / (exp((h * nu) / (k * Tbg)) - 1)
+            %m_backgroundVector = (g(i)/g(i-1)) / (exp((h * nu) / (k * Tbg)) - 1)            
             
             exponents = zeros(MoleculeData.MolecularLevels,1);
             statisticalWeightRatios = zeros(MoleculeData.MolecularLevels,1);

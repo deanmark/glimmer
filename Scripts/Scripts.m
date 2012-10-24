@@ -44,14 +44,14 @@ classdef Scripts
                 end
             end
             
-            dummyIntensity = PopulationResultPairs(1).Intensities;
+            dummyIntensity = PopulationResultPairs(1).IntegratedIntensity;
             Ratios = zeros(size(dummyIntensity,2),size(dummyIntensity,3),size(dummyIntensity,4),size(dummyIntensity,5),size(dummyIntensity,6),size(LevelPairs,1));
             RatiosTitles = cell(1,size(LevelPairs,1));
             
             for pairsIndex=1:size(LevelPairs,1)
                 
-                UpperIntensity = PopulationResultPairs(pairsIndex,1).Intensities;
-                LowerIntensity = PopulationResultPairs(pairsIndex,2).Intensities;
+                UpperIntensity = PopulationResultPairs(pairsIndex,1).IntegratedIntensity;
+                LowerIntensity = PopulationResultPairs(pairsIndex,2).IntegratedIntensity;
                 
                 UpperMolecule = WorkspaceHelper.GetMoleculeDataFromWorkspace(PopulationResultPairs(pairsIndex,1).OriginalRequest.MoleculeFileName);
                 LowerMolecule = WorkspaceHelper.GetMoleculeDataFromWorkspace(PopulationResultPairs(pairsIndex,2).OriginalRequest.MoleculeFileName);
@@ -488,7 +488,7 @@ classdef Scripts
             
             [x,y,xName,yName,titleName] = Scripts.contourParameters (originalRequest.Temperature, originalRequest.CollisionPartnerDensities, originalRequest.VelocityDerivative);
             
-            [values,MaxIndices] =max(PopulationResult.Intensities);
+            [values,MaxIndices] =max(PopulationResult.IntegratedIntensity);
             
             figure;
             
@@ -511,7 +511,7 @@ classdef Scripts
         end
         
         function DrawContours1Molecule(PopulationResult, LevelPairs, ContourLevels)
-            %Temperatures, Densities, dvdrKmParsecs, LevelPairs, ContourLevels, Intensities, MoleculeData)
+            %Temperatures, Densities, dvdrKmParsecs, LevelPairs, ContourLevels, IntegratedIntensity, MoleculeData)
             originalRequest = PopulationResult.OriginalRequest;
             MoleculeData = WorkspaceHelper.GetMoleculeDataFromWorkspace(originalRequest.MoleculeFileName);
             
@@ -524,11 +524,11 @@ classdef Scripts
             
             [x,y,xName,yName,titleName] = Scripts.contourParameters (originalRequest.Temperature, originalRequest.CollisionPartnerDensities, originalRequest.VelocityDerivative/Constants.dVdRConversionFactor);
             
-            Ratios = zeros(size(PopulationResult.Intensities,2),size(PopulationResult.Intensities,3),size(PopulationResult.Intensities,4),size(LevelPairs,1));
+            Ratios = zeros(size(PopulationResult.IntegratedIntensity,2),size(PopulationResult.IntegratedIntensity,3),size(PopulationResult.IntegratedIntensity,4),size(LevelPairs,1));
             RatiosTitles = cell(1,size(LevelPairs,1));
             
             for pairsIndex=1:size(LevelPairs,1)
-                Ratios(:,:,:,pairsIndex) = squeeze(PopulationResult.Intensities(LevelPairs(pairsIndex,1),:,:,:)./PopulationResult.Intensities(LevelPairs(pairsIndex,2),:,:,:));
+                Ratios(:,:,:,pairsIndex) = squeeze(PopulationResult.IntegratedIntensity(LevelPairs(pairsIndex,1),:,:,:)./PopulationResult.IntegratedIntensity(LevelPairs(pairsIndex,2),:,:,:));
                 RatiosTitles{pairsIndex} = sprintf(['Ratio: ',MoleculeData.MoleculeName,' I%d/',MoleculeData.MoleculeName, ' I%d'], [LevelPairs(pairsIndex,1),LevelPairs(pairsIndex,2)]);
             end
             
@@ -556,14 +556,14 @@ classdef Scripts
         
         function DrawContours2Molecules(PopulationResult1, PopulationResult2, LevelPairs, ContourLevels)
             
-            Intensities1 = PopulationResult1.Intensities;
-            Intensities2 = PopulationResult2.Intensities;
+            Intensities1 = PopulationResult1.IntegratedIntensity;
+            Intensities2 = PopulationResult2.IntegratedIntensity;
             originalRequest1 = PopulationResult1.OriginalRequest;
             originalRequest2 = PopulationResult2.OriginalRequest;
             MoleculeData1 = WorkspaceHelper.GetMoleculeDataFromWorkspace(originalRequest1.MoleculeFileName);
             MoleculeData2 = WorkspaceHelper.GetMoleculeDataFromWorkspace(originalRequest2.MoleculeFileName);
             
-            Ratios = zeros(size(Intensities1,2),size(Intensities1,3),size(Intensities1,4),size(LevelPairs,1));
+            Ratios = zeros(size(IntegratedIntensity,2),size(IntegratedIntensity,3),size(IntegratedIntensity,4),size(LevelPairs,1));
             RatiosTitles = cell(1,size(LevelPairs,1));
             
             for pairsIndex=1:size(LevelPairs,1)
@@ -676,8 +676,8 @@ classdef Scripts
         
         function [Data, XAxis, YAxis, YRange, YAxisLog] = buildResultDisplayData(DrawType, PopulationResult)
             switch DrawType
-                case ComparisonTypeCodes.Intensities
-                    Data = PopulationResult.Intensities;
+                case ComparisonTypeCodes.IntegratedIntensity
+                    Data = PopulationResult.IntegratedIntensity;
                     XAxis = 'J_u_p_p_e_r';
                     YAxis = 'I_J [erg^-^1 sr^-^1 molecule^-^1]';
                     YRange = [];

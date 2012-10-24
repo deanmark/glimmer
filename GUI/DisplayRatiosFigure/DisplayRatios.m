@@ -485,7 +485,7 @@ for comparisonType = comparisonTypeValues
 end
 
 set(hObject,'String',comparisonTypeGuiNames);
-set(hObject,'Value',ComparisonTypeCodes.Intensities);
+set(hObject,'Value',ComparisonTypeCodes.IntegratedIntensity);
 end
 
 % --- Executes on button press in displayPushbutton.
@@ -562,7 +562,8 @@ function Result = RemoveIllegalEntries(Data, ComparisonTypeCode)
 
 if (ComparisonTypeCode == ComparisonTypeCodes.Beta || ...
         ComparisonTypeCode == ComparisonTypeCodes.Population || ...
-        ComparisonTypeCode == ComparisonTypeCodes.Intensities)
+        ComparisonTypeCode == ComparisonTypeCodes.IntegratedIntensity || ...
+        ComparisonTypeCode == ComparisonTypeCodes.Flux)
     Data(Data<=0)=NaN;
     Data(Data==Inf)=NaN;
 elseif ComparisonTypeCode == ComparisonTypeCodes.Tau

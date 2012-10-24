@@ -38,6 +38,8 @@ classdef ExpandingSphereBetaProvider < LVGBetaProvider
     methods(Access=public)
         
         function BetaCoefficients = TauCoefficientsToBetaCoefficients (obj, TauCoefficients)
+           
+            % beta = (1-exp(-tau))/tau
             
             smallNumbersLogicalIndex = (-10^-5 < TauCoefficients) & (TauCoefficients < 10^-5);
             

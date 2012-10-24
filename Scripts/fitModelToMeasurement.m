@@ -92,12 +92,12 @@ for dvdrKmParsecIndex = dvdrKmParsecIndices
                 end
                 
 %                 %normalize results.
-%                 ourCmp = Result.Intensities(:,tempIndex,densityIndex,dvdrKmParsecIndex);
+%                 ourCmp = Result.IntegratedIntensity(:,tempIndex,densityIndex,dvdrKmParsecIndex);
 %                 rawColumnDensityFactor = 1.1e-16/max(ourCmp);
 %                 ourCmp = ourCmp*rawColumnDensityFactor;
                 
                 [val, ind] = max(Measurement);
-                ourCmp = Result.Intensities(:,tempIndex,densityIndex,dvdrKmParsecIndex);
+                ourCmp = Result.IntegratedIntensity(:,tempIndex,densityIndex,dvdrKmParsecIndex);
                 rawCollisionPartnerColumnDensityFactor = Measurement(ind)/max(ourCmp);
                 ourCmp = ourCmp*rawCollisionPartnerColumnDensityFactor;
                 

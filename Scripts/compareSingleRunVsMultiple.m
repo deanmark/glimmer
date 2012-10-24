@@ -101,11 +101,11 @@ for dvdrIndex = 1:numel(dvdrKmParsecArray)
             LVGResultSingle = Scripts.CalculateLVGPopulation(req2);
             
             popDiff = Scripts.PopulationDiff(LVGResultSingle.Population(:),LVGResultMultiple.Population(:,tempIndex,densIndex,dvdrIndex));
-            intDiff = Scripts.PopulationDiff(LVGResultSingle.Intensities(:),LVGResultMultiple.Intensities(:,tempIndex,densIndex,dvdrIndex));
+            intDiff = Scripts.PopulationDiff(LVGResultSingle.IntegratedIntensity(:),LVGResultMultiple.IntegratedIntensity(:,tempIndex,densIndex,dvdrIndex));
             betaDiff = Scripts.PopulationDiff(LVGResultSingle.FinalBetaCoefficients(:),LVGResultMultiple.FinalBetaCoefficients(:,tempIndex,densIndex,dvdrIndex));
             
             if any(LVGResultMultiple.Population(:,tempIndex,densIndex,dvdrIndex) ~= LVGResultSingle.Population(:)) && ...
-                    any(LVGResultMultiple.Intensities(:,tempIndex,densIndex,dvdrIndex) ~= LVGResultSingle.Intensities(:))
+                    any(LVGResultMultiple.IntegratedIntensity(:,tempIndex,densIndex,dvdrIndex) ~= LVGResultSingle.IntegratedIntensity(:))
                 
                 foundError = true;
                 maxDiffPop = max(maxDiffPop,max(popDiff));
