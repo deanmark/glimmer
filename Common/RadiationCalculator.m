@@ -60,10 +60,9 @@ classdef RadiationCalculator < handle
         
         function Intensities = CalculateIntegratedIntensityLVG(obj, LevelPopulation, TauCoefficients, MoleculeAbundanceRatio, CollisionPartnerColumnDensity)
             
-            numDensities = size(LevelPopulation,2);
-            
-            repeatedEinsteinCoefficients = repmat(obj.m_einsteinCoefficients,[1 numDensities]);
-            repeatedTransitionEnergies = repmat(obj.m_transitionEnergies,[1 numDensities]);
+            % (h nu) * x(i) * A(i) * Ntot * ((1 - exp(-tau))/tau) * BRF / 4 pi
+            %BRF = BackgroundRadiationFactor = 1 - ( ((n(i)g(i+1)/(n(i+1)g(i))) -1) / (exp((h * nu) / (k * Tbg)) - 1)
+            %units: erg cm-2 s-1
             
             BetaCoefficients = obj.m_expandingSphereBetaProvider.TauCoefficientsToBetaCoefficients(TauCoefficients);
             
@@ -71,13 +70,13 @@ classdef RadiationCalculator < handle
                 BetaCoefficients = BetaCoefficients .* obj.m_expandingSphereBetaProvider.m_cosmicBackgroundProvider.BackgroundRadiationFactor(LevelPopulation);
             end
             
-            Intensities = (LevelPopulation.*repeatedEinsteinCoefficients.*repeatedTransitionEnergies.*BetaCoefficients*MoleculeAbundanceRatio*CollisionPartnerColumnDensity)/(4*Constants.pi);
+            Intensities = (LevelPopulation.*obj.m_einsteinCoefficients.*obj.m_transitionEnergies.*BetaCoefficients*MoleculeAbundanceRatio*CollisionPartnerColumnDensity)/(4*Constants.pi);
             
         end
         
         function IntensityTemperatureUnits = CalculateIntegratedIntensityInTemperatureUnits(obj, LevelPopulation, TauCoefficients, MoleculeAbundanceRatio, CollisionPartnerColumnDensity)
             
-            Intensity = obj.CalculateIntensitiesLVG(LevelPopulation, TauCoefficients, MoleculeAbundanceRatio, CollisionPartnerColumnDensity);
+            Intensity = obj.CalculateIntegratedIntensityLVG(LevelPopulation, TauCoefficients, MoleculeAbundanceRatio, CollisionPartnerColumnDensity);
             IntensityTemperatureUnits = (Intensity ./ (obj.m_frequencies .^ 3)) * Constants.c ^ 3 / (2 * Constants.k);
             
         end

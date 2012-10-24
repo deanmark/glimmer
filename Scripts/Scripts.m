@@ -679,7 +679,7 @@ classdef Scripts
                 case ComparisonTypeCodes.IntegratedIntensity
                     Data = PopulationResult.IntegratedIntensity;
                     XAxis = 'J_u_p_p_e_r';
-                    YAxis = 'I_J [erg^-^1 sr^-^1 molecule^-^1]';
+                    YAxis = 'I_J [erg cm^-^2 s^-^1 sr^-^1]';
                     YRange = [];
                     YAxisLog = true;
                 case ComparisonTypeCodes.Beta
