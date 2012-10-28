@@ -59,7 +59,7 @@ classdef LVGSolverPopulationRequest < handle
         
         %Sets the Collision Partner Density. Units: cm^-3
         CollisionPartnerDensities;         
-        %Sets the Molecule Abundance Ratios. Units: cm^-3
+        %Sets the molecule to collision partner ratios.
         MoleculeAbundanceRatios;
         %Sets the Collision Partner (H2) Column Density. Units: cm^-2
         CollisionPartnerColumnDensity;
