@@ -9,6 +9,14 @@ Quick start
 + Download the [manual](http://www.github.com/downloads/deanmark/glimmer/glimmer_manual.pdf) with install directions.
 + Download the latest [release](https://github.com/deanmark/glimmer/zipball/master), or clone the repo, `git clone git://github.com/deanmark/glimmer.git`.
 
+Downloads
+---------
+
++ Backup of LAMDA data files. [LamdaDataFiles_oct12.zip](https://github.com/downloads/deanmark/glimmer/LamdaDataFiles_oct12.zip)
++ Data cube used for analysis in Davies et al. 2012 (See manual). [Davies_et_al_2012_HCN-CO_precalculated.mat](https://github.com/downloads/deanmark/glimmer/Davies_et_al_2012_HCN-CO_precalculated.mat)
++ RADEX compiled for Windows. [radex_30nov11_Windows.zip](https://github.com/downloads/deanmark/glimmer/radex_30nov11_Windows.zip)
++ RADEX compiled for Linux. [radex_24aug11_Linux.zip](https://github.com/downloads/deanmark/glimmer/radex_24aug11_Linux.zip)
+
 Bug tracker
 -----------
 
